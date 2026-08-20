@@ -112,13 +112,25 @@
 
 ### 4.2 判定条件
 
-以下のいずれかに該当する課題を `stale` とする。
+評価対象は `status IN ('inbox','active') AND tier != 'focus'` の課題。
+`archived` と、現に `focus` にある課題は対象外。
+以下のいずれかに該当する課題を `stale` とし、`reason` を 1 つ持たせる。
 
-- 登録から一定期間、**一度も `focus` に入っていない**
-- `focus` から外れて、一定回数の練習を経過した
-- 最終更新から一定期間が経過した
+| `reason` | 条件 | 理由文の例 |
+|---|---|---|
+| `never_focused` | `focus_span` が 1 件も無く、`created_at` が `stale_days` 以上前 | 「4 週間、一度も重点に入っていません」 |
+| `left_focus` | 最後に `focus` を外れた `left_at` 以降の練習件数が `stale_practice_count` 以上 | 「重点から外れて練習 6 回、触れていません」 |
+| `no_update` | `updated_at` が `stale_days` 以上前 | 「3 週間、更新がありません」 |
 
-閾値は初期値を持たせ、後で調整できるようにする(例: 3 週間 / 練習 6 回)。
+- 複数該当時の理由表示は **`never_focused` > `left_focus` > `no_update`** の優先とする
+  (`never_focused` が §4.1 の最頻ケース=インボックスに埋もれた課題)。
+- 日付比較は SQLite の `julianday()`(全バージョンで使用可・json 関数ではない)、
+  または ISO 8601 TEXT の辞書順比較で行う。
+- **タイムスタンプは UTC の ISO 8601 で統一して保存する。**
+  でないと `practice_date > left_at` の比較がずれる。
+
+閾値は `app_meta` に初期値を持たせ、後で調整できるようにする
+(初期値: `stale_days=21` / `stale_practice_count=6`)。
 
 ### 4.3 提示方法
 
@@ -130,19 +142,34 @@
 > スマッシュのあと戻りが遅い
 > 4 週間、一度も重点に入っていません
 
-3 択で完結させる(別画面に飛ばさない)。
+3 択で完結させる(別画面に飛ばさない)。各選択の副作用は次のとおり。
 
-- 今週の重点にする
-- まだいい
-- もう不要(アーカイブ)
+| 選択 | 動作 |
+|---|---|
+| 今週の重点にする | `focus` 3 枠に空きがあれば `tier=focus`(`focus_span` を open + `last_focused_at` 更新)、`resurface_count += 1`、`stale_flag` を削除。埋まっていれば §7.4 の入れ替えフローへ回す |
+| まだいい | `stale_flag` を削除するのみ(翌週また該当し得る。これは許容) |
+| もう不要 | `status=archived`, `archived_at=now`, `stale_flag` を削除 |
 
 判定は**週 1 回**のみ実行(重点を組み替えるタイミング、日曜夜など)。
 毎日出すと無視されるようになる。
+
+**実行ゲートと結果の保持**
+
+- 判定結果は週次スナップショットとして `stale_flag` テーブルに保存し、
+  次の評価まで固定表示する。ホーム表示は `stale_flag` の単純な SELECT。
+- 起動時、`今日の曜日 == reshuffle_weekday`(既定 0=日) かつ
+  `stale_last_evaluated_at` が今日より前なら評価を実行する。
+  最後の評価から 7 日以上経過していれば曜日に関係なく実行する(取りこぼし救済)。
+- 評価実行時は `stale_flag` を全削除してから再 INSERT する。
+- 実行状態と閾値・組み替え曜日は `app_meta`(KVS)に持つ。
 
 ### 4.4 調整期の抑制
 
 **直近の目標大会の 2 週間前に入ったら、stale の提示を停止する。**
 大会直前に忘れていた課題を掘り返さない。
+
+- 判定は「最も近い目標大会」の `event_date - now ≤ 14 日` で行う(§7.5 と共通)。
+- 調整期に入っている間は**評価自体をスキップし、ホームのセクションも非表示**にする。
 
 ---
 
@@ -272,6 +299,32 @@ CREATE TABLE level_change (
   to_level   INTEGER NOT NULL,
   created_at TEXT NOT NULL
 );
+
+-- focus 在籍履歴(stale 条件② と §7.3「重点にした回数」を賄う)
+CREATE TABLE focus_span (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  issue_id   INTEGER NOT NULL REFERENCES issue(id) ON DELETE CASCADE,
+  entered_at TEXT NOT NULL,
+  left_at    TEXT                 -- NULL = 現在 focus 中
+);
+-- 運用: tier を focus にする時に 1 行 INSERT(left_at=NULL)、
+--       focus から外す時に開いている span の left_at を now で UPDATE。
+--       重点にした回数 = COUNT(*)、未 focus = NOT EXISTS。
+
+-- stale 週次スナップショット(3 択処理で 1 行ずつ消す)
+CREATE TABLE stale_flag (
+  issue_id     INTEGER PRIMARY KEY REFERENCES issue(id) ON DELETE CASCADE,
+  reason       TEXT NOT NULL,      -- 'never_focused'|'left_focus'|'no_update'
+  evaluated_at TEXT NOT NULL
+);
+
+-- 設定・メタ(閾値・組み替え曜日・前回評価日時)
+CREATE TABLE app_meta (
+  key   TEXT PRIMARY KEY,
+  value TEXT NOT NULL
+);
+-- 初期値: stale_days=21 / stale_practice_count=6 /
+--         reshuffle_weekday=0(日) / stale_last_evaluated_at=''
 
 -- 大会後の振り返り(種目ごとに 1 件)
 CREATE TABLE competition_review (
