@@ -192,4 +192,68 @@ final class LevelChangeTests: XCTestCase {
         let remaining = try XCTUnwrap(rows.first?.first?.longValue)
         XCTAssertEqual(Int64(0), remaining)
     }
+
+    // MARK: - 期間のレベルアップ回数(§5.1)
+
+    func testCountLevelUpsInRange() throws {
+        let db = try makeDatabase()
+        defer { try? db.close() }
+        let repo = makeRepository(db)
+
+        let first = try repo.create(coachWords: "A")
+        let second = try repo.create(coachWords: "B")
+        var editedFirst = first
+        editedFirst.masteryLevel = .drill
+        _ = try repo.update(editedFirst)
+        var editedSecond = second
+        editedSecond.masteryLevel = .drill
+        _ = try repo.update(editedSecond)
+
+        let count = try repo.countLevelUps(from: t0, to: t1)
+
+        XCTAssertEqual(2, count)
+    }
+
+    /// 下げた記録は「レベルアップ回数」に数えない。
+    func testCountLevelUpsExcludesLevelDowns() throws {
+        let db = try makeDatabase()
+        defer { try? db.close() }
+        let repo = makeRepository(db)
+
+        let created = try repo.create(coachWords: "A", masteryLevel: .match)
+        var edited = created
+        edited.masteryLevel = .drill
+        _ = try repo.update(edited)
+
+        let count = try repo.countLevelUps(from: t0, to: t1)
+
+        XCTAssertEqual(0, count)
+    }
+
+    /// 境界: 終了時刻ちょうどは含まない(翌月の頭をそのまま渡せる形)。
+    func testCountLevelUpsExcludesEnd() throws {
+        let db = try makeDatabase()
+        defer { try? db.close() }
+        let repo = makeRepository(db)
+
+        let created = try repo.create(coachWords: "A")
+        clock = t1
+        var edited = created
+        edited.masteryLevel = .drill
+        _ = try repo.update(edited)
+
+        let count = try repo.countLevelUps(from: t0, to: t1)
+
+        XCTAssertEqual(0, count)
+    }
+
+    func testCountLevelUpsIsZeroWithoutChanges() throws {
+        let db = try makeDatabase()
+        defer { try? db.close() }
+        let repo = makeRepository(db)
+
+        _ = try repo.create(coachWords: "A")
+
+        XCTAssertEqual(0, try repo.countLevelUps(from: t0, to: t1))
+    }
 }

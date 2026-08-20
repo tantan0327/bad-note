@@ -165,6 +165,21 @@ public final class IssueRepository {
         return changes
     }
 
+    /// 期間内のレベルアップ回数(§5.1)。`from` 以上 `to` 未満。
+    ///
+    /// 下げた記録は数えない。積み上げとして見せる数字なので、上がった分だけ。
+    public func countLevelUps(from: Date, to: Date) throws -> Int {
+        let rows = try db.selectAll(sql: "SELECT COUNT(*) FROM level_change WHERE to_level > from_level AND created_at >= ? AND created_at < ?",
+                                    parameters: [
+                                        .text(timestamps.text(from: from)),
+                                        .text(timestamps.text(from: to)),
+                                    ])
+        guard let count = rows.first?.first?.longValue else {
+            return 0
+        }
+        return Int(count)
+    }
+
     private func decodeLevelChange(_ row: [SQLValue]) throws -> LevelChange {
         guard let id = row[0].longValue else {
             throw IssueRepositoryError.unreadableColumn(name: "id")
