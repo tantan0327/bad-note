@@ -58,6 +58,9 @@ public struct AppDatabase {
                 // §3.2「1 度だけ提案する」の記録。既存の課題は NULL(まだ断っていない)
                 try context.exec(sql: "ALTER TABLE issue ADD COLUMN level_up_declined_level INTEGER")
             },
+            { context in
+                try context.exec(sql: AppDatabase.createLevelChangeTable)
+            },
         ])
     }
 
@@ -154,6 +157,17 @@ public struct AppDatabase {
           issue_id INTEGER NOT NULL REFERENCES issue(id) ON DELETE CASCADE,
           tag_id   INTEGER NOT NULL REFERENCES tag(id) ON DELETE CASCADE,
           PRIMARY KEY (issue_id, tag_id)
+        )
+        """
+
+    /// 習熟度の変更履歴(§6)
+    static let createLevelChangeTable = """
+        CREATE TABLE level_change (
+          id         INTEGER PRIMARY KEY AUTOINCREMENT,
+          issue_id   INTEGER NOT NULL REFERENCES issue(id) ON DELETE CASCADE,
+          from_level INTEGER NOT NULL,
+          to_level   INTEGER NOT NULL,
+          created_at TEXT NOT NULL
         )
         """
 }

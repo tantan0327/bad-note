@@ -127,6 +127,67 @@ public final class IssueRepository {
     /// `created_at` は更新しない。`updated_at` は引数の値ではなくクロックの現在時刻で上書きする。
     @discardableResult
     public func update(_ issue: Issue) throws -> Issue {
+        return try db.transaction {
+            try recordLevelChangeIfNeeded(for: issue)
+            try writeIssue(issue)
+            return try require(id: issue.id)
+        }
+    }
+
+    /// 習熟度が変わっていれば `level_change` に 1 行残す(§6)。
+    ///
+    /// **記録は `update(_:)` の中で行う。** 呼び出し側に書かせると、
+    /// レベルを変える経路が増えたときに書き忘れて「レベルアップ回数」が嘘になる。
+    private func recordLevelChangeIfNeeded(for issue: Issue) throws {
+        guard let stored = try fetch(id: issue.id) else {
+            return
+        }
+        if stored.masteryLevel == issue.masteryLevel {
+            return
+        }
+        try db.exec(sql: "INSERT INTO level_change (issue_id, from_level, to_level, created_at) VALUES (?, ?, ?, ?)",
+                    parameters: [
+                        SQLValue.long(issue.id),
+                        SQLValue.long(Int64(stored.masteryLevel.rawValue)),
+                        SQLValue.long(Int64(issue.masteryLevel.rawValue)),
+                        SQLValue.text(timestamps.text(from: now())),
+                    ])
+    }
+
+    /// 習熟度の変更履歴。古い順(進み方をそのまま並べる)。
+    public func fetchLevelChanges(issueId: Int64) throws -> [LevelChange] {
+        let rows = try db.selectAll(sql: "SELECT id, issue_id, from_level, to_level, created_at FROM level_change WHERE issue_id = ? ORDER BY created_at, id",
+                                    parameters: [.long(issueId)])
+        var changes: [LevelChange] = []
+        for row in rows {
+            changes.append(try decodeLevelChange(row))
+        }
+        return changes
+    }
+
+    private func decodeLevelChange(_ row: [SQLValue]) throws -> LevelChange {
+        guard let id = row[0].longValue else {
+            throw IssueRepositoryError.unreadableColumn(name: "id")
+        }
+        guard let issueId = row[1].longValue else {
+            throw IssueRepositoryError.unreadableColumn(name: "issue_id")
+        }
+        guard let fromRaw = row[2].longValue,
+              let fromLevel = MasteryLevel(rawValue: Int(fromRaw)) else {
+            throw IssueRepositoryError.unreadableColumn(name: "from_level")
+        }
+        guard let toRaw = row[3].longValue,
+              let toLevel = MasteryLevel(rawValue: Int(toRaw)) else {
+            throw IssueRepositoryError.unreadableColumn(name: "to_level")
+        }
+        guard let createdAtText = row[4].textValue,
+              let createdAt = timestamps.date(from: createdAtText) else {
+            throw IssueRepositoryError.unreadableColumn(name: "created_at")
+        }
+        return LevelChange(id: id, issueId: issueId, fromLevel: fromLevel, toLevel: toLevel, createdAt: createdAt)
+    }
+
+    private func writeIssue(_ issue: Issue) throws {
         try db.exec(sql: """
             UPDATE issue SET coach_words = ?, done_form = ?, coach_name = ?, discipline = ?, mastery_level = ?, tier = ?, sort_order = ?, impact = ?, cost = ?, status = ?, resurface_count = ?, last_focused_at = ?, updated_at = ?, archived_at = ?, level_up_declined_level = ?
             WHERE id = ?
@@ -149,7 +210,6 @@ public final class IssueRepository {
                 intValue(issue.levelUpDeclinedLevel),
                 .long(issue.id),
             ])
-        return try require(id: issue.id)
     }
 
     // MARK: - Delete
