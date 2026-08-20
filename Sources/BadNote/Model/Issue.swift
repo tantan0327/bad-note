@@ -22,6 +22,24 @@ public enum Tier: String, CaseIterable, Hashable {
     case focus
     case next
     case someday
+
+    /// 1 段上の層。`focus` が最上位なので、その上は無い。
+    public var higher: Tier? {
+        switch self {
+        case .focus: return nil
+        case .next: return Tier.focus
+        case .someday: return Tier.next
+        }
+    }
+
+    /// 1 段下の層。`someday` が最下位なので、その下は無い。
+    public var lower: Tier? {
+        switch self {
+        case .focus: return Tier.next
+        case .next: return Tier.someday
+        case .someday: return nil
+        }
+    }
 }
 
 /// 課題の状態。`inbox` は未整理、`archived` は定着済み。
@@ -90,5 +108,15 @@ public struct Issue: Hashable, Identifiable {
         self.createdAt = createdAt
         self.updatedAt = updatedAt
         self.archivedAt = archivedAt
+    }
+}
+
+extension Issue {
+    /// UI の主表示。未整理で `doneForm` がまだ無ければ、コーチの言葉をそのまま出す(§3.1)。
+    public var displayTitle: String {
+        if let doneForm = doneForm, !doneForm.isEmpty {
+            return doneForm
+        }
+        return coachWords
     }
 }

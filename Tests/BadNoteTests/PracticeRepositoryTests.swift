@@ -485,4 +485,68 @@ final class PracticeRepositoryTests: XCTestCase {
 
         XCTAssertEqual(0, practices.count)
     }
+
+    // MARK: - 期間の合計時間
+
+    /// §7.2 保存後に出す「今月の累計」の集計。
+    func testTotalMinutesInRangeSumsPracticesInside() throws {
+        let db = try makeDatabase()
+        defer { try? db.close() }
+        let repo = makePracticeRepository(db)
+
+        _ = try repo.create(practiceDate: t0, minutes: 90)
+        _ = try repo.create(practiceDate: t1, minutes: 60)
+
+        let total = try repo.totalMinutes(from: t0, to: Date(timeIntervalSince1970: 1_700_010_000))
+
+        XCTAssertEqual(150, total)
+    }
+
+    /// 境界: 開始日ちょうどは含む。
+    func testTotalMinutesInRangeIncludesStart() throws {
+        let db = try makeDatabase()
+        defer { try? db.close() }
+        let repo = makePracticeRepository(db)
+
+        _ = try repo.create(practiceDate: t0, minutes: 90)
+
+        let total = try repo.totalMinutes(from: t0, to: t1)
+
+        XCTAssertEqual(90, total)
+    }
+
+    /// 境界: 終了日ちょうどは含まない(半開区間)。翌月の頭を渡せる形にするため。
+    func testTotalMinutesInRangeExcludesEnd() throws {
+        let db = try makeDatabase()
+        defer { try? db.close() }
+        let repo = makePracticeRepository(db)
+
+        _ = try repo.create(practiceDate: t1, minutes: 90)
+
+        let total = try repo.totalMinutes(from: t0, to: t1)
+
+        XCTAssertEqual(0, total)
+    }
+
+    func testTotalMinutesInRangeExcludesPracticesBeforeStart() throws {
+        let db = try makeDatabase()
+        defer { try? db.close() }
+        let repo = makePracticeRepository(db)
+
+        _ = try repo.create(practiceDate: Date(timeIntervalSince1970: 1_699_000_000), minutes: 90)
+
+        let total = try repo.totalMinutes(from: t0, to: t1)
+
+        XCTAssertEqual(0, total)
+    }
+
+    func testTotalMinutesInRangeIsZeroWhenNoPractices() throws {
+        let db = try makeDatabase()
+        defer { try? db.close() }
+        let repo = makePracticeRepository(db)
+
+        let total = try repo.totalMinutes(from: t0, to: t1)
+
+        XCTAssertEqual(0, total)
+    }
 }

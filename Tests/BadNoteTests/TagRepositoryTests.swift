@@ -377,4 +377,85 @@ final class TagRepositoryTests: XCTestCase {
         let fetched = try issues.fetch(id: issue.id)
         XCTAssertNotNil(fetched)
     }
+
+    // MARK: - タグ集合の置き換え
+
+    /// 画面の状態に合わせて issue_tag を合わせる。付けるものと外すものを 1 回で。
+    func testSetTagsAttachesGivenTags() throws {
+        let db = try makeDatabase()
+        defer { try? db.close() }
+        let repo = makeRepository(db)
+        let issues = makeIssueRepository(db)
+
+        let issue = try issues.create(coachWords: "A")
+        let smash = try repo.create(name: "スマッシュ")
+        let clear = try repo.create(name: "クリア")
+        try repo.setTags([smash, clear], for: issue.id)
+
+        let tags = try repo.fetchTags(issueId: issue.id)
+        XCTAssertEqual(["クリア", "スマッシュ"], tags.map { $0.name })
+    }
+
+    func testSetTagsDetachesTagsNoLongerPresent() throws {
+        let db = try makeDatabase()
+        defer { try? db.close() }
+        let repo = makeRepository(db)
+        let issues = makeIssueRepository(db)
+
+        let issue = try issues.create(coachWords: "A")
+        let smash = try repo.create(name: "スマッシュ")
+        let clear = try repo.create(name: "クリア")
+        try repo.setTags([smash, clear], for: issue.id)
+        try repo.setTags([smash], for: issue.id)
+
+        let tags = try repo.fetchTags(issueId: issue.id)
+        XCTAssertEqual([smash], tags)
+    }
+
+    func testSetTagsWithEmptyArrayRemovesAll() throws {
+        let db = try makeDatabase()
+        defer { try? db.close() }
+        let repo = makeRepository(db)
+        let issues = makeIssueRepository(db)
+
+        let issue = try issues.create(coachWords: "A")
+        let smash = try repo.create(name: "スマッシュ")
+        try repo.setTags([smash], for: issue.id)
+        try repo.setTags([], for: issue.id)
+
+        let tags = try repo.fetchTags(issueId: issue.id)
+        XCTAssertEqual(0, tags.count)
+    }
+
+    /// 同じ集合を渡し直しても増えない。
+    func testSetTagsIsIdempotent() throws {
+        let db = try makeDatabase()
+        defer { try? db.close() }
+        let repo = makeRepository(db)
+        let issues = makeIssueRepository(db)
+
+        let issue = try issues.create(coachWords: "A")
+        let smash = try repo.create(name: "スマッシュ")
+        try repo.setTags([smash], for: issue.id)
+        try repo.setTags([smash], for: issue.id)
+
+        XCTAssertEqual(Int64(1), try issueTagCount(db))
+    }
+
+    /// 他の課題のタグには触らない。
+    func testSetTagsLeavesOtherIssuesUntouched() throws {
+        let db = try makeDatabase()
+        defer { try? db.close() }
+        let repo = makeRepository(db)
+        let issues = makeIssueRepository(db)
+
+        let first = try issues.create(coachWords: "A")
+        let second = try issues.create(coachWords: "B")
+        let smash = try repo.create(name: "スマッシュ")
+        try repo.setTags([smash], for: second.id)
+        try repo.setTags([], for: first.id)
+
+        let tags = try repo.fetchTags(issueId: second.id)
+        XCTAssertEqual([smash], tags)
+    }
 }

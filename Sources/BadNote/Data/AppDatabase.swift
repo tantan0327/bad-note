@@ -11,6 +11,18 @@ public struct AppDatabase {
     private init() {
     }
 
+    /// アプリのデータベースを開く。`prepare(_:)` 済みの接続を返す。
+    ///
+    /// 保存先は Application Support。iOS も Android も同じコードで解決できる。
+    public static func open() throws -> SQLContext {
+        let directory = URL.applicationSupportDirectory
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        let path = directory.appendingPathComponent("badnote.sqlite").path
+        let db = try SQLContext(path: path, configuration: .platform)
+        try AppDatabase.prepare(db)
+        return db
+    }
+
     /// 接続を使える状態にする。**接続を開いたら必ず呼ぶこと。**
     ///
     /// 外部キー制約は SQLite の既定で OFF、しかも**接続ごと**の設定なので、

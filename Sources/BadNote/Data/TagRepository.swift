@@ -81,6 +81,27 @@ public final class TagRepository {
                     parameters: [.long(issueId), .long(tagId)])
     }
 
+    /// 課題のタグを `tags` の集合に合わせる。足りないものを付け、余分なものを外す。
+    ///
+    /// 画面の状態をそのまま渡せる形。差分の計算を呼び出し側に書かせないための入口。
+    public func setTags(_ tags: [Tag], for issueId: Int64) throws {
+        let stored = try fetchTags(issueId: issueId)
+        for existing in stored {
+            var keep = false
+            for tag in tags {
+                if tag.id == existing.id {
+                    keep = true
+                }
+            }
+            if !keep {
+                try detach(tagId: existing.id, from: issueId)
+            }
+        }
+        for tag in tags {
+            try attach(tagId: tag.id, to: issueId)
+        }
+    }
+
     /// 課題に付いているタグ。名前順。
     public func fetchTags(issueId: Int64) throws -> [Tag] {
         let rows = try db.selectAll(sql: """

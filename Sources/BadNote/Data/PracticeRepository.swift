@@ -104,6 +104,23 @@ public final class PracticeRepository {
         return Int(total)
     }
 
+    /// 期間内の練習時間の合計。`from` 以上 `to` 未満(半開区間)。
+    ///
+    /// §7.2 の「今月の累計」に使う。月をまたぐ判定を呼び出し側に寄せるため、
+    /// 終端は含めない(翌月の頭をそのまま渡せる)。
+    public func totalMinutes(from: Date, to: Date) throws -> Int {
+        let rows = try db.selectAll(sql: "SELECT SUM(minutes) FROM practice WHERE practice_date >= ? AND practice_date < ?",
+                                    parameters: [
+                                        .text(timestamps.text(from: from)),
+                                        .text(timestamps.text(from: to)),
+                                    ])
+        // 1 件も無いとき SUM は NULL
+        guard let total = rows.first?.first?.longValue else {
+            return 0
+        }
+        return Int(total)
+    }
+
     // MARK: - Update
 
     /// 練習ログを更新し、手応えを `focus` の内容で置き換える。

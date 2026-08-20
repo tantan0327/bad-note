@@ -9,6 +9,7 @@ struct ContentView: View {
     @AppStorage("name") var welcomeName = "Skipper"
     @AppStorage("appearance") var appearance = ""
     @State var viewModel = ViewModel()
+    @State var isShowingPracticeLog = false
 
     var body: some View {
         TabView(selection: $tab) {
@@ -19,8 +20,29 @@ struct ContentView: View {
             .tag(ContentTab.welcome)
 
             NavigationStack {
-                ItemListView()
-                    .navigationTitle(Text("\(viewModel.items.count) Items"))
+                VStack(spacing: 16) {
+                    NavigationLink {
+                        IssueListView()
+                    } label: {
+                        Text("課題一覧", bundle: .module)
+                    }
+                    .padding(.top)
+                    Spacer()
+                    // §7.1 練習を記録するボタンは末尾に大きく
+                    Button {
+                        isShowingPracticeLog = true
+                    } label: {
+                        Text("練習を記録する", bundle: .module)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 8)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .padding()
+                }
+                .navigationTitle(Text("ホーム", bundle: .module))
+                .sheet(isPresented: $isShowingPracticeLog) {
+                    PracticeLogView()
+                }
             }
             .tabItem { Label("Home", systemImage: "house.fill") }
             .tag(ContentTab.home)
