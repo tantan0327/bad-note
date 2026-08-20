@@ -23,7 +23,7 @@ public final class IssueRepository {
     }
 
     /// SELECT の列。並びは `decode(_:)` の添字と対応している。
-    private static let columns = "id, coach_words, done_form, coach_name, discipline, mastery_level, tier, sort_order, impact, cost, status, resurface_count, last_focused_at, created_at, updated_at, archived_at"
+    private static let columns = "id, coach_words, done_form, coach_name, discipline, mastery_level, tier, sort_order, impact, cost, status, resurface_count, last_focused_at, created_at, updated_at, archived_at, level_up_declined_level"
 
     // MARK: - Create
 
@@ -128,7 +128,7 @@ public final class IssueRepository {
     @discardableResult
     public func update(_ issue: Issue) throws -> Issue {
         try db.exec(sql: """
-            UPDATE issue SET coach_words = ?, done_form = ?, coach_name = ?, discipline = ?, mastery_level = ?, tier = ?, sort_order = ?, impact = ?, cost = ?, status = ?, resurface_count = ?, last_focused_at = ?, updated_at = ?, archived_at = ?
+            UPDATE issue SET coach_words = ?, done_form = ?, coach_name = ?, discipline = ?, mastery_level = ?, tier = ?, sort_order = ?, impact = ?, cost = ?, status = ?, resurface_count = ?, last_focused_at = ?, updated_at = ?, archived_at = ?, level_up_declined_level = ?
             WHERE id = ?
             """,
             parameters: [
@@ -146,6 +146,7 @@ public final class IssueRepository {
                 dateValue(issue.lastFocusedAt),
                 .text(timestamps.text(from: now())),
                 dateValue(issue.archivedAt),
+                intValue(issue.levelUpDeclinedLevel),
                 .long(issue.id),
             ])
         return try require(id: issue.id)
@@ -226,6 +227,7 @@ public final class IssueRepository {
                      status: status,
                      resurfaceCount: Int(resurfaceCount),
                      lastFocusedAt: dateOrNil(row[12]),
+                     levelUpDeclinedLevel: intOrNil(row[16]),
                      createdAt: createdAt,
                      updatedAt: updatedAt,
                      archivedAt: dateOrNil(row[15]))

@@ -36,6 +36,17 @@ public struct LevelUpSuggestion {
         return count
     }
 
+    /// 課題の状態を見て提案すべきレベルを返す。提案しないときは nil。
+    ///
+    /// §3.2「1 度だけ提案する」—— 同じレベルで一度断られていれば、もう聞かない。
+    /// レベルが変われば `levelUpDeclinedLevel` と一致しなくなるので、また提案できる。
+    public static func suggestedLevel(recentResults: [FocusResult?], for issue: Issue) -> MasteryLevel? {
+        if let declined = issue.levelUpDeclinedLevel, declined == issue.masteryLevel.rawValue {
+            return nil
+        }
+        return LevelUpSuggestion.suggestedLevel(recentResults: recentResults, currentLevel: issue.masteryLevel)
+    }
+
     /// 提案すべきレベル。提案しないときは nil。
     ///
     /// `done` が 3 回連続していれば 1 つ上のレベルを返す。

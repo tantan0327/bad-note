@@ -551,4 +551,31 @@ final class IssueRepositoryTests: XCTestCase {
 
         XCTAssertEqual(["1番目", "2番目"], found.map { $0.coachWords })
     }
+
+    // MARK: - レベルアップ提案の抑制
+
+    /// §3.2「1 度だけ提案する」ための記録。新規では何も断っていない。
+    func testCreateLeavesLevelUpDeclinedLevelNil() throws {
+        let db = try makeDatabase()
+        defer { try? db.close() }
+        let repo = makeRepository(db)
+
+        let issue = try repo.create(coachWords: "A")
+
+        XCTAssertNil(issue.levelUpDeclinedLevel)
+    }
+
+    func testUpdatePersistsLevelUpDeclinedLevel() throws {
+        let db = try makeDatabase()
+        defer { try? db.close() }
+        let repo = makeRepository(db)
+
+        let created = try repo.create(coachWords: "A")
+        var edited = created
+        edited.levelUpDeclinedLevel = 1
+        _ = try repo.update(edited)
+
+        let fetched = try XCTUnwrap(try repo.fetch(id: created.id))
+        XCTAssertEqual(1, fetched.levelUpDeclinedLevel)
+    }
 }

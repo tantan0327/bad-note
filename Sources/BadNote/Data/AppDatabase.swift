@@ -54,6 +54,10 @@ public struct AppDatabase {
                 try context.exec(sql: AppDatabase.createTagTable)
                 try context.exec(sql: AppDatabase.createIssueTagTable)
             },
+            { context in
+                // §3.2「1 度だけ提案する」の記録。既存の課題は NULL(まだ断っていない)
+                try context.exec(sql: "ALTER TABLE issue ADD COLUMN level_up_declined_level INTEGER")
+            },
         ])
     }
 

@@ -84,6 +84,25 @@ public final class PracticeRepository {
         return records
     }
 
+    /// 課題ごとの手応え履歴。**新しい練習が先**(§3.2 のレベルアップ判定に渡す形)。
+    ///
+    /// 未入力(NULL)も nil として含める。連続の数え方は `LevelUpSuggestion` 側の責務。
+    public func fetchFocusResults(issueId: Int64) throws -> [FocusResult?] {
+        let rows = try db.selectAll(sql: """
+            SELECT f.result
+            FROM focus_record f
+            JOIN practice p ON p.id = f.practice_id
+            WHERE f.issue_id = ?
+            ORDER BY p.practice_date DESC, p.id DESC
+            """,
+            parameters: [.long(issueId)])
+        var results: [FocusResult?] = []
+        for row in rows {
+            results.append(try decodeResult(row[0]))
+        }
+        return results
+    }
+
     /// 課題ごとの累計時間(§6)。値は保持せず、その都度集計する。
     ///
     /// **1 練習の minutes は重点課題それぞれに満額計上する(按分しない)。**

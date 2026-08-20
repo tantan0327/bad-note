@@ -169,4 +169,49 @@ final class LevelUpSuggestionTests: XCTestCase {
         XCTAssertEqual(MasteryLevel.drill,
                        LevelUpSuggestion.suggestedLevel(recentResults: oldestIsCloser, currentLevel: .solo))
     }
+
+    // MARK: - 1 度だけ提案する(§3.2)
+
+    private func issue(level: MasteryLevel, declined: Int? = nil) -> Issue {
+        let t0 = Date(timeIntervalSince1970: 1_700_000_000)
+        return Issue(id: 1,
+                     coachWords: "A",
+                     masteryLevel: level,
+                     levelUpDeclinedLevel: declined,
+                     createdAt: t0,
+                     updatedAt: t0)
+    }
+
+    private var threeDone: [FocusResult?] {
+        return [FocusResult.done, FocusResult.done, FocusResult.done]
+    }
+
+    func testSuggestsForIssueThatHasNotDeclined() throws {
+        let suggested = LevelUpSuggestion.suggestedLevel(recentResults: threeDone, for: issue(level: .solo))
+
+        XCTAssertEqual(MasteryLevel.drill, suggested)
+    }
+
+    /// 同じレベルで一度断られていたら、もう聞かない。
+    func testDoesNotSuggestAgainAtDeclinedLevel() throws {
+        let suggested = LevelUpSuggestion.suggestedLevel(recentResults: threeDone,
+                                                         for: issue(level: .solo, declined: 1))
+
+        XCTAssertNil(suggested)
+    }
+
+    /// レベルが上がったら、また提案してよい。
+    func testSuggestsAgainAfterLevelChanged() throws {
+        let suggested = LevelUpSuggestion.suggestedLevel(recentResults: threeDone,
+                                                         for: issue(level: .drill, declined: 1))
+
+        XCTAssertEqual(MasteryLevel.pattern, suggested)
+    }
+
+    func testDoesNotSuggestForIssueWithoutStreak() throws {
+        let suggested = LevelUpSuggestion.suggestedLevel(recentResults: [FocusResult.done],
+                                                         for: issue(level: .solo))
+
+        XCTAssertNil(suggested)
+    }
 }

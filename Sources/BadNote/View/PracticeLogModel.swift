@@ -37,12 +37,25 @@ import SkipSQL
     /// 入力中の 1 行
     public var coachWordsDraft = ""
 
+    /// レベルアップの提案(§3.2)。承認するのはユーザー。
+    public struct LevelUpProposal: Identifiable, Hashable {
+        public var issue: Issue
+        public var suggestedLevel: MasteryLevel
+
+        public var id: Int64 {
+            return issue.id
+        }
+    }
+
     // MARK: - 表示状態
 
     public var errorText: String? = nil
-    public var isShowingSummary = false
     public var summaryText = ""
     public var isSaved = false
+    /// 保存直後にだけ出す提案(§3.2)。承認 / 見送りで消える。
+    public private(set) var levelUpProposals: [LevelUpProposal] = []
+    /// 未整理の件数(§5.3)。**保存直後にだけ見せる。**常設のバッジにはしない。
+    public private(set) var unorganizedCount = 0
 
     private var database: SQLContext? = nil
 
@@ -160,12 +173,69 @@ import SkipSQL
             let month = MonthRange.containing(practice.practiceDate)
             let monthTotal = try practices.totalMinutes(from: month.start, to: month.end)
             summaryText = PracticeLogModel.summary(recordedMinutes: practice.minutes, monthTotalMinutes: monthTotal)
+            levelUpProposals = try collectLevelUpProposals(practices: practices, issues: issues)
+            unorganizedCount = try issues.fetch(statuses: [.inbox]).count
             errorText = nil
             isSaved = true
-            isShowingSummary = true
         } catch {
             errorText = "保存に失敗しました: \(error)"
         }
+    }
+
+    /// 今回の重点のうち、done が 3 回連続した課題を拾う(§3.2)。
+    ///
+    /// 提案するだけで、レベルは自動で上げない。
+    private func collectLevelUpProposals(practices: PracticeRepository,
+                                         issues: IssueRepository) throws -> [LevelUpProposal] {
+        var proposals: [LevelUpProposal] = []
+        for input in focusInputs {
+            guard let issue = try issues.fetch(id: input.issue.id) else {
+                continue
+            }
+            let history = try practices.fetchFocusResults(issueId: issue.id)
+            if let suggested = LevelUpSuggestion.suggestedLevel(recentResults: history, for: issue) {
+                proposals.append(LevelUpProposal(issue: issue, suggestedLevel: suggested))
+            }
+        }
+        return proposals
+    }
+
+    /// 提案を受け入れてレベルを上げる。
+    public func acceptLevelUp(_ proposal: LevelUpProposal) {
+        do {
+            var issue = proposal.issue
+            issue.masteryLevel = proposal.suggestedLevel
+            // 上げたので、断った記録は用済み
+            issue.levelUpDeclinedLevel = nil
+            _ = try IssueRepository(db: try context()).update(issue)
+            removeProposal(proposal)
+            errorText = nil
+        } catch {
+            errorText = "レベルの更新に失敗しました: \(error)"
+        }
+    }
+
+    /// 今は上げない。同じレベルでは二度と聞かない(§3.2 1 度だけ提案する)。
+    public func declineLevelUp(_ proposal: LevelUpProposal) {
+        do {
+            var issue = proposal.issue
+            issue.levelUpDeclinedLevel = issue.masteryLevel.rawValue
+            _ = try IssueRepository(db: try context()).update(issue)
+            removeProposal(proposal)
+            errorText = nil
+        } catch {
+            errorText = "更新に失敗しました: \(error)"
+        }
+    }
+
+    private func removeProposal(_ proposal: LevelUpProposal) {
+        var remaining: [LevelUpProposal] = []
+        for existing in levelUpProposals {
+            if existing.id != proposal.id {
+                remaining.append(existing)
+            }
+        }
+        levelUpProposals = remaining
     }
 
     /// 「90 分を記録しました / 今月の累計 14 時間」(§7.2)。

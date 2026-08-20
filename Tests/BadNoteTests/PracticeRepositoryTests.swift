@@ -549,4 +549,69 @@ final class PracticeRepositoryTests: XCTestCase {
 
         XCTAssertEqual(0, total)
     }
+
+    // MARK: - 課題ごとの手応え履歴
+
+    /// §3.2 のレベルアップ判定に渡す履歴。**新しい練習が先**。
+    func testFetchFocusResultsReturnsNewestFirst() throws {
+        let db = try makeDatabase()
+        defer { try? db.close() }
+        let repo = makePracticeRepository(db)
+        let issues = makeIssueRepository(db)
+
+        let issue = try issues.create(coachWords: "A")
+        _ = try repo.create(practiceDate: t0, focus: [FocusEntry(issueId: issue.id, result: .closer)])
+        _ = try repo.create(practiceDate: t1, focus: [FocusEntry(issueId: issue.id, result: .done)])
+
+        let results = try repo.fetchFocusResults(issueId: issue.id)
+
+        XCTAssertEqual([FocusResult.done, FocusResult.closer], results)
+    }
+
+    /// 未入力(NULL)も履歴に含める。連続判定側が飛ばして数える。
+    func testFetchFocusResultsIncludesNilResults() throws {
+        let db = try makeDatabase()
+        defer { try? db.close() }
+        let repo = makePracticeRepository(db)
+        let issues = makeIssueRepository(db)
+
+        let issue = try issues.create(coachWords: "A")
+        _ = try repo.create(practiceDate: t0, focus: [FocusEntry(issueId: issue.id, result: nil)])
+
+        let results = try repo.fetchFocusResults(issueId: issue.id)
+
+        XCTAssertEqual(1, results.count)
+        XCTAssertNil(results.first ?? nil)
+    }
+
+    func testFetchFocusResultsExcludesOtherIssues() throws {
+        let db = try makeDatabase()
+        defer { try? db.close() }
+        let repo = makePracticeRepository(db)
+        let issues = makeIssueRepository(db)
+
+        let first = try issues.create(coachWords: "A")
+        let second = try issues.create(coachWords: "B")
+        _ = try repo.create(practiceDate: t0, focus: [
+            FocusEntry(issueId: first.id, result: .done),
+            FocusEntry(issueId: second.id, result: .closer),
+        ])
+
+        let results = try repo.fetchFocusResults(issueId: first.id)
+
+        XCTAssertEqual([FocusResult.done], results)
+    }
+
+    func testFetchFocusResultsIsEmptyForUntouchedIssue() throws {
+        let db = try makeDatabase()
+        defer { try? db.close() }
+        let repo = makePracticeRepository(db)
+        let issues = makeIssueRepository(db)
+
+        let issue = try issues.create(coachWords: "A")
+
+        let results = try repo.fetchFocusResults(issueId: issue.id)
+
+        XCTAssertEqual(0, results.count)
+    }
 }

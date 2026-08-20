@@ -18,11 +18,15 @@ public struct PracticeLogView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 24) {
                     errorSection
-                    dateSection
-                    minutesSection
-                    kindSection
-                    focusSection
-                    coachWordsSection
+                    if model.isSaved {
+                        savedSection
+                    } else {
+                        dateSection
+                        minutesSection
+                        kindSection
+                        focusSection
+                        coachWordsSection
+                    }
                 }
                 .padding()
             }
@@ -32,7 +36,7 @@ public struct PracticeLogView: View {
                     Button {
                         dismiss()
                     } label: {
-                        Text("キャンセル", bundle: .module)
+                        Text("閉じる", bundle: .module)
                     }
                 }
                 ToolbarItem(placement: .confirmationAction) {
@@ -41,18 +45,92 @@ public struct PracticeLogView: View {
                     } label: {
                         Text("保存", bundle: .module)
                     }
-                }
-            }
-            .alert(Text(model.summaryText), isPresented: $model.isShowingSummary) {
-                Button {
-                    dismiss()
-                } label: {
-                    Text("OK", bundle: .module)
+                    .disabled(model.isSaved)
                 }
             }
         }
         .task {
             model.load()
+        }
+    }
+
+    // MARK: - 保存後(無言で閉じない)
+
+    @ViewBuilder private var savedSection: some View {
+        VStack(alignment: .leading, spacing: 24) {
+            // §7.2 記録内容と今月の累計
+            Text(model.summaryText)
+                .font(.headline)
+
+            // §3.2 done が 3 回連続した課題のレベルアップ提案
+            ForEach(model.levelUpProposals) { proposal in
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(proposal.issue.displayTitle)
+                        .font(.body)
+                    Text(verbatim: "\(masteryName(proposal.suggestedLevel)) に上げますか?")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                    HStack(spacing: 8) {
+                        Button {
+                            model.acceptLevelUp(proposal)
+                        } label: {
+                            Text("上げる", bundle: .module)
+                        }
+                        .buttonStyle(.borderedProminent)
+                        Button {
+                            model.declineLevelUp(proposal)
+                        } label: {
+                            Text("今はしない", bundle: .module)
+                        }
+                        .buttonStyle(.bordered)
+                    }
+                    .font(.footnote)
+                }
+                .padding(12)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(Color.secondary.opacity(0.1))
+                .cornerRadius(8)
+            }
+
+            // §5.3 未整理の促し。ここでだけ聞く(常設のバッジにはしない)
+            if model.unorganizedCount > 0 {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(verbatim: "\(model.unorganizedCount) 件が未整理です")
+                        .font(.body)
+                    Text("いま整理しますか?", bundle: .module)
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                    NavigationLink {
+                        InboxTriageView()
+                    } label: {
+                        Text("整理する", bundle: .module)
+                    }
+                    .buttonStyle(.bordered)
+                    .font(.footnote)
+                }
+                .padding(12)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(Color.secondary.opacity(0.1))
+                .cornerRadius(8)
+            }
+
+            Button {
+                dismiss()
+            } label: {
+                Text("閉じる", bundle: .module)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 4)
+            }
+            .buttonStyle(.borderedProminent)
+        }
+    }
+
+    private func masteryName(_ level: MasteryLevel) -> String {
+        switch level {
+        case .solo: return "素振り"
+        case .drill: return "ノック"
+        case .pattern: return "パターン練習"
+        case .match: return "試合"
         }
     }
 

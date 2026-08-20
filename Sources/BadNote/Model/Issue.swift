@@ -72,6 +72,9 @@ public struct Issue: Hashable, Identifiable {
     /// 再浮上した回数。3 回以上で「よく戻ってくる課題」バッジ(§7.3)。
     public var resurfaceCount: Int
     public var lastFocusedAt: Date?
+    /// このレベルでのレベルアップ提案を断ったときの `masteryLevel`(§3.2 の「1 度だけ提案」)。
+    /// レベルが変われば再び提案してよい。
+    public var levelUpDeclinedLevel: Int?
     public var createdAt: Date
     public var updatedAt: Date
     public var archivedAt: Date?
@@ -89,6 +92,7 @@ public struct Issue: Hashable, Identifiable {
                 status: IssueStatus = .inbox,
                 resurfaceCount: Int = 0,
                 lastFocusedAt: Date? = nil,
+                levelUpDeclinedLevel: Int? = nil,
                 createdAt: Date,
                 updatedAt: Date,
                 archivedAt: Date? = nil) {
@@ -105,6 +109,7 @@ public struct Issue: Hashable, Identifiable {
         self.status = status
         self.resurfaceCount = resurfaceCount
         self.lastFocusedAt = lastFocusedAt
+        self.levelUpDeclinedLevel = levelUpDeclinedLevel
         self.createdAt = createdAt
         self.updatedAt = updatedAt
         self.archivedAt = archivedAt
