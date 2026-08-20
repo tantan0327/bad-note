@@ -38,6 +38,10 @@ public struct AppDatabase {
             { context in
                 try context.exec(sql: AppDatabase.createVisionTable)
             },
+            { context in
+                try context.exec(sql: AppDatabase.createTagTable)
+                try context.exec(sql: AppDatabase.createIssueTagTable)
+            },
         ])
     }
 
@@ -117,6 +121,23 @@ public struct AppDatabase {
           body        TEXT NOT NULL DEFAULT '',
           image_path  TEXT,
           updated_at  TEXT NOT NULL
+        )
+        """
+
+    /// タグ(§6)。名前は UNIQUE。
+    static let createTagTable = """
+        CREATE TABLE tag (
+          id    INTEGER PRIMARY KEY AUTOINCREMENT,
+          name  TEXT NOT NULL UNIQUE
+        )
+        """
+
+    /// 課題とタグの紐付け(§6)。配列を 1 カラムに詰めず中間テーブルにする。
+    static let createIssueTagTable = """
+        CREATE TABLE issue_tag (
+          issue_id INTEGER NOT NULL REFERENCES issue(id) ON DELETE CASCADE,
+          tag_id   INTEGER NOT NULL REFERENCES tag(id) ON DELETE CASCADE,
+          PRIMARY KEY (issue_id, tag_id)
         )
         """
 }

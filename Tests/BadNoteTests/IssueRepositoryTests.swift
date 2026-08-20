@@ -29,6 +29,10 @@ final class IssueRepositoryTests: XCTestCase {
         return IssueRepository(db: db, now: { self.clock })
     }
 
+    private func makeTagRepository(_ db: SQLContext) -> TagRepository {
+        return TagRepository(db: db)
+    }
+
     // MARK: - Create
 
     func testCreateAssignsIdentifier() throws {
@@ -462,5 +466,89 @@ final class IssueRepositoryTests: XCTestCase {
         let living = try repo.fetch(statuses: [.active])
 
         XCTAssertEqual(["1番目", "2番目"], living.map { $0.coachWords })
+    }
+
+    // MARK: - Tag による絞り込み
+
+    func testFetchByTagReturnsOnlyTaggedIssues() throws {
+        let db = try makeDatabase()
+        defer { try? db.close() }
+        let repo = makeRepository(db)
+        let tags = makeTagRepository(db)
+
+        let tagged = try repo.create(coachWords: "スマッシュのあと戻りが遅い")
+        _ = try repo.create(coachWords: "レシーブでラケット面が下向き")
+        let smash = try tags.create(name: "スマッシュ")
+        try tags.attach(tagId: smash.id, to: tagged.id)
+
+        let found = try repo.fetch(tagId: smash.id)
+
+        XCTAssertEqual(["スマッシュのあと戻りが遅い"], found.map { $0.coachWords })
+    }
+
+    /// §7.4 絞り込みは組み合わせられる。tier / status / タグが AND で効くこと。
+    func testFetchByTagCombinesWithTier() throws {
+        let db = try makeDatabase()
+        defer { try? db.close() }
+        let repo = makeRepository(db)
+        let tags = makeTagRepository(db)
+
+        let focused = try repo.create(coachWords: "重点", tier: .focus)
+        let someday = try repo.create(coachWords: "いつか", tier: .someday)
+        let smash = try tags.create(name: "スマッシュ")
+        try tags.attach(tagId: smash.id, to: focused.id)
+        try tags.attach(tagId: smash.id, to: someday.id)
+
+        let found = try repo.fetch(tier: .focus, tagId: smash.id)
+
+        XCTAssertEqual(["重点"], found.map { $0.coachWords })
+    }
+
+    func testFetchByTagReturnsEmptyArrayWhenNoneTagged() throws {
+        let db = try makeDatabase()
+        defer { try? db.close() }
+        let repo = makeRepository(db)
+        let tags = makeTagRepository(db)
+
+        _ = try repo.create(coachWords: "A")
+        let smash = try tags.create(name: "スマッシュ")
+
+        let found = try repo.fetch(tagId: smash.id)
+
+        XCTAssertEqual(0, found.count)
+    }
+
+    /// §7.4 既定はフィルタなし。タグを渡さなければ未タグの課題も返る。
+    func testFetchWithoutTagIncludesUntaggedIssues() throws {
+        let db = try makeDatabase()
+        defer { try? db.close() }
+        let repo = makeRepository(db)
+        let tags = makeTagRepository(db)
+
+        let tagged = try repo.create(coachWords: "A")
+        _ = try repo.create(coachWords: "B")
+        let smash = try tags.create(name: "スマッシュ")
+        try tags.attach(tagId: smash.id, to: tagged.id)
+
+        let all = try repo.fetch()
+
+        XCTAssertEqual(2, all.count)
+    }
+
+    func testFetchByTagOrdersBySortOrder() throws {
+        let db = try makeDatabase()
+        defer { try? db.close() }
+        let repo = makeRepository(db)
+        let tags = makeTagRepository(db)
+
+        let second = try repo.create(coachWords: "2番目", sortOrder: 1)
+        let first = try repo.create(coachWords: "1番目", sortOrder: 0)
+        let smash = try tags.create(name: "スマッシュ")
+        try tags.attach(tagId: smash.id, to: second.id)
+        try tags.attach(tagId: smash.id, to: first.id)
+
+        let found = try repo.fetch(tagId: smash.id)
+
+        XCTAssertEqual(["1番目", "2番目"], found.map { $0.coachWords })
     }
 }

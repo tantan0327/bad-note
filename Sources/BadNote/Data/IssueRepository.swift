@@ -86,9 +86,11 @@ public final class IssueRepository {
     /// - 課題一覧(§7.4): `fetch(tier: .focus, statuses: [.inbox, .active])`
     /// - アーカイブ画面(§7.4): `fetch(statuses: [.archived])`
     /// - stale 判定の母集団(§4.2): `fetch(statuses: [.inbox, .active])`
+    /// - タグで絞り込み(§7.4): `fetch(tagId: smash.id)`
     ///
     /// - Parameter statuses: 空配列を渡すとどの status にも該当しないものとして空を返す。
-    public func fetch(tier: Tier? = nil, statuses: [IssueStatus]? = nil) throws -> [Issue] {
+    /// - Parameter tagId: 指定するとそのタグが付いた課題だけを返す(§7.4 の絞り込み行)。
+    public func fetch(tier: Tier? = nil, statuses: [IssueStatus]? = nil, tagId: Int64? = nil) throws -> [Issue] {
         if let statuses = statuses, statuses.isEmpty {
             return []
         }
@@ -106,6 +108,10 @@ public final class IssueRepository {
                 parameters.append(SQLValue.text(status.rawValue))
             }
             conditions.append("status IN (" + placeholders.joined(separator: ", ") + ")")
+        }
+        if let tagId = tagId {
+            conditions.append("id IN (SELECT issue_id FROM issue_tag WHERE tag_id = ?)")
+            parameters.append(SQLValue.long(tagId))
         }
         let whereClause = conditions.isEmpty ? "" : " WHERE " + conditions.joined(separator: " AND ")
 
