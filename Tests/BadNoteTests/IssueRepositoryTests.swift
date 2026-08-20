@@ -3,7 +3,7 @@ import Foundation
 import SkipSQL
 @testable import BadNote
 
-/// `IssueRepository` の仕様。対象は issue テーブルの CRUD と tier による絞り込みのみ。
+/// `IssueRepository` の仕様。対象は issue テーブルの CRUD と tier / status による絞り込みのみ。
 ///
 /// - スキーマは `docs/spec.md` §6 の `issue` テーブル
 /// - DB はインメモリ(`SQLContext(configuration: .platform)`)
@@ -20,7 +20,7 @@ final class IssueRepositoryTests: XCTestCase {
 
     private func makeDatabase() throws -> SQLContext {
         let db = SQLContext(configuration: .platform)
-        try AppDatabase.migrate(db)
+        try AppDatabase.prepare(db)
         return db
     }
 
@@ -362,5 +362,105 @@ final class IssueRepositoryTests: XCTestCase {
         let someday = try repo.fetch(tier: .someday)
         XCTAssertEqual(1, focused.count)
         XCTAssertEqual(0, someday.count)
+    }
+
+    // MARK: - Status による絞り込み
+
+    func testFetchByStatusReturnsOnlyThatStatus() throws {
+        let db = try makeDatabase()
+        defer { try? db.close() }
+        let repo = makeRepository(db)
+
+        _ = try repo.create(coachWords: "未整理", status: .inbox)
+        _ = try repo.create(coachWords: "取り組み中", status: .active)
+        _ = try repo.create(coachWords: "定着済み", status: .archived)
+
+        let archived = try repo.fetch(statuses: [.archived])
+
+        XCTAssertEqual(["定着済み"], archived.map { $0.coachWords })
+    }
+
+    /// §4.2 の評価対象 `status IN ('inbox','active')` のように複数指定できること。
+    func testFetchByStatusAcceptsMultipleStatuses() throws {
+        let db = try makeDatabase()
+        defer { try? db.close() }
+        let repo = makeRepository(db)
+
+        _ = try repo.create(coachWords: "未整理", status: .inbox)
+        _ = try repo.create(coachWords: "取り組み中", status: .active)
+        _ = try repo.create(coachWords: "定着済み", status: .archived)
+
+        let living = try repo.fetch(statuses: [.inbox, .active])
+
+        XCTAssertEqual(["未整理", "取り組み中"], living.map { $0.coachWords })
+    }
+
+    /// §7.4 アーカイブは一覧に出さない。tier と status の両方が AND で効くこと。
+    func testFetchByTierAndStatusAppliesBothConditions() throws {
+        let db = try makeDatabase()
+        defer { try? db.close() }
+        let repo = makeRepository(db)
+
+        _ = try repo.create(coachWords: "重点・未整理", tier: .focus, status: .inbox)
+        _ = try repo.create(coachWords: "重点・定着済み", tier: .focus, status: .archived)
+        _ = try repo.create(coachWords: "いつか・未整理", tier: .someday, status: .inbox)
+
+        let focused = try repo.fetch(tier: .focus, statuses: [.inbox, .active])
+
+        XCTAssertEqual(["重点・未整理"], focused.map { $0.coachWords })
+    }
+
+    /// status を渡さなければ絞り込まない。既定で黙ってアーカイブを隠さないこと。
+    func testFetchWithoutStatusesIncludesArchived() throws {
+        let db = try makeDatabase()
+        defer { try? db.close() }
+        let repo = makeRepository(db)
+
+        _ = try repo.create(coachWords: "重点・未整理", tier: .focus, status: .inbox)
+        _ = try repo.create(coachWords: "重点・定着済み", tier: .focus, status: .archived)
+
+        let focused = try repo.fetch(tier: .focus)
+
+        XCTAssertEqual(2, focused.count)
+    }
+
+    func testFetchWithStatusesOnlyIgnoresTier() throws {
+        let db = try makeDatabase()
+        defer { try? db.close() }
+        let repo = makeRepository(db)
+
+        _ = try repo.create(coachWords: "重点", tier: .focus, status: .active)
+        _ = try repo.create(coachWords: "いつか", tier: .someday, status: .active)
+        _ = try repo.create(coachWords: "定着済み", tier: .someday, status: .archived)
+
+        let living = try repo.fetch(statuses: [.inbox, .active])
+
+        XCTAssertEqual(2, living.count)
+    }
+
+    /// 空配列は「どの status にも該当しない」。SQL の `IN ()` にしない。
+    func testFetchWithEmptyStatusesReturnsNothing() throws {
+        let db = try makeDatabase()
+        defer { try? db.close() }
+        let repo = makeRepository(db)
+
+        _ = try repo.create(coachWords: "未整理", status: .inbox)
+
+        let result = try repo.fetch(statuses: [])
+
+        XCTAssertEqual(0, result.count)
+    }
+
+    func testFetchByStatusOrdersBySortOrder() throws {
+        let db = try makeDatabase()
+        defer { try? db.close() }
+        let repo = makeRepository(db)
+
+        _ = try repo.create(coachWords: "2番目", sortOrder: 1, status: .active)
+        _ = try repo.create(coachWords: "1番目", sortOrder: 0, status: .active)
+
+        let living = try repo.fetch(statuses: [.active])
+
+        XCTAssertEqual(["1番目", "2番目"], living.map { $0.coachWords })
     }
 }

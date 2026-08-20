@@ -75,17 +75,42 @@ public final class IssueRepository {
     }
 
     public func fetchAll() throws -> [Issue] {
-        let rows = try db.selectAll(sql: "SELECT \(IssueRepository.columns) FROM issue ORDER BY sort_order, id")
-        return try decodeAll(rows)
+        return try fetch()
     }
 
-    /// 層で絞り込む。層の中は手動並び順(`sortOrder`)で返す(§3.3)。
+    /// 層と状態で絞り込む。層の中は手動並び順(`sortOrder`)で返す(§3.3)。
     ///
-    /// 絞り込みは tier だけで、status は見ない。アーカイブ済みを除きたい画面は
-    /// 呼び出し側で除外する(将来 status 付きの絞り込みが要るならメソッドを足す)。
-    public func fetch(tier: Tier) throws -> [Issue] {
-        let rows = try db.selectAll(sql: "SELECT \(IssueRepository.columns) FROM issue WHERE tier = ? ORDER BY sort_order, id",
-                                    parameters: [.text(tier.rawValue)])
+    /// 引数を省略した条件は絞り込まない。**既定で黙ってアーカイブを隠さない**ので、
+    /// 隠したい画面は明示的に status を渡すこと。
+    ///
+    /// - 課題一覧(§7.4): `fetch(tier: .focus, statuses: [.inbox, .active])`
+    /// - アーカイブ画面(§7.4): `fetch(statuses: [.archived])`
+    /// - stale 判定の母集団(§4.2): `fetch(statuses: [.inbox, .active])`
+    ///
+    /// - Parameter statuses: 空配列を渡すとどの status にも該当しないものとして空を返す。
+    public func fetch(tier: Tier? = nil, statuses: [IssueStatus]? = nil) throws -> [Issue] {
+        if let statuses = statuses, statuses.isEmpty {
+            return []
+        }
+
+        var conditions: [String] = []
+        var parameters: [SQLValue] = []
+        if let tier = tier {
+            conditions.append("tier = ?")
+            parameters.append(SQLValue.text(tier.rawValue))
+        }
+        if let statuses = statuses {
+            var placeholders: [String] = []
+            for status in statuses {
+                placeholders.append("?")
+                parameters.append(SQLValue.text(status.rawValue))
+            }
+            conditions.append("status IN (" + placeholders.joined(separator: ", ") + ")")
+        }
+        let whereClause = conditions.isEmpty ? "" : " WHERE " + conditions.joined(separator: " AND ")
+
+        let rows = try db.selectAll(sql: "SELECT \(IssueRepository.columns) FROM issue" + whereClause + " ORDER BY sort_order, id",
+                                    parameters: parameters)
         return try decodeAll(rows)
     }
 
