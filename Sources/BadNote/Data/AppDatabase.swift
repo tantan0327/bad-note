@@ -31,6 +31,10 @@ public struct AppDatabase {
                 try context.exec(sql: AppDatabase.createPracticeTable)
                 try context.exec(sql: AppDatabase.createFocusRecordTable)
             },
+            { context in
+                try context.exec(sql: AppDatabase.createCompetitionTable)
+                try context.exec(sql: AppDatabase.createCompetitionEntryTable)
+            },
         ])
     }
 
@@ -76,6 +80,30 @@ public struct AppDatabase {
           issue_id    INTEGER NOT NULL REFERENCES issue(id) ON DELETE CASCADE,
           result      TEXT,
           UNIQUE (practice_id, issue_id)
+        )
+        """
+
+    /// 大会(§6)
+    static let createCompetitionTable = """
+        CREATE TABLE competition (
+          id          INTEGER PRIMARY KEY AUTOINCREMENT,
+          name        TEXT NOT NULL,
+          event_date  TEXT NOT NULL,
+          venue       TEXT,
+          created_at  TEXT NOT NULL
+        )
+        """
+
+    /// 大会のエントリー種目(§6)。1 大会が複数種目を持てる。
+    /// `is_target = 1` を discipline ごとに最大 1 件に保つのはアプリ側の責務
+    /// (`CompetitionRepository`)。SQL の制約では表現できない。
+    static let createCompetitionEntryTable = """
+        CREATE TABLE competition_entry (
+          id             INTEGER PRIMARY KEY AUTOINCREMENT,
+          competition_id INTEGER NOT NULL REFERENCES competition(id) ON DELETE CASCADE,
+          discipline     TEXT NOT NULL,
+          is_target      INTEGER NOT NULL DEFAULT 0,
+          UNIQUE (competition_id, discipline)
         )
         """
 }
