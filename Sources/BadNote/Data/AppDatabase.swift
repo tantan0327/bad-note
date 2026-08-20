@@ -35,6 +35,9 @@ public struct AppDatabase {
                 try context.exec(sql: AppDatabase.createCompetitionTable)
                 try context.exec(sql: AppDatabase.createCompetitionEntryTable)
             },
+            { context in
+                try context.exec(sql: AppDatabase.createVisionTable)
+            },
         ])
     }
 
@@ -104,6 +107,16 @@ public struct AppDatabase {
           discipline     TEXT NOT NULL,
           is_target      INTEGER NOT NULL DEFAULT 0,
           UNIQUE (competition_id, discipline)
+        )
+        """
+
+    /// めざす姿(§6)。1 レコードのみ。id は AUTOINCREMENT にしない。
+    static let createVisionTable = """
+        CREATE TABLE vision (
+          id          INTEGER PRIMARY KEY,
+          body        TEXT NOT NULL DEFAULT '',
+          image_path  TEXT,
+          updated_at  TEXT NOT NULL
         )
         """
 }
