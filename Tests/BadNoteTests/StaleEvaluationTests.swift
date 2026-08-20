@@ -214,4 +214,95 @@ final class StaleEvaluationTests: XCTestCase {
         XCTAssertEqual("never_focused", StaleReason.neverFocused.rawValue)
         XCTAssertEqual("left_focus", StaleReason.leftFocus.rawValue)
     }
+
+    // MARK: - no_update(§4.2 の 3 つ目)
+
+    /// 重点を経験していて、外れてからの練習は少ないが、更新が途絶えている。
+    func testNoUpdateAfterThresholdDays() throws {
+        let reason = StaleEvaluation.reason(status: .active,
+                                            tier: .next,
+                                            createdAt: day(-100),
+                                            focusCount: 1,
+                                            practiceCountSinceLeavingFocus: 0,
+                                            updatedAt: day(-30),
+                                            asOf: asOf)
+
+        XCTAssertEqual(StaleReason.noUpdate, reason)
+    }
+
+    /// 境界: 21 日ちょうどで該当。
+    func testNoUpdateIsStaleExactlyAtThreshold() throws {
+        let reason = StaleEvaluation.reason(status: .active,
+                                            tier: .next,
+                                            createdAt: day(-100),
+                                            focusCount: 1,
+                                            practiceCountSinceLeavingFocus: 0,
+                                            updatedAt: day(-21),
+                                            asOf: asOf)
+
+        XCTAssertEqual(StaleReason.noUpdate, reason)
+    }
+
+    func testNoUpdateIsNotStaleBeforeThreshold() throws {
+        let reason = StaleEvaluation.reason(status: .active,
+                                            tier: .next,
+                                            createdAt: day(-100),
+                                            focusCount: 1,
+                                            practiceCountSinceLeavingFocus: 0,
+                                            updatedAt: day(-20),
+                                            asOf: asOf)
+
+        XCTAssertNil(reason)
+    }
+
+    /// §4.2 複数該当時は never_focused > left_focus > no_update の優先。
+    /// never_focused が §4.1 の最頻ケース(インボックスに埋もれた課題)。
+    func testNeverFocusedWinsOverNoUpdate() throws {
+        let reason = StaleEvaluation.reason(status: .inbox,
+                                            tier: .someday,
+                                            createdAt: day(-30),
+                                            focusCount: 0,
+                                            practiceCountSinceLeavingFocus: 0,
+                                            updatedAt: day(-30),
+                                            asOf: asOf)
+
+        XCTAssertEqual(StaleReason.neverFocused, reason)
+    }
+
+    func testLeftFocusWinsOverNoUpdate() throws {
+        let reason = StaleEvaluation.reason(status: .active,
+                                            tier: .next,
+                                            createdAt: day(-100),
+                                            focusCount: 1,
+                                            practiceCountSinceLeavingFocus: 6,
+                                            updatedAt: day(-30),
+                                            asOf: asOf)
+
+        XCTAssertEqual(StaleReason.leftFocus, reason)
+    }
+
+    /// 重点未経験でも、登録が新しければ no_update だけで拾わない。
+    func testRecentIssueIsNotStale() throws {
+        let reason = StaleEvaluation.reason(status: .inbox,
+                                            tier: .someday,
+                                            createdAt: day(-1),
+                                            focusCount: 0,
+                                            practiceCountSinceLeavingFocus: 0,
+                                            updatedAt: day(-1),
+                                            asOf: asOf)
+
+        XCTAssertNil(reason)
+    }
+
+    func testArchivedIsNotStaleEvenWithoutUpdates() throws {
+        let reason = StaleEvaluation.reason(status: .archived,
+                                            tier: .someday,
+                                            createdAt: day(-100),
+                                            focusCount: 1,
+                                            practiceCountSinceLeavingFocus: 0,
+                                            updatedAt: day(-100),
+                                            asOf: asOf)
+
+        XCTAssertNil(reason)
+    }
 }

@@ -103,6 +103,18 @@ public final class PracticeRepository {
         return results
     }
 
+    /// 指定した日時より**後**の練習件数(§4.2 の left_focus 判定)。
+    ///
+    /// 重点を外れた時刻ちょうどの練習は含めない。
+    public func countPractices(after date: Date) throws -> Int {
+        let rows = try db.selectAll(sql: "SELECT COUNT(*) FROM practice WHERE practice_date > ?",
+                                    parameters: [.text(timestamps.text(from: date))])
+        guard let count = rows.first?.first?.longValue else {
+            return 0
+        }
+        return Int(count)
+    }
+
     /// 課題ごとの累計時間(§6)。値は保持せず、その都度集計する。
     ///
     /// **1 練習の minutes は重点課題それぞれに満額計上する(按分しない)。**

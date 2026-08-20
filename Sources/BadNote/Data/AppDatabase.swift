@@ -61,6 +61,14 @@ public struct AppDatabase {
             { context in
                 try context.exec(sql: AppDatabase.createLevelChangeTable)
             },
+            { context in
+                try context.exec(sql: AppDatabase.createFocusSpanTable)
+                try context.exec(sql: AppDatabase.createStaleFlagTable)
+                try context.exec(sql: AppDatabase.createAppMetaTable)
+                for statement in AppDatabase.appMetaDefaults {
+                    try context.exec(sql: statement)
+                }
+            },
         ])
     }
 
@@ -170,4 +178,39 @@ public struct AppDatabase {
           created_at TEXT NOT NULL
         )
         """
+
+    /// focus 在籍履歴(§6)。stale 条件と §7.3「重点にした回数」を賄う。
+    static let createFocusSpanTable = """
+        CREATE TABLE focus_span (
+          id         INTEGER PRIMARY KEY AUTOINCREMENT,
+          issue_id   INTEGER NOT NULL REFERENCES issue(id) ON DELETE CASCADE,
+          entered_at TEXT NOT NULL,
+          left_at    TEXT
+        )
+        """
+
+    /// stale の週次スナップショット(§6)。3 択の処理で 1 行ずつ消す。
+    static let createStaleFlagTable = """
+        CREATE TABLE stale_flag (
+          issue_id     INTEGER PRIMARY KEY REFERENCES issue(id) ON DELETE CASCADE,
+          reason       TEXT NOT NULL,
+          evaluated_at TEXT NOT NULL
+        )
+        """
+
+    /// 設定・メタ(§6)
+    static let createAppMetaTable = """
+        CREATE TABLE app_meta (
+          key   TEXT PRIMARY KEY,
+          value TEXT NOT NULL
+        )
+        """
+
+    /// §4.2 の初期値。
+    static let appMetaDefaults = [
+        "INSERT OR IGNORE INTO app_meta (key, value) VALUES ('stale_days', '21')",
+        "INSERT OR IGNORE INTO app_meta (key, value) VALUES ('stale_practice_count', '6')",
+        "INSERT OR IGNORE INTO app_meta (key, value) VALUES ('reshuffle_weekday', '0')",
+        "INSERT OR IGNORE INTO app_meta (key, value) VALUES ('stale_last_evaluated_at', '')",
+    ]
 }

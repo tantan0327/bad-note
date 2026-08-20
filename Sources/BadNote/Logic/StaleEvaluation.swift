@@ -6,6 +6,8 @@ public enum StaleReason: String, CaseIterable, Hashable {
     case neverFocused = "never_focused"
     /// 重点を外れてから `stale_practice_count` 回以上練習している
     case leftFocus = "left_focus"
+    /// `stale_days` 以上、更新が無い
+    case noUpdate = "no_update"
 }
 
 /// stale 判定の閾値(§4.2)。
@@ -39,6 +41,37 @@ public struct StaleEvaluation {
     }
 
     private static let secondsPerDay = 86_400.0
+
+    /// stale なら理由を、そうでなければ nil を返す(3 条件すべてを見る版)。
+    ///
+    /// 複数該当したときの優先は **never_focused > left_focus > no_update**(§4.2)。
+    /// `never_focused` が §4.1 の最頻ケース(インボックスに入れたきり埋もれた課題)。
+    public static func reason(status: IssueStatus,
+                              tier: Tier,
+                              createdAt: Date,
+                              focusCount: Int,
+                              practiceCountSinceLeavingFocus: Int,
+                              updatedAt: Date,
+                              asOf: Date,
+                              thresholds: StaleThresholds = StaleThresholds.standard) -> StaleReason? {
+        if let reason = StaleEvaluation.reason(status: status,
+                                               tier: tier,
+                                               createdAt: createdAt,
+                                               focusCount: focusCount,
+                                               practiceCountSinceLeavingFocus: practiceCountSinceLeavingFocus,
+                                               asOf: asOf,
+                                               thresholds: thresholds) {
+            return reason
+        }
+        if status == IssueStatus.archived || tier == Tier.focus {
+            return nil
+        }
+        let elapsedDays = asOf.timeIntervalSince(updatedAt) / StaleEvaluation.secondsPerDay
+        if elapsedDays >= Double(thresholds.days) {
+            return StaleReason.noUpdate
+        }
+        return nil
+    }
 
     /// stale なら理由を、そうでなければ nil を返す。
     ///

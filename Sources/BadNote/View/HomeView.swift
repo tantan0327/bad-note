@@ -24,6 +24,7 @@ public struct HomeView: View {
                 visionSection
                 countdownSection
                 focusSection
+                staleSection
                 recordButton
             }
             .padding()
@@ -40,6 +41,22 @@ public struct HomeView: View {
         }
         .sheet(isPresented: $isShowingPracticeLog) {
             PracticeLogView()
+        }
+        .confirmationDialog(Text("どれと入れ替えますか?", bundle: .module),
+                            isPresented: $model.isShowingSwap,
+                            titleVisibility: .visible) {
+            ForEach(model.swapCandidates) { candidate in
+                Button {
+                    model.confirmSwap(with: candidate)
+                } label: {
+                    Text(candidate.displayTitle)
+                }
+            }
+            Button(role: .cancel) {
+                model.cancelSwap()
+            } label: {
+                Text("やめる", bundle: .module)
+            }
         }
         .onAppear {
             model.load()
@@ -175,6 +192,62 @@ public struct HomeView: View {
                 .background(Color.secondary.opacity(0.1))
                 .cornerRadius(8)
             }
+        }
+    }
+
+    // MARK: - 4. しばらく触れていない課題(該当時のみ)
+
+    @ViewBuilder private var staleSection: some View {
+        if !model.staleItems.isEmpty {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("しばらく触れていない課題", bundle: .module)
+                    .font(.headline)
+                ForEach(model.staleItems) { item in
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text(item.issue.displayTitle)
+                            .font(.body)
+                        // 理由を添える(§4.3)
+                        Text(reasonText(item.reason))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        // 3 択をその場で完結させる。別画面に飛ばさない
+                        HStack(spacing: 8) {
+                            Button {
+                                model.focusOnStaleIssue(item)
+                            } label: {
+                                Text("今週の重点にする", bundle: .module)
+                            }
+                            .buttonStyle(.borderedProminent)
+                            Button {
+                                model.postponeStaleIssue(item)
+                            } label: {
+                                Text("まだいい", bundle: .module)
+                            }
+                            .buttonStyle(.bordered)
+                            Button {
+                                model.archiveStaleIssue(item)
+                            } label: {
+                                Text("もう不要", bundle: .module)
+                            }
+                            .buttonStyle(.bordered)
+                        }
+                        .font(.caption)
+                    }
+                    .padding(12)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(Color.secondary.opacity(0.1))
+                    .cornerRadius(8)
+                }
+            }
+        }
+    }
+
+    /// §4.3 理由文。アプリは解釈や警告を出さず、事実だけを添える。
+    private func reasonText(_ reason: StaleReason) -> String {
+        switch reason {
+        case .neverFocused: return "一度も重点に入っていません"
+        case .leftFocus: return "重点から外れたあと、触れていません"
+        case .noUpdate: return "しばらく更新がありません"
         }
     }
 

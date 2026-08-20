@@ -27,6 +27,16 @@ import SkipSQL
         }
     }
 
+    /// しばらく触れていない課題 1 件(§4.3)。理由を添えて出す。
+    public struct StaleItem: Identifiable, Hashable {
+        public var issue: Issue
+        public var reason: StaleReason
+
+        public var id: Int64 {
+            return issue.id
+        }
+    }
+
     /// 今週の重点カード(§7.1)。
     public struct FocusCard: Identifiable, Hashable {
         public var issue: Issue
@@ -50,6 +60,13 @@ import SkipSQL
     /// 調整期(§4.4)。stale の提示を止める判断に使う。
     public private(set) var isAdjustmentPeriod = false
 
+    /// しばらく触れていない課題(§4.3)。`stale_flag` の単純な読み出し。
+    public private(set) var staleItems: [StaleItem] = []
+    /// 重点が埋まっているときの入れ替え候補(§7.4 のフローへ回す)。
+    public private(set) var swapCandidates: [Issue] = []
+    public var isShowingSwap = false
+    private var pendingPromotion: Issue? = nil
+
     public var errorText: String? = nil
 
     private var database: SQLContext? = nil
@@ -67,6 +84,9 @@ import SkipSQL
             try loadCountdowns(db: db, today: today)
             try loadFocusCards(db: db)
             try loadBuildUp(db: db, now: now)
+            // §4.3 起動時のゲート。走るのは週 1 回、調整期はスキップ
+            try StaleEvaluator(db: db, now: { now }).evaluateIfNeeded()
+            try loadStaleItems(db: db)
             errorText = nil
         } catch {
             errorText = "ホームの読み込みに失敗しました: \(error)"
@@ -122,6 +142,114 @@ import SkipSQL
             cards.append(FocusCard(issue: issue, latestResult: history.first ?? nil))
         }
         focusCards = cards
+    }
+
+    // MARK: - しばらく触れていない課題(§4.3)
+
+    /// ホームの表示は `stale_flag` の単純な SELECT。判定はしない。
+    private func loadStaleItems(db: SQLContext) throws {
+        // 調整期はセクションごと隠す(§4.4)
+        if isAdjustmentPeriod {
+            staleItems = []
+            return
+        }
+        let issues = IssueRepository(db: db)
+        var items: [StaleItem] = []
+        for flag in try StaleFlagRepository(db: db).fetchAll() {
+            guard let issue = try issues.fetch(id: flag.issueId) else {
+                continue
+            }
+            items.append(StaleItem(issue: issue, reason: flag.reason))
+        }
+        staleItems = items
+    }
+
+    /// 3 択その 1: 今週の重点にする。
+    ///
+    /// 空きがあれば `focus` に上げ、再浮上回数を 1 増やしてフラグを消す。
+    /// 埋まっていれば入れ替えフローへ回す(§7.4)。
+    public func focusOnStaleIssue(_ item: StaleItem) {
+        do {
+            let db = try context()
+            let issues = IssueRepository(db: db)
+            let board = try issues.fetch(statuses: [.inbox, .active])
+            let result = FocusBoard.move(item.issue, to: .focus, at: Int.max, in: board)
+            if let candidates = result.swapCandidates {
+                pendingPromotion = item.issue
+                swapCandidates = candidates
+                isShowingSwap = true
+                return
+            }
+            if let updated = result.updatedIssues {
+                try applyPromotion(updated, promoted: item.issue, issues: issues)
+            }
+            try StaleFlagRepository(db: db).delete(issueId: item.issue.id)
+            load()
+        } catch {
+            errorText = "重点への移動に失敗しました: \(error)"
+        }
+    }
+
+    /// 入れ替えを確定して重点に入れる。
+    public func confirmSwap(with demoting: Issue) {
+        guard let promoting = pendingPromotion else {
+            cancelSwap()
+            return
+        }
+        do {
+            let db = try context()
+            let issues = IssueRepository(db: db)
+            let board = try issues.fetch(statuses: [.inbox, .active])
+            let updated = FocusBoard.swap(promoting: promoting, demoting: demoting, in: board)
+            try applyPromotion(updated, promoted: promoting, issues: issues)
+            try StaleFlagRepository(db: db).delete(issueId: promoting.id)
+            cancelSwap()
+            load()
+        } catch {
+            errorText = "入れ替えに失敗しました: \(error)"
+        }
+    }
+
+    public func cancelSwap() {
+        pendingPromotion = nil
+        swapCandidates = []
+        isShowingSwap = false
+    }
+
+    /// 3 択その 2: まだいい。フラグを消すだけ(翌週また該当し得る。これは許容)。
+    public func postponeStaleIssue(_ item: StaleItem) {
+        do {
+            try StaleFlagRepository(db: try context()).delete(issueId: item.issue.id)
+            load()
+        } catch {
+            errorText = "更新に失敗しました: \(error)"
+        }
+    }
+
+    /// 3 択その 3: もう不要。アーカイブしてフラグを消す。
+    public func archiveStaleIssue(_ item: StaleItem) {
+        do {
+            let db = try context()
+            var issue = item.issue
+            issue.status = .archived
+            issue.archivedAt = Date()
+            _ = try IssueRepository(db: db).update(issue)
+            try StaleFlagRepository(db: db).delete(issueId: item.issue.id)
+            load()
+        } catch {
+            errorText = "アーカイブに失敗しました: \(error)"
+        }
+    }
+
+    /// 層の変更を保存し、重点に上がった課題の再浮上回数を 1 増やす(§4.3)。
+    private func applyPromotion(_ updated: [Issue], promoted: Issue, issues: IssueRepository) throws {
+        for issue in updated {
+            var target = issue
+            if target.id == promoted.id {
+                target.resurfaceCount += 1
+            }
+            _ = try issues.update(target)
+        }
     }
 
     // MARK: - 積み上げ

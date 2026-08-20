@@ -60,7 +60,11 @@ public final class IssueRepository {
                 .text(timestamp),
                 .text(timestamp),
             ])
-        return try require(id: db.lastInsertRowID)
+        let id = db.lastInsertRowID
+        if tier == Tier.focus {
+            try openFocusSpan(issueId: id)
+        }
+        return try require(id: id)
     }
 
     // MARK: - Read
@@ -129,8 +133,14 @@ public final class IssueRepository {
     public func update(_ issue: Issue) throws -> Issue {
         return try db.transaction {
             try recordLevelChangeIfNeeded(for: issue)
-            try writeIssue(issue)
-            return try require(id: issue.id)
+            let entered = try recordFocusSpanIfNeeded(for: issue)
+            var target = issue
+            if entered {
+                // §4.3 重点にする時に last_focused_at を更新する
+                target.lastFocusedAt = now()
+            }
+            try writeIssue(target)
+            return try require(id: target.id)
         }
     }
 
@@ -152,6 +162,66 @@ public final class IssueRepository {
                         SQLValue.long(Int64(issue.masteryLevel.rawValue)),
                         SQLValue.text(timestamps.text(from: now())),
                     ])
+    }
+
+    /// 層の出入りを `focus_span` に記録する(§4.3 の運用)。
+    ///
+    /// **記録は `update(_:)` の中で行う。** 重点を出し入れする経路は
+    /// 一覧・入れ替え・stale の 3 択と増えるので、呼び出し側には持たせない。
+    ///
+    /// - Returns: 重点に入ったなら true。
+    private func recordFocusSpanIfNeeded(for issue: Issue) throws -> Bool {
+        guard let stored = try fetch(id: issue.id) else {
+            return false
+        }
+        if stored.tier == issue.tier {
+            return false
+        }
+        if issue.tier == Tier.focus {
+            try openFocusSpan(issueId: issue.id)
+            return true
+        }
+        if stored.tier == Tier.focus {
+            try closeFocusSpan(issueId: issue.id)
+        }
+        return false
+    }
+
+    private func openFocusSpan(issueId: Int64) throws {
+        try db.exec(sql: "INSERT INTO focus_span (issue_id, entered_at, left_at) VALUES (?, ?, NULL)",
+                    parameters: [
+                        SQLValue.long(issueId),
+                        SQLValue.text(timestamps.text(from: now())),
+                    ])
+    }
+
+    /// 開いている span を閉じる。
+    private func closeFocusSpan(issueId: Int64) throws {
+        try db.exec(sql: "UPDATE focus_span SET left_at = ? WHERE issue_id = ? AND left_at IS NULL",
+                    parameters: [
+                        SQLValue.text(timestamps.text(from: now())),
+                        SQLValue.long(issueId),
+                    ])
+    }
+
+    /// 重点にした回数(§7.3)。stale の `never_focused` 判定にも使う。
+    public func focusSpanCount(issueId: Int64) throws -> Int {
+        let rows = try db.selectAll(sql: "SELECT COUNT(*) FROM focus_span WHERE issue_id = ?",
+                                    parameters: [.long(issueId)])
+        guard let count = rows.first?.first?.longValue else {
+            return 0
+        }
+        return Int(count)
+    }
+
+    /// 最後に重点を外れた日時。まだ外れていない / 一度も入っていなければ nil。
+    public func lastLeftFocusAt(issueId: Int64) throws -> Date? {
+        let rows = try db.selectAll(sql: "SELECT MAX(left_at) FROM focus_span WHERE issue_id = ? AND left_at IS NOT NULL",
+                                    parameters: [.long(issueId)])
+        guard let text = rows.first?.first?.textValue else {
+            return nil
+        }
+        return timestamps.date(from: text)
     }
 
     /// 習熟度の変更履歴。古い順(進み方をそのまま並べる)。
