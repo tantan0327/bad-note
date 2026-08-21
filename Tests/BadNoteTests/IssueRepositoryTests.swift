@@ -578,4 +578,126 @@ final class IssueRepositoryTests: XCTestCase {
         let fetched = try XCTUnwrap(try repo.fetch(id: created.id))
         XCTAssertEqual(1, fetched.levelUpDeclinedLevel)
     }
+
+    // MARK: - アーカイブ(§7.4 これまでに定着した課題)
+
+    /// 達成の記録として見る画面なので、**新しく定着したものが先**。
+    func testFetchArchivedReturnsNewestFirst() throws {
+        let db = try makeDatabase()
+        defer { try? db.close() }
+        let repo = makeRepository(db)
+
+        let first = try repo.create(coachWords: "先に定着")
+        let second = try repo.create(coachWords: "後で定着")
+        var editedFirst = first
+        editedFirst.status = .archived
+        editedFirst.archivedAt = t0
+        _ = try repo.update(editedFirst)
+        var editedSecond = second
+        editedSecond.status = .archived
+        editedSecond.archivedAt = t1
+        _ = try repo.update(editedSecond)
+
+        let archived = try repo.fetchArchived()
+
+        XCTAssertEqual(["後で定着", "先に定着"], archived.map { $0.coachWords })
+    }
+
+    func testFetchArchivedExcludesActiveIssues() throws {
+        let db = try makeDatabase()
+        defer { try? db.close() }
+        let repo = makeRepository(db)
+
+        _ = try repo.create(coachWords: "取り組み中", status: .active)
+
+        XCTAssertEqual(0, try repo.fetchArchived().count)
+    }
+
+    func testFetchArchivedIsEmptyWhenNothingArchived() throws {
+        let db = try makeDatabase()
+        defer { try? db.close() }
+        let repo = makeRepository(db)
+
+        XCTAssertEqual(0, try repo.fetchArchived().count)
+    }
+
+    // MARK: - 種目と習熟度による絞り込み(§7.4)
+
+    /// §3.5 / §7.5 **`both` の課題は両方の種目に出す。**
+    func testFetchByDisciplineIncludesBothIssues() throws {
+        let db = try makeDatabase()
+        defer { try? db.close() }
+        let repo = makeRepository(db)
+
+        _ = try repo.create(coachWords: "シングルス専用", discipline: .singles)
+        _ = try repo.create(coachWords: "両方", discipline: .both)
+        _ = try repo.create(coachWords: "ダブルス専用", discipline: .doubles)
+
+        let singles = try repo.fetch(discipline: .singles)
+
+        XCTAssertEqual(["シングルス専用", "両方"], singles.map { $0.coachWords })
+    }
+
+    func testFetchByDisciplineIncludesBothForDoubles() throws {
+        let db = try makeDatabase()
+        defer { try? db.close() }
+        let repo = makeRepository(db)
+
+        _ = try repo.create(coachWords: "シングルス専用", discipline: .singles)
+        _ = try repo.create(coachWords: "両方", discipline: .both)
+
+        let doubles = try repo.fetch(discipline: .doubles)
+
+        XCTAssertEqual(["両方"], doubles.map { $0.coachWords })
+    }
+
+    /// `both` で絞り込むと `both` の課題だけ(種目を問わない課題の一覧)。
+    func testFetchByBothDisciplineReturnsOnlyBoth() throws {
+        let db = try makeDatabase()
+        defer { try? db.close() }
+        let repo = makeRepository(db)
+
+        _ = try repo.create(coachWords: "シングルス専用", discipline: .singles)
+        _ = try repo.create(coachWords: "両方", discipline: .both)
+
+        XCTAssertEqual(["両方"], try repo.fetch(discipline: .both).map { $0.coachWords })
+    }
+
+    func testFetchByMasteryLevel() throws {
+        let db = try makeDatabase()
+        defer { try? db.close() }
+        let repo = makeRepository(db)
+
+        _ = try repo.create(coachWords: "素振り", masteryLevel: .solo)
+        _ = try repo.create(coachWords: "試合", masteryLevel: .match)
+
+        XCTAssertEqual(["試合"], try repo.fetch(masteryLevel: .match).map { $0.coachWords })
+    }
+
+    /// §7.4 既定はフィルタなし。何も渡さなければ全部返る。
+    func testFetchWithoutFiltersReturnsEverything() throws {
+        let db = try makeDatabase()
+        defer { try? db.close() }
+        let repo = makeRepository(db)
+
+        _ = try repo.create(coachWords: "A", discipline: .singles, masteryLevel: .solo)
+        _ = try repo.create(coachWords: "B", discipline: .doubles, masteryLevel: .match)
+
+        XCTAssertEqual(2, try repo.fetch().count)
+    }
+
+    /// 絞り込みは組み合わせられる。
+    func testFiltersCombine() throws {
+        let db = try makeDatabase()
+        defer { try? db.close() }
+        let repo = makeRepository(db)
+
+        _ = try repo.create(coachWords: "対象", discipline: .singles, masteryLevel: .match, tier: .focus)
+        _ = try repo.create(coachWords: "種目違い", discipline: .doubles, masteryLevel: .match, tier: .focus)
+        _ = try repo.create(coachWords: "レベル違い", discipline: .singles, masteryLevel: .solo, tier: .focus)
+
+        let found = try repo.fetch(tier: .focus, discipline: .singles, masteryLevel: .match)
+
+        XCTAssertEqual(["対象"], found.map { $0.coachWords })
+    }
 }

@@ -207,5 +207,9 @@ adb -s emulator-5554 logcat -d | grep -iE "FATAL|SQLite"
 - **アイコンは `.symbolset`** — `Image(systemName:)` は Android で描画されない
   (ただし `heart.fill` / `house.fill` / `gearshape.fill` など約 50 個は SkipUI が
   Material Icons に対応付けるため表示される。対応表は SkipUI の実装なので依存しない方が安全)
+- **`setFoo(...)` という名前のメソッドは `var foo` と衝突する** — Kotlin では `var foo` が
+  `setFoo()` を生成するため、同名のメソッドを書くと
+  `Platform declaration clash: ... same JVM signature` になる。
+  Swift 側では通るので Android のコンパイルまで気づけない。`selectFoo(...)` のように改名する
 - **`PhotosPicker` は使えない** — `UIViewRepresentable` / `TimelineView` / `matchedGeometryEffect` も同様。
   `building-skip-ui` スキルの `references/components.md` の "Not Available in SkipUI" を先に見る

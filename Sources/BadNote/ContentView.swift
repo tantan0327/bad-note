@@ -59,6 +59,11 @@ struct ContentView: View {
 struct SettingsView: View {
     var body: some View {
         Form {
+            NavigationLink {
+                ArchiveListView()
+            } label: {
+                Text("定着した課題", bundle: .module)
+            }
             if let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String,
                let buildNumber = Bundle.main.infoDictionary?["CFBundleVersion"] as? String {
                 Text(verbatim: "バージョン \(version) (\(buildNumber))")

@@ -94,7 +94,14 @@ public final class IssueRepository {
     ///
     /// - Parameter statuses: 空配列を渡すとどの status にも該当しないものとして空を返す。
     /// - Parameter tagId: 指定するとそのタグが付いた課題だけを返す(§7.4 の絞り込み行)。
-    public func fetch(tier: Tier? = nil, statuses: [IssueStatus]? = nil, tagId: Int64? = nil) throws -> [Issue] {
+    /// - Parameter discipline: `singles` / `doubles` を指定すると **`both` の課題も含める**
+    ///   (§3.5 種目を問わない課題は両方に出す)。`both` を指定したときは `both` の課題だけ。
+    /// - Parameter masteryLevel: 指定するとその段階の課題だけを返す。
+    public func fetch(tier: Tier? = nil,
+                      statuses: [IssueStatus]? = nil,
+                      tagId: Int64? = nil,
+                      discipline: Discipline? = nil,
+                      masteryLevel: MasteryLevel? = nil) throws -> [Issue] {
         if let statuses = statuses, statuses.isEmpty {
             return []
         }
@@ -117,10 +124,34 @@ public final class IssueRepository {
             conditions.append("id IN (SELECT issue_id FROM issue_tag WHERE tag_id = ?)")
             parameters.append(SQLValue.long(tagId))
         }
+        if let discipline = discipline {
+            if discipline == Discipline.both {
+                conditions.append("discipline = ?")
+                parameters.append(SQLValue.text(discipline.rawValue))
+            } else {
+                // 種目を問わない課題は、どちらの種目の一覧にも出す(§3.5)
+                conditions.append("discipline IN (?, ?)")
+                parameters.append(SQLValue.text(discipline.rawValue))
+                parameters.append(SQLValue.text(Discipline.both.rawValue))
+            }
+        }
+        if let masteryLevel = masteryLevel {
+            conditions.append("mastery_level = ?")
+            parameters.append(SQLValue.long(Int64(masteryLevel.rawValue)))
+        }
         let whereClause = conditions.isEmpty ? "" : " WHERE " + conditions.joined(separator: " AND ")
 
         let rows = try db.selectAll(sql: "SELECT \(IssueRepository.columns) FROM issue" + whereClause + " ORDER BY sort_order, id",
                                     parameters: parameters)
+        return try decodeAll(rows)
+    }
+
+    /// これまでに定着した課題(§7.4 のアーカイブ画面)。
+    ///
+    /// **新しく定着したものが先。** 達成の記録として気持ちよく見える並びにする。
+    public func fetchArchived() throws -> [Issue] {
+        let rows = try db.selectAll(sql: "SELECT \(IssueRepository.columns) FROM issue WHERE status = ? ORDER BY archived_at DESC, id DESC",
+                                    parameters: [.text(IssueStatus.archived.rawValue)])
         return try decodeAll(rows)
     }
 

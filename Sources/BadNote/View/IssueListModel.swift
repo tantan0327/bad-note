@@ -14,6 +14,14 @@ import SkipSQL
     /// `[.inbox, .active]` に変える余地を残してある。
     public var statuses: [IssueStatus] = [IssueStatus.active]
 
+    /// §7.4 上部の絞り込み行。**既定はフィルタなし** ——
+    /// 絞ると、もう一方の種目が視界から消えて忘れられる。
+    public var discipline: Discipline? = nil
+    public var masteryLevel: MasteryLevel? = nil
+    public var tagId: Int64? = nil
+    /// 絞り込みに出すタグの候補
+    public private(set) var availableTags: [Tag] = []
+
     public private(set) var focus: [Issue] = []
     public private(set) var next: [Issue] = []
     public private(set) var someday: [Issue] = []
@@ -36,14 +44,59 @@ import SkipSQL
 
     public func load() {
         do {
-            let issues = IssueRepository(db: try context())
-            focus = try issues.fetch(tier: .focus, statuses: statuses)
-            next = try issues.fetch(tier: .next, statuses: statuses)
-            someday = try issues.fetch(tier: .someday, statuses: statuses)
+            let db = try context()
+            let issues = IssueRepository(db: db)
+            focus = try issues.fetch(tier: .focus, statuses: statuses, tagId: tagId,
+                                     discipline: discipline, masteryLevel: masteryLevel)
+            next = try issues.fetch(tier: .next, statuses: statuses, tagId: tagId,
+                                    discipline: discipline, masteryLevel: masteryLevel)
+            someday = try issues.fetch(tier: .someday, statuses: statuses, tagId: tagId,
+                                       discipline: discipline, masteryLevel: masteryLevel)
+            availableTags = try TagRepository(db: db).fetchAll()
             errorText = nil
         } catch {
             errorText = "課題の読み込みに失敗しました: \(error)"
         }
+    }
+
+    /// 絞り込みが 1 つでも掛かっているか(解除ボタンの出し分け)。
+    public var isFiltering: Bool {
+        return discipline != nil || masteryLevel != nil || tagId != nil
+    }
+
+    public func clearFilters() {
+        discipline = nil
+        masteryLevel = nil
+        tagId = nil
+        load()
+    }
+
+    public func selectDiscipline(_ value: Discipline?) {
+        discipline = value
+        load()
+    }
+
+    public func selectMasteryLevel(_ value: MasteryLevel?) {
+        masteryLevel = value
+        load()
+    }
+
+    public func selectTag(_ value: Int64?) {
+        tagId = value
+        load()
+    }
+
+    /// 絞り込み中のタグ名(表示用)。
+    public func selectedTagName() -> String? {
+        guard let tagId = tagId else {
+            return nil
+        }
+        for tag in availableTags {
+            if tag.id == tagId {
+                return tag.name
+            }
+        }
+        return nil
     }
 
     // MARK: - 層の移動
