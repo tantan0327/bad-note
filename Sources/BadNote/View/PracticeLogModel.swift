@@ -16,7 +16,7 @@ import SkipSQL
             return issue.id
         }
 
-        /// UI の主表示は完了形。未整理ならコーチの言葉をそのまま出す(§3.1)。
+        /// UI の主表示は完了形。未整理なら書いた原文をそのまま出す(§3.1)。
         public var title: String {
             if let doneForm = issue.doneForm, !doneForm.isEmpty {
                 return doneForm
@@ -133,7 +133,7 @@ import SkipSQL
         }
     }
 
-    /// 保存対象のコーチの言葉。**入力中の 1 行も含める**(「＋」を押し忘れても失わない)。
+    /// 保存対象の原文。**入力中の 1 行も含める**(「＋」を押し忘れても失わない)。
     public func pendingCoachWords() -> [String] {
         var all: [String] = []
         all.append(contentsOf: addedCoachWords)
@@ -165,7 +165,7 @@ import SkipSQL
                                                 kind: kind,
                                                 focus: focus)
 
-            // 今日言われたことは未整理の課題として登録する(ここでは整理させない)
+            // ここで書いた 1 行は未整理の課題として登録する(ここでは整理させない)
             for words in pendingCoachWords() {
                 _ = try issues.create(coachWords: words)
             }

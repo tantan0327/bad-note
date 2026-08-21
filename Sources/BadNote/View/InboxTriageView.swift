@@ -64,7 +64,7 @@ public struct InboxTriageView: View {
     /// 原文は編集しない。引用の見た目で出す(§7.3)。
     @ViewBuilder private func coachWordsCard(_ issue: Issue) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("言われたこと", bundle: .module)
+            Text("もとの言葉", bundle: .module)
                 .font(.headline)
             Text(issue.coachWords)
                 .font(.title3)

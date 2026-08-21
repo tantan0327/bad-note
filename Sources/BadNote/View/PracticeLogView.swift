@@ -3,7 +3,7 @@ import SwiftUI
 /// 練習ログ入力画面(§7.2)。
 ///
 /// - 全項目任意。手応え未選択でも保存できる
-/// - キーボードが必要なのは「時間」と「今日言われたこと」だけ
+/// - キーボードが必要なのは「時間」と「追加する課題」だけ
 /// - ここで課題を整理させない(タグ・優先度・言い換えは別画面)
 /// - 保存後は無言で閉じない
 public struct PracticeLogView: View {
@@ -265,11 +265,11 @@ public struct PracticeLogView: View {
         }
     }
 
-    // MARK: - 5. 今日言われたこと
+    // MARK: - 5. 追加する課題
 
     @ViewBuilder private var coachWordsSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            sectionTitle(Text("今日言われたこと(任意)", bundle: .module))
+            sectionTitle(Text("追加する課題(任意)", bundle: .module))
 
             ForEach(model.addedCoachWords, id: \.self) { words in
                 HStack {
@@ -286,7 +286,7 @@ public struct PracticeLogView: View {
             }
 
             TextField(text: $model.coachWordsDraft) {
-                Text("言われたことを 1 行で", bundle: .module)
+                Text("課題を 1 行で", bundle: .module)
             }
             .textFieldStyle(.roundedBorder)
 

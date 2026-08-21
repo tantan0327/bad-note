@@ -15,7 +15,7 @@ import SkipSQL
 
     // MARK: - 入力
 
-    /// 言われたことの原文。**編集しない**ので、既存の課題では読み取り専用にする。
+    /// もとの言葉(原文)。**編集しない**ので、既存の課題では読み取り専用にする。
     public var coachWords = ""
     public var doneForm = ""
     public var coachName = ""
@@ -123,7 +123,7 @@ import SkipSQL
     /// 新規は `status = inbox` / `tier = someday` で作る(整理は後の工程)。
     public func save() {
         if !canSave {
-            errorText = "コーチの言葉を 1 行入れてください"
+            errorText = "気づいたことを 1 行入れてください"
             return
         }
         do {

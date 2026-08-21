@@ -2,7 +2,7 @@ import SwiftUI
 
 /// 課題の登録・編集画面(§3)。
 ///
-/// 新規で必須なのはコーチの言葉の 1 行だけ。他はすべて任意で、後から編集できる。
+/// 新規で必須なのは原文の 1 行だけ。他はすべて任意で、後から編集できる。
 public struct IssueEditView: View {
     @State private var model: IssueEditModel
     @Environment(\.dismiss) private var dismiss
@@ -48,15 +48,15 @@ public struct IssueEditView: View {
         }
     }
 
-    // MARK: - コーチの言葉(原文)
+    // MARK: - もとの言葉(原文)
 
     @ViewBuilder private var coachWordsSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("コーチの言葉", bundle: .module)
+            Text("もとの言葉", bundle: .module)
                 .font(.headline)
             if model.isNew {
                 TextField(text: $model.coachWords) {
-                    Text("言われたことを 1 行で", bundle: .module)
+                    Text("気づいたことを 1 行で", bundle: .module)
                 }
                 .textFieldStyle(.roundedBorder)
                 Text("入れるのはこの 1 行だけで十分です", bundle: .module)

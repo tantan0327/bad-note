@@ -2,7 +2,7 @@ import SwiftUI
 
 /// 課題詳細(§7.3)。
 ///
-/// 上から できている状態 / 習熟度 / コーチの言葉 / 記録 / 進み方 / 属性 / アクション。
+/// 上から できている状態 / 習熟度 / もとの言葉 / 記録 / 進み方 / 属性 / アクション。
 public struct IssueDetailView: View {
     @State private var model: IssueDetailModel
     @State private var isShowingAttributes = false
@@ -82,11 +82,11 @@ public struct IssueDetailView: View {
         }
     }
 
-    // MARK: - 3. コーチの言葉(引用の見た目)
+    // MARK: - 3. もとの言葉(引用の見た目)
 
     @ViewBuilder private func coachWordsSection(_ issue: Issue) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("コーチの言葉", bundle: .module)
+            Text("もとの言葉", bundle: .module)
                 .font(.headline)
             Text(issue.coachWords)
                 .padding(12)

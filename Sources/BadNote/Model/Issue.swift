@@ -65,7 +65,7 @@ public enum IssueStatus: String, CaseIterable, Hashable, Sendable {
 
 /// 課題(§3.1)。`issue` テーブルの 1 行に対応する。
 ///
-/// `coachWords` は言われたことの原文で編集しない。`doneForm` は完了形の言い換えで、
+/// `coachWords` はもとの言葉(原文)で編集しない。`doneForm` は完了形の言い換えで、
 /// 入力時には強制しないため未整理の間は nil。
 public struct Issue: Hashable, Identifiable, Sendable {
     /// 採番済みの主キー。`IssueRepository` が返す値にのみ現れる。
@@ -131,7 +131,7 @@ public struct Issue: Hashable, Identifiable, Sendable {
 }
 
 extension Issue {
-    /// UI の主表示。未整理で `doneForm` がまだ無ければ、コーチの言葉をそのまま出す(§3.1)。
+    /// UI の主表示。未整理で `doneForm` がまだ無ければ、原文をそのまま出す(§3.1)。
     public var displayTitle: String {
         if let doneForm = doneForm, !doneForm.isEmpty {
             return doneForm
