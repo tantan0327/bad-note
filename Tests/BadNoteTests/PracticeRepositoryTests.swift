@@ -614,4 +614,26 @@ final class PracticeRepositoryTests: XCTestCase {
 
         XCTAssertEqual(0, results.count)
     }
+
+    // MARK: - 練習の総数
+
+    /// §7.1 の「数回使った後に促す」の判定材料。
+    func testCountReturnsNumberOfPractices() throws {
+        let db = try makeDatabase()
+        defer { try? db.close() }
+        let repo = makePracticeRepository(db)
+
+        _ = try repo.create(practiceDate: t0)
+        _ = try repo.create(practiceDate: t1)
+
+        XCTAssertEqual(2, try repo.count())
+    }
+
+    func testCountIsZeroWithoutPractices() throws {
+        let db = try makeDatabase()
+        defer { try? db.close() }
+        let repo = makePracticeRepository(db)
+
+        XCTAssertEqual(0, try repo.count())
+    }
 }

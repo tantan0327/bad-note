@@ -98,4 +98,23 @@ final class AppMetaRepositoryTests: XCTestCase {
 
         XCTAssertEqual(t0, try repo.staleLastEvaluatedAt())
     }
+
+    // MARK: - めざす姿の促し(§7.1)
+
+    func testVisionPromptIsNotShownInitially() throws {
+        let db = try makeDatabase()
+        defer { try? db.close() }
+
+        XCTAssertFalse(try AppMetaRepository(db: db).isVisionPromptShown())
+    }
+
+    func testVisionPromptCanBeMarkedAsShown() throws {
+        let db = try makeDatabase()
+        defer { try? db.close() }
+        let repo = AppMetaRepository(db: db)
+
+        try repo.markVisionPromptShown()
+
+        XCTAssertTrue(try repo.isVisionPromptShown())
+    }
 }

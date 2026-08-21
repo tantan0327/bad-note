@@ -13,6 +13,8 @@ public struct AppMetaKey {
     public static let stalePracticeCount = "stale_practice_count"
     public static let reshuffleWeekday = "reshuffle_weekday"
     public static let staleLastEvaluatedAt = "stale_last_evaluated_at"
+    /// §7.1 めざす姿の促しを出したか
+    public static let visionPromptShown = "vision_prompt_shown"
 }
 
 public final class AppMetaRepository {
@@ -71,6 +73,17 @@ public final class AppMetaRepository {
 
     public func setReshuffleWeekday(_ weekday: Int) throws {
         try setInt(weekday, forKey: AppMetaKey.reshuffleWeekday)
+    }
+
+    // MARK: - めざす姿の促し(§7.1)
+
+    /// 促しを既に出したか。**1 度だけ**促すための記録。
+    public func isVisionPromptShown() throws -> Bool {
+        return try string(forKey: AppMetaKey.visionPromptShown) == "1"
+    }
+
+    public func markVisionPromptShown() throws {
+        try set("1", forKey: AppMetaKey.visionPromptShown)
     }
 
     /// 前回の評価日時。**一度も評価していなければ nil**(初期値は空文字)。

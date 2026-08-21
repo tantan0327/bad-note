@@ -27,39 +27,47 @@
 | `HomeEmphasis` | §5.1 8 週間での表示切り替え(種目ごと) |
 | `MonthRange` | 今月の集計期間 |
 
-**画面** — ホーム(§7.1)/ 練習ログ入力(§7.2)/ 課題一覧(§7.4 の一部)/ 課題の登録・編集(§3)/ インボックス整理。
+**画面** — ホーム(§7.1)/ 練習ログ入力(§7.2)/ 課題一覧(§7.4 の一部)/ 課題の登録・編集(§3)/
+インボックス整理 / めざす姿の編集(§7.1、テキストのみ)。
 
-**実機での起動を確認済み**(2026-08-21)。`AppDatabase.open()` が Application Support に
-DB を作る経路が実際に通ることを確認した。
+**アイコンは `.symbolset`**(2026-08-21)。`systemName:` / `systemImage:` の使用箇所はゼロ。
+`Sources/BadNote/Resources/Icons.xcassets/` に `favorite` / `home` / `settings` を配置し、
+iOS・Android の両方で同じ Material Symbols が描画されることを確認済み。
+
+**iOS / Android の両方で実機動作を確認済み**(2026-08-21)。
+Android エミュレータ(API 34 / SQLite 3.39.2)で DB 作成・マイグレーション 8 本の適用・
+週次評価の初回実行・課題の登録まで通ることを確認した。
 
 ---
 
 ## 0. 最優先
 
-### タブアイコンが Android で表示されない
-
-`ContentView` にテンプレート由来の `Label(_, systemImage:)` が 3 か所残っている。
-SF Symbols は Android に無いため、`.symbolset` を用意して
-`Image("name", bundle: .module)` に置き換える(`skip-icons` スキル)。
-
 ### テンプレート残骸の掃除
 
-`WelcomeView` / `ItemListView` / `ViewModel.swift` / `Item` が未使用のまま残り、
-Welcome・Settings タブがテンプレートのまま。タブ構成を決めて整理する。
+`WelcomeView` / `ViewModel.swift` / `Item` が未使用のまま残り、
+Welcome・Settings タブがテンプレートのまま。**タブ構成を決めて整理する。**
+
+いま必要なタブは何か(ホーム / 課題 / 大会 / 設定?)を決めれば、
+それに合わせて `.symbolset` を足すだけで済む。
+(`ItemListView` / `ItemView` は 2026-08-21 に削除済み)
 
 ---
 
 ## 1. Phase 1 に足りないもの
 
-### 1.1 めざす姿の編集画面(§7.1)
+### 1.1 めざす姿の画像(2026-08-21 時点で残っているのはこれだけ)
 
-**機能が欠落している。** `VisionRepository` は完成してテストも通っているが、
-呼んでいるのはホームの表示だけで、**書き込む UI がどこにも無い**。
-現状では「めざす姿」を登録する手段がゼロ。4 層構造の頂点なので最優先。
+テキストの編集と「数回使った後に 1 度だけ促す」は実装済み
+(`VisionEditView` / `VisionPrompt`)。**残るのは画像 1 枚(`vision.image_path`)。**
 
-- テキストの編集
-- 画像 1 枚(`vision.image_path`)の扱い
-- 空のとき「数回使った後に 1 度だけ促す」(§7.1)。初回は促さない
+**`PhotosPicker` は SkipUI 非対応。** 列と読み書きはあるが、画像を選ぶ手段が Android に無い。
+実装するなら次のどちらか。
+
+1. iOS は `PhotosPicker`、Android は `#if SKIP` + Compose の `PickVisualMedia` を自前で書く。
+   content URI をアプリ領域にコピーする処理も要る
+2. 画像はあきらめる。§7.1 も「+**任意**で画像 1 枚」で、主役はテキスト
+
+優先度は低い。画像が無くてもアプリは成立する。
 
 ### 1.2 課題詳細(§7.3)
 
@@ -163,6 +171,46 @@ JAVA_HOME=... xcodebuild -workspace Project.xcworkspace -scheme "BadNote App" \
   -destination "generic/platform=iOS Simulator" -configuration Debug build
 ```
 
+### Android エミュレータの起動
+
+**SDK が 2 つある。** arm64 のシステムイメージは homebrew 側(`ANDROID_HOME` が指す場所)にあり、
+`~/Library/Android/sdk/emulator` の方で起動すると
+`detected a hanging thread 'QEMU2 CPU0 thread'` で固まって起動しない。**必ず homebrew 側を使う。**
+
+```
+/opt/homebrew/share/android-commandlinetools/emulator/emulator -avd emulator-34-medium_phone
+```
+
+`adb` は `~/Library/Android/sdk/platform-tools/adb`(どちらでも可)。
+
+```
+export PATH="$HOME/Library/Android/sdk/platform-tools:$PATH"
+adb devices                                   # emulator-5554 が device になるまで待つ
+adb -s emulator-5554 install -r -g .build/Android/app/outputs/apk/debug/app-debug.apk
+adb -s emulator-5554 shell am start -n com.tange.badnote/bad.note.MainActivity
+```
+
+**Activity 名は `bad.note.MainActivity`**(Kotlin パッケージ名)。`.MainActivity` では起動しない。
+
+### 実機の DB を覗く
+
+```
+adb -s emulator-5554 shell "run-as com.tange.badnote sqlite3 files/badnote.sqlite 'PRAGMA user_version;'"
+adb -s emulator-5554 shell "run-as com.tange.badnote sqlite3 files/badnote.sqlite 'SELECT key, value FROM app_meta;'"
+```
+
+`user_version` が `migrations` の本数と一致していればスキーマは最新。
+
+### 画面の確認
+
+```
+adb -s emulator-5554 exec-out screencap -p > screen.png
+adb -s emulator-5554 shell input tap <x> <y>
+adb -s emulator-5554 logcat -d | grep -iE "FATAL|SQLite"
+```
+
+**既定タブは Welcome(テンプレート)なので、ホームに移動するまで DB は開かれない。**
+
 ### Skip の落とし穴(実際に踏んだもの)
 
 - **`sorted()` / `map` / `filter` の戻り値は変更不可** — `insert` / `append` すると Android だけ
@@ -173,3 +221,7 @@ JAVA_HOME=... xcodebuild -workspace Project.xcworkspace -scheme "BadNote App" \
 - **`.keyboardType` は macOS で使えない** — `Package.swift` が macOS を宣言しているので
   `#if !os(macOS)` で囲む
 - **アイコンは `.symbolset`** — `Image(systemName:)` は Android で描画されない
+  (ただし `heart.fill` / `house.fill` / `gearshape.fill` など約 50 個は SkipUI が
+  Material Icons に対応付けるため表示される。対応表は SkipUI の実装なので依存しない方が安全)
+- **`PhotosPicker` は使えない** — `UIViewRepresentable` / `TimelineView` / `matchedGeometryEffect` も同様。
+  `building-skip-ui` スキルの `references/components.md` の "Not Available in SkipUI" を先に見る

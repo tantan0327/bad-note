@@ -103,6 +103,15 @@ public final class PracticeRepository {
         return results
     }
 
+    /// 練習ログの総数。§7.1 の「数回使った後に促す」の判定材料。
+    public func count() throws -> Int {
+        let rows = try db.selectAll(sql: "SELECT COUNT(*) FROM practice")
+        guard let count = rows.first?.first?.longValue else {
+            return 0
+        }
+        return Int(count)
+    }
+
     /// 指定した日時より**後**の練習件数(§4.2 の left_focus 判定)。
     ///
     /// 重点を外れた時刻ちょうどの練習は含めない。

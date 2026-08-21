@@ -69,16 +69,55 @@ public struct HomeView: View {
         VStack(alignment: .leading, spacing: 8) {
             Text("めざす姿", bundle: .module)
                 .font(.headline)
-            if model.vision.isEmpty {
-                // 初回は促さない(§7.1)。空でも場所だけ確保しておく
-                Text("まだ書かれていません", bundle: .module)
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-            } else {
-                Text(model.vision.body)
-                    .font(.title3)
+            NavigationLink {
+                VisionEditView()
+            } label: {
+                if model.vision.isEmpty {
+                    // 初回は促さない(§7.1)。空でも場所だけ確保しておく
+                    Text("まだ書かれていません", bundle: .module)
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                } else {
+                    Text(model.vision.body)
+                        .font(.title3)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+            }
+            if model.isPromptingVision {
+                visionPrompt
             }
         }
+    }
+
+    /// §7.1 数回使った後に 1 度だけ促す。
+    @ViewBuilder private var visionPrompt: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("めざす姿を書いてみませんか", bundle: .module)
+                .font(.body)
+            Text("何をめざしているかが決まると、大会と今週の重点に意味が出ます", bundle: .module)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            HStack(spacing: 8) {
+                NavigationLink {
+                    VisionEditView()
+                } label: {
+                    Text("書く", bundle: .module)
+                }
+                .buttonStyle(.borderedProminent)
+                Button {
+                    model.dismissVisionPrompt()
+                } label: {
+                    Text("あとで", bundle: .module)
+                }
+                .buttonStyle(.bordered)
+            }
+            .font(.footnote)
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.secondary.opacity(0.1))
+        .cornerRadius(8)
     }
 
     // MARK: - 2. カウントダウン(種目ごと。近いほうを上に大きく)

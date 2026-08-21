@@ -60,6 +60,9 @@ import SkipSQL
     /// 調整期(§4.4)。stale の提示を止める判断に使う。
     public private(set) var isAdjustmentPeriod = false
 
+    /// めざす姿を書くよう促すか(§7.1)。初回は促さず、数回使った後に 1 度だけ。
+    public private(set) var isPromptingVision = false
+
     /// しばらく触れていない課題(§4.3)。`stale_flag` の単純な読み出し。
     public private(set) var staleItems: [StaleItem] = []
     /// 重点が埋まっているときの入れ替え候補(§7.4 のフローへ回す)。
@@ -81,6 +84,7 @@ import SkipSQL
             let today = Calendar.current.startOfDay(for: now)
 
             vision = try VisionRepository(db: db).fetch()
+            try loadVisionPrompt(db: db)
             try loadCountdowns(db: db, today: today)
             try loadFocusCards(db: db)
             try loadBuildUp(db: db, now: now)
@@ -142,6 +146,27 @@ import SkipSQL
             cards.append(FocusCard(issue: issue, latestResult: history.first ?? nil))
         }
         focusCards = cards
+    }
+
+    // MARK: - めざす姿の促し(§7.1)
+
+    /// 促すかどうかを決め、**出すと決めた時点で「促し済み」にする。**
+    ///
+    /// 無視されたものを毎回蒸し返さないため。仕様の「1 度だけ」をこの形で守る。
+    private func loadVisionPrompt(db: SQLContext) throws {
+        let meta = AppMetaRepository(db: db)
+        let shouldPrompt = VisionPrompt.shouldPrompt(vision: vision,
+                                                     practiceCount: try PracticeRepository(db: db).count(),
+                                                     alreadyPrompted: try meta.isVisionPromptShown())
+        if shouldPrompt {
+            try meta.markVisionPromptShown()
+        }
+        isPromptingVision = shouldPrompt
+    }
+
+    /// 促しを閉じる(表示は 1 度きりなので、記録済みのフラグはそのまま)。
+    public func dismissVisionPrompt() {
+        isPromptingVision = false
     }
 
     // MARK: - しばらく触れていない課題(§4.3)
