@@ -22,6 +22,9 @@ import SkipSQL
     /// 絞り込みに出すタグの候補
     public private(set) var availableTags: [Tag] = []
 
+    /// 3 層を見出し込みで畳んだ並び(§7.4 長押しドラッグ用)。
+    public private(set) var rows: [TierRow] = []
+
     public private(set) var focus: [Issue] = []
     public private(set) var next: [Issue] = []
     public private(set) var someday: [Issue] = []
@@ -53,6 +56,7 @@ import SkipSQL
             someday = try issues.fetch(tier: .someday, statuses: statuses, tagId: tagId,
                                        discipline: discipline, masteryLevel: masteryLevel)
             availableTags = try TagRepository(db: db).fetchAll()
+            rows = TierLayout.rows(focus: focus, next: next, someday: someday)
             errorText = nil
         } catch {
             errorText = "課題の読み込みに失敗しました: \(error)"
@@ -128,6 +132,40 @@ import SkipSQL
         }
         if let updated = result.updatedIssues {
             apply(updated)
+        }
+    }
+
+    /// 長押しドラッグの結果を適用する(§7.4 層をまたぐ移動と層内の並び替え)。
+    ///
+    /// 移動先の逆算は `TierLayout`、実際の並べ替えは `FocusBoard` に任せる。
+    public func moveRows(from offsets: [Int], to toOffset: Int) {
+        guard let fromOffset = offsets.first else {
+            return
+        }
+        guard let target = TierLayout.target(movingFrom: fromOffset, toOffset: toOffset, rows: rows) else {
+            return
+        }
+        guard let issue = rows[fromOffset].issue else {
+            return
+        }
+        let result = FocusBoard.move(issue, to: target.tier, at: target.index, in: allIssues())
+        if let candidates = result.swapCandidates {
+            pendingPromotion = issue
+            swapCandidates = candidates
+            isShowingSwap = true
+            return
+        }
+        if let updated = result.updatedIssues {
+            apply(updated)
+        }
+    }
+
+    /// 層ごとの件数(見出しの表示用)。
+    public func count(of tier: Tier) -> Int {
+        switch tier {
+        case .focus: return focus.count
+        case .next: return next.count
+        case .someday: return someday.count
         }
     }
 

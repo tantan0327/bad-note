@@ -20,13 +20,25 @@ public struct IssueListView: View {
             Section {
                 filterRow
             }
-            focusSection
-            section(title: Text("次にやる", bundle: .module),
-                    count: Text(verbatim: "\(model.next.count)件"),
-                    issues: model.next)
-            section(title: Text("いつか", bundle: .module),
-                    count: Text(verbatim: "\(model.someday.count)件"),
-                    issues: model.someday)
+            // §7.4 層をまたぐドラッグのため、3 層を 1 つの ForEach に畳んでいる
+            ForEach(model.rows) { row in
+                if row.isHeader {
+                    headerRow(row.tier)
+                } else if let issue = row.issue {
+                    self.row(issue)
+                }
+            }
+            .onMove { offsets, toOffset in
+                model.moveRows(from: Array(offsets), to: toOffset)
+            }
+            Section {
+                NavigationLink {
+                    FocusReshuffleView()
+                } label: {
+                    Text("今週の重点を組み替える", bundle: .module)
+                        .font(.footnote)
+                }
+            }
         }
         .navigationTitle(Text("課題", bundle: .module))
         .toolbar {
@@ -64,32 +76,6 @@ public struct IssueListView: View {
         }
         .onAppear {
             model.load()
-        }
-    }
-
-    /// 今週の重点。§7.4 の 3 つ目の方法(週次の組み替えモード)への導線をここに置く。
-    @ViewBuilder private var focusSection: some View {
-        Section {
-            if model.focus.isEmpty {
-                Text("まだありません", bundle: .module)
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-            }
-            ForEach(model.focus) { issue in
-                row(issue)
-            }
-            NavigationLink {
-                FocusReshuffleView()
-            } label: {
-                Text("今週の重点を組み替える", bundle: .module)
-                    .font(.footnote)
-            }
-        } header: {
-            HStack {
-                Text("今週の重点", bundle: .module)
-                Spacer()
-                Text(verbatim: "\(model.focus.count)/\(model.focusCapacity)")
-            }
         }
     }
 
@@ -182,22 +168,27 @@ public struct IssueListView: View {
         }
     }
 
-    @ViewBuilder private func section(title: Text, count: Text, issues: [Issue]) -> some View {
-        Section {
-            if issues.isEmpty {
-                Text("まだありません", bundle: .module)
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-            }
-            ForEach(issues) { issue in
-                row(issue)
-            }
-        } header: {
-            HStack {
-                title
-                Spacer()
-                count
-            }
+    /// 層の見出し。ドラッグの落下位置を決める区切りでもあるので、行として並べる。
+    @ViewBuilder private func headerRow(_ tier: Tier) -> some View {
+        HStack {
+            Text(tierName(tier))
+                .font(.headline)
+            Spacer()
+            Text(verbatim: tier == Tier.focus
+                 ? "\(model.count(of: tier))/\(model.focusCapacity)"
+                 : "\(model.count(of: tier))件")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+        }
+        .padding(.top, 8)
+        .moveDisabled(true)
+    }
+
+    private func tierName(_ tier: Tier) -> String {
+        switch tier {
+        case .focus: return "今週の重点"
+        case .next: return "次にやる"
+        case .someday: return "いつか"
         }
     }
 

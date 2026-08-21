@@ -1,7 +1,7 @@
 import Foundation
 
 /// 種目。多くの技術課題は種目を問わないため、既定は `both`(§3.5)。
-public enum Discipline: String, CaseIterable, Hashable {
+public enum Discipline: String, CaseIterable, Hashable, Sendable {
     case singles
     case doubles
     case both
@@ -10,7 +10,7 @@ public enum Discipline: String, CaseIterable, Hashable {
 /// 習熟度。不確実性の低い順に 4 段階(§3.2)。
 ///
 /// raw value は `issue.mastery_level` にそのまま入る 1..4。
-public enum MasteryLevel: Int, CaseIterable, Hashable {
+public enum MasteryLevel: Int, CaseIterable, Hashable, Sendable {
     case solo = 1
     case drill = 2
     case pattern = 3
@@ -32,7 +32,7 @@ public enum MasteryLevel: Int, CaseIterable, Hashable {
 }
 
 /// 優先度の層(§3.3)。`focus` は 3 件までだが、上限はこの層より上のレイヤで扱う。
-public enum Tier: String, CaseIterable, Hashable {
+public enum Tier: String, CaseIterable, Hashable, Sendable {
     case focus
     case next
     case someday
@@ -57,7 +57,7 @@ public enum Tier: String, CaseIterable, Hashable {
 }
 
 /// 課題の状態。`inbox` は未整理、`archived` は定着済み。
-public enum IssueStatus: String, CaseIterable, Hashable {
+public enum IssueStatus: String, CaseIterable, Hashable, Sendable {
     case inbox
     case active
     case archived
@@ -67,7 +67,7 @@ public enum IssueStatus: String, CaseIterable, Hashable {
 ///
 /// `coachWords` は言われたことの原文で編集しない。`doneForm` は完了形の言い換えで、
 /// 入力時には強制しないため未整理の間は nil。
-public struct Issue: Hashable, Identifiable {
+public struct Issue: Hashable, Identifiable, Sendable {
     /// 採番済みの主キー。`IssueRepository` が返す値にのみ現れる。
     public var id: Int64
     public var coachWords: String
