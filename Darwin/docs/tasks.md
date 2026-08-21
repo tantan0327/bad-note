@@ -42,8 +42,8 @@
 
 **アイコンは `.symbolset`**(2026-08-21)。`systemName:` / `systemImage:` の使用箇所はゼロ。
 `Sources/BadNote/Resources/Icons.xcassets/` に `home` / `checklist` / `emoji_events` / `settings`
-(と未使用の `favorite`)を配置し、iOS・Android の両方で同じ Material Symbols が
-描画されることを確認済み。追加手順は `skip-icons` スキルのとおり。
+を配置し、iOS・Android の両方で同じ Material Symbols が描画されることを確認済み。
+追加手順は `skip-icons` スキルのとおり。
 
 **iOS / Android の両方で実機動作を確認済み**(2026-08-21)。
 Android エミュレータ(API 34 / SQLite 3.39.2)で DB 作成・マイグレーション 8 本の適用・
