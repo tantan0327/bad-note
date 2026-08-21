@@ -15,6 +15,11 @@ public struct AppMetaKey {
     public static let staleLastEvaluatedAt = "stale_last_evaluated_at"
     /// §7.1 めざす姿の促しを出したか
     public static let visionPromptShown = "vision_prompt_shown"
+    /// §8 通知
+    public static let notificationsEnabled = "notifications_enabled"
+    public static let practiceReminderWeekdays = "practice_reminder_weekdays"
+    public static let practiceReminderHour = "practice_reminder_hour"
+    public static let notificationEveningHour = "notification_evening_hour"
 }
 
 public final class AppMetaRepository {
@@ -73,6 +78,35 @@ public final class AppMetaRepository {
 
     public func setReshuffleWeekday(_ weekday: Int) throws {
         try setInt(weekday, forKey: AppMetaKey.reshuffleWeekday)
+    }
+
+    // MARK: - 通知(§8)
+
+    /// 通知の設定。**組み替えの曜日は §4.3 の設定を共有する**(二重に持たない)。
+    public func notificationSettings() throws -> NotificationSettings {
+        let weekdays = try string(forKey: AppMetaKey.practiceReminderWeekdays) ?? ""
+        var practiceWeekdays: [Int] = []
+        for part in weekdays.split(separator: ",") {
+            if let value = Int(String(part)) {
+                practiceWeekdays.append(value)
+            }
+        }
+        return NotificationSettings(isEnabled: try string(forKey: AppMetaKey.notificationsEnabled) == "1",
+                                    practiceWeekdays: practiceWeekdays,
+                                    practiceHour: try int(forKey: AppMetaKey.practiceReminderHour) ?? NotificationSettings.standard.practiceHour,
+                                    eveningHour: try int(forKey: AppMetaKey.notificationEveningHour) ?? NotificationSettings.standard.eveningHour,
+                                    reshuffleWeekday: try reshuffleWeekday())
+    }
+
+    public func setNotificationSettings(_ settings: NotificationSettings) throws {
+        try set(settings.isEnabled ? "1" : "0", forKey: AppMetaKey.notificationsEnabled)
+        var parts: [String] = []
+        for weekday in settings.practiceWeekdays {
+            parts.append(String(weekday))
+        }
+        try set(parts.joined(separator: ","), forKey: AppMetaKey.practiceReminderWeekdays)
+        try setInt(settings.practiceHour, forKey: AppMetaKey.practiceReminderHour)
+        try setInt(settings.eveningHour, forKey: AppMetaKey.notificationEveningHour)
     }
 
     // MARK: - めざす姿の促し(§7.1)

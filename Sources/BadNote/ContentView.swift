@@ -64,6 +64,11 @@ struct SettingsView: View {
             } label: {
                 Text("定着した課題", bundle: .module)
             }
+            NavigationLink {
+                NotificationSettingsView()
+            } label: {
+                Text("通知", bundle: .module)
+            }
             if let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String,
                let buildNumber = Bundle.main.infoDictionary?["CFBundleVersion"] as? String {
                 Text(verbatim: "バージョン \(version) (\(buildNumber))")

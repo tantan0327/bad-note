@@ -91,6 +91,11 @@ import SkipSQL
             // §4.3 起動時のゲート。走るのは週 1 回、調整期はスキップ
             try StaleEvaluator(db: db, now: { now }).evaluateIfNeeded()
             try loadStaleItems(db: db)
+            // §8 通知の予定を入れ直す。組み立ては同じ接続、登録だけ非同期
+            let planned = try NotificationService(db: db).plannedNotifications(now: now)
+            Task {
+                await NotificationService.apply(planned)
+            }
             errorText = nil
         } catch {
             errorText = "ホームの読み込みに失敗しました: \(error)"

@@ -117,4 +117,54 @@ final class AppMetaRepositoryTests: XCTestCase {
 
         XCTAssertTrue(try repo.isVisionPromptShown())
     }
+
+    // MARK: - 通知設定(§8)
+
+    /// 既定は off。許可を求める前に勝手に鳴らさない。
+    func testNotificationsAreDisabledByDefault() throws {
+        let db = try makeDatabase()
+        defer { try? db.close() }
+
+        XCTAssertFalse(try AppMetaRepository(db: db).notificationSettings().isEnabled)
+    }
+
+    func testNotificationSettingsRoundTrip() throws {
+        let db = try makeDatabase()
+        defer { try? db.close() }
+        let repo = AppMetaRepository(db: db)
+
+        try repo.setNotificationSettings(NotificationSettings(isEnabled: true,
+                                                              practiceWeekdays: [2, 4],
+                                                              practiceHour: 17,
+                                                              eveningHour: 21,
+                                                              reshuffleWeekday: 0))
+
+        let settings = try repo.notificationSettings()
+        XCTAssertTrue(settings.isEnabled)
+        XCTAssertEqual([2, 4], settings.practiceWeekdays)
+        XCTAssertEqual(17, settings.practiceHour)
+        XCTAssertEqual(21, settings.eveningHour)
+    }
+
+    /// 組み替えの曜日は §4.3 の設定と同じものを見る。二重に持たない。
+    func testNotificationSettingsShareReshuffleWeekday() throws {
+        let db = try makeDatabase()
+        defer { try? db.close() }
+        let repo = AppMetaRepository(db: db)
+
+        try repo.setReshuffleWeekday(3)
+
+        XCTAssertEqual(3, try repo.notificationSettings().reshuffleWeekday)
+    }
+
+    func testPracticeWeekdaysCanBeCleared() throws {
+        let db = try makeDatabase()
+        defer { try? db.close() }
+        let repo = AppMetaRepository(db: db)
+
+        try repo.setNotificationSettings(NotificationSettings(isEnabled: true, practiceWeekdays: [1]))
+        try repo.setNotificationSettings(NotificationSettings(isEnabled: true, practiceWeekdays: []))
+
+        XCTAssertEqual(0, try repo.notificationSettings().practiceWeekdays.count)
+    }
 }
