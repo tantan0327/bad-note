@@ -94,13 +94,13 @@ public struct InboxTriageView: View {
             Text("種目", bundle: .module)
                 .font(.headline)
             HStack(spacing: 8) {
-                selectionButton(Text("シングルス", bundle: .module), isSelected: model.discipline == .singles) {
+                selectionButton(Text(Discipline.singles.displayName), isSelected: model.discipline == .singles) {
                     model.discipline = .singles
                 }
-                selectionButton(Text("ダブルス", bundle: .module), isSelected: model.discipline == .doubles) {
+                selectionButton(Text(Discipline.doubles.displayName), isSelected: model.discipline == .doubles) {
                     model.discipline = .doubles
                 }
-                selectionButton(Text("両方", bundle: .module), isSelected: model.discipline == .both) {
+                selectionButton(Text(Discipline.both.displayName), isSelected: model.discipline == .both) {
                     model.discipline = .both
                 }
             }
@@ -113,9 +113,9 @@ public struct InboxTriageView: View {
             Text("影響度(任意)", bundle: .module)
                 .font(.headline)
             HStack(spacing: 8) {
-                selectionButton(Text(verbatim: "1"), isSelected: model.impact == 1) { model.toggleImpact(1) }
-                selectionButton(Text(verbatim: "2"), isSelected: model.impact == 2) { model.toggleImpact(2) }
-                selectionButton(Text(verbatim: "3"), isSelected: model.impact == 3) { model.toggleImpact(3) }
+                selectionButton(Text(ScaleLabel.impact(1)), isSelected: model.impact == 1) { model.toggleImpact(1) }
+                selectionButton(Text(ScaleLabel.impact(2)), isSelected: model.impact == 2) { model.toggleImpact(2) }
+                selectionButton(Text(ScaleLabel.impact(3)), isSelected: model.impact == 3) { model.toggleImpact(3) }
             }
             Text("試合の失点に直結するか", bundle: .module)
                 .font(.caption)
@@ -128,9 +128,9 @@ public struct InboxTriageView: View {
             Text("習得コスト(任意)", bundle: .module)
                 .font(.headline)
             HStack(spacing: 8) {
-                selectionButton(Text(verbatim: "1"), isSelected: model.cost == 1) { model.toggleCost(1) }
-                selectionButton(Text(verbatim: "2"), isSelected: model.cost == 2) { model.toggleCost(2) }
-                selectionButton(Text(verbatim: "3"), isSelected: model.cost == 3) { model.toggleCost(3) }
+                selectionButton(Text(ScaleLabel.cost(1)), isSelected: model.cost == 1) { model.toggleCost(1) }
+                selectionButton(Text(ScaleLabel.cost(2)), isSelected: model.cost == 2) { model.toggleCost(2) }
+                selectionButton(Text(ScaleLabel.cost(3)), isSelected: model.cost == 3) { model.toggleCost(3) }
             }
             Text("直るまでの時間", bundle: .module)
                 .font(.caption)

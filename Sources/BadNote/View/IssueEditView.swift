@@ -100,9 +100,9 @@ public struct IssueEditView: View {
             Text("種目", bundle: .module)
                 .font(.headline)
             HStack(spacing: 8) {
-                disciplineButton(Text("シングルス", bundle: .module), value: .singles)
-                disciplineButton(Text("ダブルス", bundle: .module), value: .doubles)
-                disciplineButton(Text("両方", bundle: .module), value: .both)
+                disciplineButton(Text(Discipline.singles.displayName), value: .singles)
+                disciplineButton(Text(Discipline.doubles.displayName), value: .doubles)
+                disciplineButton(Text(Discipline.both.displayName), value: .both)
             }
             .font(.footnote)
         }
@@ -122,11 +122,11 @@ public struct IssueEditView: View {
         VStack(alignment: .leading, spacing: 8) {
             Text("習熟度", bundle: .module)
                 .font(.headline)
-            HStack(spacing: 8) {
-                masteryButton(Text("素振り", bundle: .module), value: .solo)
-                masteryButton(Text("ノック", bundle: .module), value: .drill)
-                masteryButton(Text("パターン練習", bundle: .module), value: .pattern)
-                masteryButton(Text("試合", bundle: .module), value: .match)
+            VStack(alignment: .leading, spacing: 8) {
+                masteryButton(Text(MasteryLevel.solo.displayName), value: .solo)
+                masteryButton(Text(MasteryLevel.drill.displayName), value: .drill)
+                masteryButton(Text(MasteryLevel.pattern.displayName), value: .pattern)
+                masteryButton(Text(MasteryLevel.match.displayName), value: .match)
             }
             .font(.footnote)
         }
@@ -147,9 +147,9 @@ public struct IssueEditView: View {
             Text("影響度(任意)", bundle: .module)
                 .font(.headline)
             HStack(spacing: 8) {
-                scaleButton("1", isSelected: model.impact == 1) { model.toggleImpact(1) }
-                scaleButton("2", isSelected: model.impact == 2) { model.toggleImpact(2) }
-                scaleButton("3", isSelected: model.impact == 3) { model.toggleImpact(3) }
+                scaleButton(ScaleLabel.impact(1), isSelected: model.impact == 1) { model.toggleImpact(1) }
+                scaleButton(ScaleLabel.impact(2), isSelected: model.impact == 2) { model.toggleImpact(2) }
+                scaleButton(ScaleLabel.impact(3), isSelected: model.impact == 3) { model.toggleImpact(3) }
             }
             Text("試合の失点に直結するか", bundle: .module)
                 .font(.caption)
@@ -162,9 +162,9 @@ public struct IssueEditView: View {
             Text("習得コスト(任意)", bundle: .module)
                 .font(.headline)
             HStack(spacing: 8) {
-                scaleButton("1", isSelected: model.cost == 1) { model.toggleCost(1) }
-                scaleButton("2", isSelected: model.cost == 2) { model.toggleCost(2) }
-                scaleButton("3", isSelected: model.cost == 3) { model.toggleCost(3) }
+                scaleButton(ScaleLabel.cost(1), isSelected: model.cost == 1) { model.toggleCost(1) }
+                scaleButton(ScaleLabel.cost(2), isSelected: model.cost == 2) { model.toggleCost(2) }
+                scaleButton(ScaleLabel.cost(3), isSelected: model.cost == 3) { model.toggleCost(3) }
             }
             Text("直るまでの時間", bundle: .module)
                 .font(.caption)

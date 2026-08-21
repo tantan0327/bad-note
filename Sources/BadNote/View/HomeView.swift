@@ -110,7 +110,7 @@ public struct HomeView: View {
     @ViewBuilder private func countdownCard(_ countdown: HomeModel.Countdown) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack {
-                Text(disciplineName(countdown.discipline))
+                Text(countdown.discipline.displayName)
                     .font(.footnote)
                     .foregroundStyle(.secondary)
                 Text(countdown.competition.name)
@@ -172,14 +172,14 @@ public struct HomeView: View {
                         Text(card.issue.displayTitle)
                             .font(.body)
                         HStack(spacing: 8) {
-                            Text(masteryName(card.issue.masteryLevel))
+                            Text(card.issue.masteryLevel.displayName)
                                 .font(.caption)
                                 .padding(.horizontal, 8)
                                 .padding(.vertical, 2)
                                 .background(Color.secondary.opacity(0.2))
                                 .cornerRadius(4)
                             if let result = card.latestResult {
-                                Text(resultName(result))
+                                Text(result.displayName)
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
                             }
@@ -207,7 +207,7 @@ public struct HomeView: View {
                         Text(item.issue.displayTitle)
                             .font(.body)
                         // 理由を添える(§4.3)
-                        Text(reasonText(item.reason))
+                        Text(item.reason.displayName)
                             .font(.caption)
                             .foregroundStyle(.secondary)
                         // 3 択をその場で完結させる。別画面に飛ばさない
@@ -242,15 +242,6 @@ public struct HomeView: View {
         }
     }
 
-    /// §4.3 理由文。アプリは解釈や警告を出さず、事実だけを添える。
-    private func reasonText(_ reason: StaleReason) -> String {
-        switch reason {
-        case .neverFocused: return "一度も重点に入っていません"
-        case .leftFocus: return "重点から外れたあと、触れていません"
-        case .noUpdate: return "しばらく更新がありません"
-        }
-    }
-
     // MARK: - 5. 練習を記録するボタン(末尾に大きく)
 
     @ViewBuilder private var recordButton: some View {
@@ -265,30 +256,4 @@ public struct HomeView: View {
         .padding(.top, 8)
     }
 
-    // MARK: - 表示名
-
-    private func disciplineName(_ discipline: Discipline) -> String {
-        switch discipline {
-        case .singles: return "シングルス"
-        case .doubles: return "ダブルス"
-        case .both: return "両方"
-        }
-    }
-
-    private func masteryName(_ level: MasteryLevel) -> String {
-        switch level {
-        case .solo: return "素振り"
-        case .drill: return "ノック"
-        case .pattern: return "パターン練習"
-        case .match: return "試合"
-        }
-    }
-
-    private func resultName(_ result: FocusResult) -> String {
-        switch result {
-        case .done: return "できた"
-        case .closer: return "近づいた"
-        case .next: return "次にやる"
-        }
-    }
 }

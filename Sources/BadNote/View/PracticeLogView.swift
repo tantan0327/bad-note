@@ -67,7 +67,7 @@ public struct PracticeLogView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     Text(proposal.issue.displayTitle)
                         .font(.body)
-                    Text(verbatim: "\(masteryName(proposal.suggestedLevel)) に上げますか?")
+                    Text(verbatim: "「\(proposal.suggestedLevel.displayName)」に上げますか?")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                     HStack(spacing: 8) {
@@ -125,14 +125,6 @@ public struct PracticeLogView: View {
         }
     }
 
-    private func masteryName(_ level: MasteryLevel) -> String {
-        switch level {
-        case .solo: return "素振り"
-        case .drill: return "ノック"
-        case .pattern: return "パターン練習"
-        case .match: return "試合"
-        }
-    }
 
     @ViewBuilder private var errorSection: some View {
         if let errorText = model.errorText {
@@ -200,10 +192,10 @@ public struct PracticeLogView: View {
         VStack(alignment: .leading, spacing: 12) {
             sectionTitle(Text("種類", bundle: .module))
             HStack(spacing: 8) {
-                kindButton(Text("全体練習", bundle: .module), kind: .whole)
-                kindButton(Text("個人練習", bundle: .module), kind: .individual)
-                kindButton(Text("ゲーム練習", bundle: .module), kind: .game)
-                kindButton(Text("筋トレ", bundle: .module), kind: .strength)
+                kindButton(Text(PracticeKind.whole.displayName), kind: .whole)
+                kindButton(Text(PracticeKind.individual.displayName), kind: .individual)
+                kindButton(Text(PracticeKind.game.displayName), kind: .game)
+                kindButton(Text(PracticeKind.strength.displayName), kind: .strength)
             }
             .font(.footnote)
         }
@@ -242,9 +234,9 @@ public struct PracticeLogView: View {
                     Text(input.title)
                         .font(.body)
                     HStack(spacing: 8) {
-                        resultButton(Text("できた", bundle: .module), result: .done, input: input)
-                        resultButton(Text("近づいた", bundle: .module), result: .closer, input: input)
-                        resultButton(Text("次にやる", bundle: .module), result: .next, input: input)
+                        resultButton(Text(FocusResult.done.displayName), result: .done, input: input)
+                        resultButton(Text(FocusResult.closer.displayName), result: .closer, input: input)
+                        resultButton(Text(FocusResult.next.displayName), result: .next, input: input)
                     }
                     .font(.footnote)
                 }

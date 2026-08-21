@@ -97,7 +97,7 @@ public struct IssueListView: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(issue.displayTitle)
                         .font(.body)
-                    Text(masteryLabel(issue.masteryLevel))
+                    Text(issue.masteryLevel.displayName)
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -125,12 +125,4 @@ public struct IssueListView: View {
         .cornerRadius(8)
     }
 
-    private func masteryLabel(_ level: MasteryLevel) -> String {
-        switch level {
-        case .solo: return "素振り"
-        case .drill: return "ノック"
-        case .pattern: return "パターン練習"
-        case .match: return "試合"
-        }
-    }
 }
