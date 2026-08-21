@@ -32,14 +32,52 @@ final class TierLayoutTests: XCTestCase {
         XCTAssertTrue(rows[5].isHeader)
     }
 
-    /// 空の層でも見出しは残す。移動先として選べる必要がある。
-    func testEmptyTierKeepsItsHeader() throws {
+    /// **空の層には落下先の行を置く。**
+    /// 見出しは動かせない(`moveDisabled`)ので、見出しだけだとその層に落とせない。
+    func testEmptyTierGetsAPlaceholderRow() throws {
         let rows = TierLayout.rows(focus: [], next: [], someday: [])
 
-        XCTAssertEqual(3, rows.count)
-        XCTAssertEqual(Tier.focus, rows[0].tier)
-        XCTAssertEqual(Tier.next, rows[1].tier)
-        XCTAssertEqual(Tier.someday, rows[2].tier)
+        XCTAssertEqual(6, rows.count, "層ごとに 見出し + 落下先 の 2 行")
+        XCTAssertTrue(rows[0].isHeader)
+        XCTAssertTrue(rows[1].isPlaceholder)
+        XCTAssertEqual(Tier.focus, rows[1].tier)
+    }
+
+    /// 課題がある層には落下先の行を作らない。
+    func testFilledTierHasNoPlaceholder() throws {
+        let rows = sampleRows()
+
+        for row in rows {
+            XCTAssertFalse(row.isPlaceholder)
+        }
+    }
+
+    /// 空の層に落とせること —— これが直したかった不具合。
+    func testDropIntoEmptyTier() throws {
+        // 重点 1 件 / 次にやる 0 件 / いつか 1 件
+        let rows = TierLayout.rows(focus: [issue(1, .focus)], next: [], someday: [issue(2, .someday)])
+        // 0 見出し(重点) / 1 課題1 / 2 見出し(次) / 3 落下先 / 4 見出し(いつか) / 5 課題2
+        let target = try XCTUnwrap(TierLayout.target(movingFrom: 5, toOffset: 3, rows: rows))
+
+        XCTAssertEqual(Tier.next, target.tier)
+        XCTAssertEqual(0, target.index)
+    }
+
+    /// 落下先の行の後ろに落としても、その層の先頭に入る(空なので位置は 1 つしかない)。
+    func testDropAfterPlaceholderStaysInThatTier() throws {
+        let rows = TierLayout.rows(focus: [issue(1, .focus)], next: [], someday: [issue(2, .someday)])
+
+        let target = try XCTUnwrap(TierLayout.target(movingFrom: 5, toOffset: 4, rows: rows))
+
+        XCTAssertEqual(Tier.next, target.tier)
+        XCTAssertEqual(0, target.index)
+    }
+
+    /// 落下先の行そのものは動かせない。
+    func testMovingPlaceholderIsRejected() throws {
+        let rows = TierLayout.rows(focus: [issue(1, .focus)], next: [], someday: [])
+
+        XCTAssertNil(TierLayout.target(movingFrom: 3, toOffset: 1, rows: rows))
     }
 
     // MARK: - 移動先の逆算

@@ -24,6 +24,8 @@ public struct IssueListView: View {
             ForEach(model.rows) { row in
                 if row.isHeader {
                     headerRow(row.tier)
+                } else if row.isPlaceholder {
+                    emptyRow
                 } else if let issue = row.issue {
                     self.row(issue)
                 }
@@ -166,6 +168,14 @@ public struct IssueListView: View {
                 .background(Color.secondary.opacity(0.1))
                 .cornerRadius(16)
         }
+    }
+
+    /// 空の層の行。**`moveDisabled` を付けない** ——
+    /// これがドラッグの落とし先になる(付けると空の層に移動できなくなる)。
+    @ViewBuilder private var emptyRow: some View {
+        Text("まだありません", bundle: .module)
+            .font(.footnote)
+            .foregroundStyle(.secondary)
     }
 
     /// 層の見出し。ドラッグの落下位置を決める区切りでもあるので、行として並べる。
