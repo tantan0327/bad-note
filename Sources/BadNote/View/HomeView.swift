@@ -33,10 +33,11 @@ public struct HomeView: View {
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 NavigationLink {
-                    IssueListView()
+                    SettingsView()
                 } label: {
-                    Text("課題", bundle: .module)
+                    Image("settings", bundle: .module)
                 }
+                .accessibilityLabel(Text("設定", bundle: .module, comment: "accessibility label for the settings button"))
             }
         }
         .sheet(isPresented: $isShowingPracticeLog) {

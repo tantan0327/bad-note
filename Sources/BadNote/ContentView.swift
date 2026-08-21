@@ -1,29 +1,19 @@
 import SwiftUI
 
 enum ContentTab: String, Hashable {
-    case welcome, home, settings
+    case home, issues, competitions
 }
 
+/// タブは「往復するもの」だけ。3 つに絞っている。
+///
+/// - **練習ログ入力**(§7.2)はホームのボタンからシートで開く(ヘッダーが ✕ / 保存 のモーダル)
+/// - **課題詳細**(§7.3)は課題一覧からプッシュ
+/// - **設定**は日常操作ではないのでホームのツールバーに置く
 struct ContentView: View {
-    @AppStorage("tab") var tab = ContentTab.welcome
-    @AppStorage("name") var welcomeName = "Skipper"
-    @AppStorage("appearance") var appearance = ""
-    @State var viewModel = ViewModel()
+    @AppStorage("tab") var tab = ContentTab.home
 
     var body: some View {
         TabView(selection: $tab) {
-            NavigationStack {
-                WelcomeView(welcomeName: $welcomeName)
-            }
-            .tabItem {
-                Label {
-                    Text("ようこそ", bundle: .module, comment: "welcome tab label")
-                } icon: {
-                    Image("favorite", bundle: .module)
-                }
-            }
-            .tag(ContentTab.welcome)
-
             NavigationStack {
                 HomeView()
             }
@@ -37,77 +27,43 @@ struct ContentView: View {
             .tag(ContentTab.home)
 
             NavigationStack {
-                SettingsView(appearance: $appearance, welcomeName: $welcomeName)
-                    .navigationTitle("Settings")
+                IssueListView()
             }
             .tabItem {
                 Label {
-                    Text("設定", bundle: .module, comment: "settings tab label")
+                    Text("課題", bundle: .module, comment: "issues tab label")
                 } icon: {
-                    Image("settings", bundle: .module)
+                    Image("checklist", bundle: .module)
                 }
             }
-            .tag(ContentTab.settings)
-        }
-        .environment(viewModel)
-        .preferredColorScheme(appearance == "dark" ? .dark : appearance == "light" ? .light : nil)
-    }
-}
+            .tag(ContentTab.issues)
 
-struct WelcomeView : View {
-    @State var heartBeating = false
-    @Binding var welcomeName: String
-
-    var body: some View {
-        VStack(spacing: 0) {
-            Text("Hello [\(welcomeName)](https://skip.dev)!")
-                .padding()
-            Image("favorite", bundle: .module)
-                .foregroundStyle(.red)
-                .scaleEffect(heartBeating ? 1.5 : 1.0)
-                .task {
-                    withAnimation(.easeInOut(duration: 1).repeatForever()) {
-                        heartBeating = true
-                    }
+            NavigationStack {
+                CompetitionListView()
+            }
+            .tabItem {
+                Label {
+                    Text("大会", bundle: .module, comment: "competitions tab label")
+                } icon: {
+                    Image("emoji_events", bundle: .module)
                 }
+            }
+            .tag(ContentTab.competitions)
         }
-        .font(.largeTitle)
     }
 }
 
-struct SettingsView : View {
-    @Binding var appearance: String
-    @Binding var welcomeName: String
-
+/// 設定(§4.2 の閾値、§8 の通知、アーカイブ閲覧の置き場)。
+///
+/// 日常操作ではないので、ホームのツールバーから開く。
+struct SettingsView: View {
     var body: some View {
         Form {
-            TextField("Name", text: $welcomeName)
-            Picker("Appearance", selection: $appearance) {
-                Text("System").tag("")
-                Text("Light").tag("light")
-                Text("Dark").tag("dark")
-            }
             if let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String,
                let buildNumber = Bundle.main.infoDictionary?["CFBundleVersion"] as? String {
-                Text("Version \(version) (\(buildNumber))")
-            }
-            HStack {
-                PlatformHeartView()
-                Text("Powered by [Skip](https://skip.dev)")
+                Text(verbatim: "バージョン \(version) (\(buildNumber))")
             }
         }
-    }
-}
-
-/// A view that shows a blue heart on iOS and a green heart on Android.
-struct PlatformHeartView : View {
-    var body: some View {
-       #if SKIP
-       ComposeView { ctx in // Mix in Compose code!
-           androidx.compose.material3.Text("💚", modifier: ctx.modifier)
-       }
-       #else
-       Text(verbatim: "💙")
-       #endif
+        .navigationTitle(Text("設定", bundle: .module))
     }
 }

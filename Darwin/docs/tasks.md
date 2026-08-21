@@ -28,28 +28,26 @@
 | `MonthRange` | 今月の集計期間 |
 
 **画面** — ホーム(§7.1)/ 練習ログ入力(§7.2)/ 課題一覧(§7.4 の一部)/ 課題の登録・編集(§3)/
-インボックス整理 / めざす姿の編集(§7.1、テキストのみ)。
+インボックス整理 / めざす姿の編集(§7.1、テキストのみ)/ 大会一覧・登録(§7.5 の一部)。
+
+**タブ構成**(2026-08-21 決定) — **ホーム / 課題 / 大会** の 3 つ。
+タブは「往復するもの」だけに絞る。
+
+- 練習ログ入力はホームのボタンからシート(§7.2 のヘッダーが ✕ / 保存 のモーダル)
+- 課題詳細は課題一覧からプッシュ
+- 設定は日常操作ではないのでホームのツールバー(歯車)。
+  stale の閾値・通知時刻・アーカイブ閲覧の置き場になる
+
+テンプレート(`WelcomeView` / `ItemListView` / `ViewModel.swift` / `Item`)は削除済み。
 
 **アイコンは `.symbolset`**(2026-08-21)。`systemName:` / `systemImage:` の使用箇所はゼロ。
-`Sources/BadNote/Resources/Icons.xcassets/` に `favorite` / `home` / `settings` を配置し、
-iOS・Android の両方で同じ Material Symbols が描画されることを確認済み。
+`Sources/BadNote/Resources/Icons.xcassets/` に `home` / `checklist` / `emoji_events` / `settings`
+(と未使用の `favorite`)を配置し、iOS・Android の両方で同じ Material Symbols が
+描画されることを確認済み。追加手順は `skip-icons` スキルのとおり。
 
 **iOS / Android の両方で実機動作を確認済み**(2026-08-21)。
 Android エミュレータ(API 34 / SQLite 3.39.2)で DB 作成・マイグレーション 8 本の適用・
 週次評価の初回実行・課題の登録まで通ることを確認した。
-
----
-
-## 0. 最優先
-
-### テンプレート残骸の掃除
-
-`WelcomeView` / `ViewModel.swift` / `Item` が未使用のまま残り、
-Welcome・Settings タブがテンプレートのまま。**タブ構成を決めて整理する。**
-
-いま必要なタブは何か(ホーム / 課題 / 大会 / 設定?)を決めれば、
-それに合わせて `.symbolset` を足すだけで済む。
-(`ItemListView` / `ItemView` は 2026-08-21 に削除済み)
 
 ---
 
@@ -88,11 +86,12 @@ Welcome・Settings タブがテンプレートのまま。**タブ構成を決�
 - 再浮上 3 回以上で「よく戻ってくる課題」バッジ
 - レベルを下げる操作(「⋯」メニューの中に置く)
 
-### 1.3 大会画面(§7.5)
+### 1.3 大会の詳細と振り返り(§7.5)
 
-画面 + テーブル 2 つ(`issue_competition` / `competition_review`)。
-一覧は `fetchUpcoming(asOf:)` / `fetchFinished(asOf:)` がそのまま使える。
+一覧と登録は実装済み(`CompetitionListView` / `CompetitionEditView`)。
+**残るのは詳細画面**と、テーブル 2 つ(`issue_competition` / `competition_review`)。
 
+- 詳細の基本情報(残り日数 / 残り練習回数)
 - 課題と大会の紐付け。**`both` の課題は両種目のセクションに出す**
 - 習得コストと残り時間から「この大会では厳しいかもしれません」を控えめに提示
 - 調整期の帯(`AdjustmentPeriod.nearestTarget` が大会名を返せる)
