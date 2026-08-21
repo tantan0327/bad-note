@@ -20,9 +20,7 @@ public struct IssueListView: View {
             Section {
                 filterRow
             }
-            section(title: Text("今週の重点", bundle: .module),
-                    count: Text(verbatim: "\(model.focus.count)/\(model.focusCapacity)"),
-                    issues: model.focus)
+            focusSection
             section(title: Text("次にやる", bundle: .module),
                     count: Text(verbatim: "\(model.next.count)件"),
                     issues: model.next)
@@ -66,6 +64,32 @@ public struct IssueListView: View {
         }
         .onAppear {
             model.load()
+        }
+    }
+
+    /// 今週の重点。§7.4 の 3 つ目の方法(週次の組み替えモード)への導線をここに置く。
+    @ViewBuilder private var focusSection: some View {
+        Section {
+            if model.focus.isEmpty {
+                Text("まだありません", bundle: .module)
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
+            ForEach(model.focus) { issue in
+                row(issue)
+            }
+            NavigationLink {
+                FocusReshuffleView()
+            } label: {
+                Text("今週の重点を組み替える", bundle: .module)
+                    .font(.footnote)
+            }
+        } header: {
+            HStack {
+                Text("今週の重点", bundle: .module)
+                Spacer()
+                Text(verbatim: "\(model.focus.count)/\(model.focusCapacity)")
+            }
         }
     }
 
