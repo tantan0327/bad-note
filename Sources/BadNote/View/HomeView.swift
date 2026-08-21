@@ -206,7 +206,7 @@ public struct HomeView: View {
             }
             ForEach(model.focusCards) { card in
                 NavigationLink {
-                    IssueEditView(issueID: card.issue.id)
+                    IssueDetailView(issueID: card.issue.id)
                 } label: {
                     VStack(alignment: .leading, spacing: 4) {
                         Text(card.issue.displayTitle)

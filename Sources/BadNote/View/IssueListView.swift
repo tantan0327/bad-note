@@ -92,7 +92,7 @@ public struct IssueListView: View {
     @ViewBuilder private func row(_ issue: Issue) -> some View {
         HStack(spacing: 8) {
             NavigationLink {
-                IssueEditView(issueID: issue.id)
+                IssueDetailView(issueID: issue.id)
             } label: {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(issue.displayTitle)

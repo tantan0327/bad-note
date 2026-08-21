@@ -15,6 +15,20 @@ public enum MasteryLevel: Int, CaseIterable, Hashable {
     case drill = 2
     case pattern = 3
     case match = 4
+
+    /// 1 つ下のレベル。**Lv.1 の下は無いので Lv.1 のまま**(§7.3 ゼロに戻さない)。
+    ///
+    /// 再浮上させるときの再開レベルに使う。
+    public var oneStepDown: MasteryLevel {
+        return MasteryLevel(rawValue: rawValue - 1) ?? MasteryLevel.solo
+    }
+
+    /// 克服した(定着確認へ)に進めるか。**Lv.4(試合で出せる)のときだけ**(§7.3)。
+    ///
+    /// 素振りでできるだけの課題を「克服した」とは呼べない。
+    public var canOvercome: Bool {
+        return self == MasteryLevel.match
+    }
 }
 
 /// 優先度の層(§3.3)。`focus` は 3 件までだが、上限はこの層より上のレイヤで扱う。
@@ -123,5 +137,15 @@ extension Issue {
             return doneForm
         }
         return coachWords
+    }
+}
+
+extension Issue {
+    /// 「よく戻ってくる課題」バッジを出す再浮上回数(§7.3)。
+    public static let frequentResurfaceThreshold = 3
+
+    /// 何度も戻ってくる課題。弱点の本質を示す情報として提示する(§7.3)。
+    public var isFrequentlyResurfacing: Bool {
+        return resurfaceCount >= Issue.frequentResurfaceThreshold
     }
 }
