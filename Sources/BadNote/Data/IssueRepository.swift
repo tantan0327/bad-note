@@ -100,6 +100,7 @@ public final class IssueRepository {
     public func fetch(tier: Tier? = nil,
                       statuses: [IssueStatus]? = nil,
                       tagId: Int64? = nil,
+                      competitionId: Int64? = nil,
                       discipline: Discipline? = nil,
                       masteryLevel: MasteryLevel? = nil) throws -> [Issue] {
         if let statuses = statuses, statuses.isEmpty {
@@ -123,6 +124,10 @@ public final class IssueRepository {
         if let tagId = tagId {
             conditions.append("id IN (SELECT issue_id FROM issue_tag WHERE tag_id = ?)")
             parameters.append(SQLValue.long(tagId))
+        }
+        if let competitionId = competitionId {
+            conditions.append("id IN (SELECT issue_id FROM issue_competition WHERE competition_id = ?)")
+            parameters.append(SQLValue.long(competitionId))
         }
         if let discipline = discipline {
             if discipline == Discipline.both {

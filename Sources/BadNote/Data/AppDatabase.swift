@@ -69,6 +69,10 @@ public struct AppDatabase {
                     try context.exec(sql: statement)
                 }
             },
+            { context in
+                try context.exec(sql: AppDatabase.createIssueCompetitionTable)
+                try context.exec(sql: AppDatabase.createCompetitionReviewTable)
+            },
         ])
     }
 
@@ -213,4 +217,28 @@ public struct AppDatabase {
         "INSERT OR IGNORE INTO app_meta (key, value) VALUES ('reshuffle_weekday', '0')",
         "INSERT OR IGNORE INTO app_meta (key, value) VALUES ('stale_last_evaluated_at', '')",
     ]
+
+    /// 課題と大会の紐付け(§6)
+    static let createIssueCompetitionTable = """
+        CREATE TABLE issue_competition (
+          issue_id       INTEGER NOT NULL REFERENCES issue(id) ON DELETE CASCADE,
+          competition_id INTEGER NOT NULL REFERENCES competition(id) ON DELETE CASCADE,
+          PRIMARY KEY (issue_id, competition_id)
+        )
+        """
+
+    /// 大会後の振り返り(§6)。種目ごとに 1 件。
+    static let createCompetitionReviewTable = """
+        CREATE TABLE competition_review (
+          id                INTEGER PRIMARY KEY AUTOINCREMENT,
+          competition_id    INTEGER NOT NULL REFERENCES competition(id) ON DELETE CASCADE,
+          discipline        TEXT NOT NULL,
+          result            TEXT,
+          went_well         TEXT,
+          next_action       TEXT,
+          needed_resources  TEXT,
+          created_at        TEXT NOT NULL,
+          UNIQUE (competition_id, discipline)
+        )
+        """
 }

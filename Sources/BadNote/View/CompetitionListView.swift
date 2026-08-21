@@ -50,7 +50,7 @@ public struct CompetitionListView: View {
                 title.font(.headline)
                 ForEach(rows) { row in
                     NavigationLink {
-                        CompetitionEditView(competitionID: row.competition.id)
+                        CompetitionDetailView(competitionID: row.competition.id)
                     } label: {
                         VStack(alignment: .leading, spacing: 4) {
                             Text(row.competition.name)

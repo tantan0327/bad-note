@@ -120,6 +120,96 @@ public final class CompetitionRepository {
         return try decode(row)
     }
 
+    // MARK: - 課題との紐付け(§7.5 この大会までに)
+
+    /// この大会に紐付ける課題を `issueIds` の集合に合わせる。
+    public func setIssues(_ issueIds: [Int64], for competitionId: Int64) throws {
+        try db.transaction {
+            try db.exec(sql: "DELETE FROM issue_competition WHERE competition_id = ?",
+                        parameters: [.long(competitionId)])
+            for issueId in issueIds {
+                try db.exec(sql: "INSERT INTO issue_competition (issue_id, competition_id) VALUES (?, ?)",
+                            parameters: [SQLValue.long(issueId), SQLValue.long(competitionId)])
+            }
+        }
+    }
+
+    public func fetchIssueIds(competitionId: Int64) throws -> [Int64] {
+        let rows = try db.selectAll(sql: "SELECT issue_id FROM issue_competition WHERE competition_id = ? ORDER BY issue_id",
+                                    parameters: [.long(competitionId)])
+        var ids: [Int64] = []
+        for row in rows {
+            if let id = row[0].longValue {
+                ids.append(id)
+            }
+        }
+        return ids
+    }
+
+    // MARK: - 大会後の振り返り(§7.5 種目ごとに 1 セット)
+
+    /// 振り返りを保存する。**全項目任意。** 同じ種目に 2 件は作らない。
+    public func saveReview(competitionId: Int64,
+                           discipline: Discipline,
+                           result: String? = nil,
+                           wentWell: String? = nil,
+                           nextAction: String? = nil,
+                           neededResources: String? = nil) throws {
+        try requireEntryDiscipline(discipline)
+        // UPSERT は SQLite 3.24 以降。Android API 28 は 3.22 なので使わない
+        let existing = try fetchReview(competitionId: competitionId, discipline: discipline)
+        let createdAt = existing?.createdAt ?? now()
+        try db.exec(sql: "DELETE FROM competition_review WHERE competition_id = ? AND discipline = ?",
+                    parameters: [SQLValue.long(competitionId), SQLValue.text(discipline.rawValue)])
+        try db.exec(sql: """
+            INSERT INTO competition_review (competition_id, discipline, result, went_well, next_action, needed_resources, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            """,
+            parameters: [
+                SQLValue.long(competitionId),
+                SQLValue.text(discipline.rawValue),
+                textValue(result),
+                textValue(wentWell),
+                textValue(nextAction),
+                textValue(neededResources),
+                SQLValue.text(timestamps.text(from: createdAt)),
+            ])
+    }
+
+    public func fetchReview(competitionId: Int64, discipline: Discipline) throws -> CompetitionReview? {
+        let rows = try db.selectAll(sql: "SELECT id, competition_id, discipline, result, went_well, next_action, needed_resources, created_at FROM competition_review WHERE competition_id = ? AND discipline = ?",
+                                    parameters: [SQLValue.long(competitionId), SQLValue.text(discipline.rawValue)])
+        guard let row = rows.first else {
+            return nil
+        }
+        return try decodeReview(row)
+    }
+
+    private func decodeReview(_ row: [SQLValue]) throws -> CompetitionReview {
+        guard let id = row[0].longValue else {
+            throw CompetitionRepositoryError.unreadableColumn(name: "id")
+        }
+        guard let competitionId = row[1].longValue else {
+            throw CompetitionRepositoryError.unreadableColumn(name: "competition_id")
+        }
+        guard let disciplineRaw = row[2].textValue,
+              let discipline = Discipline(rawValue: disciplineRaw) else {
+            throw CompetitionRepositoryError.unreadableColumn(name: "discipline")
+        }
+        guard let createdAtText = row[7].textValue,
+              let createdAt = timestamps.date(from: createdAtText) else {
+            throw CompetitionRepositoryError.unreadableColumn(name: "created_at")
+        }
+        return CompetitionReview(id: id,
+                                 competitionId: competitionId,
+                                 discipline: discipline,
+                                 result: row[3].textValue,
+                                 wentWell: row[4].textValue,
+                                 nextAction: row[5].textValue,
+                                 neededResources: row[6].textValue,
+                                 createdAt: createdAt)
+    }
+
     // MARK: - Update
 
     /// 大会を更新し、エントリー種目を `entries` の内容で置き換える。
