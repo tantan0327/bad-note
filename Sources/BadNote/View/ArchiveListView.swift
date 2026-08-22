@@ -56,25 +56,23 @@ public struct ArchiveListView: View {
                         .foregroundStyle(.secondary)
                 }
                 ForEach(model.issues) { issue in
-                    NavigationLink {
-                        IssueDetailView(issueID: issue.id)
-                    } label: {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(issue.displayTitle)
-                                .font(.body)
-                            if let archivedAt = issue.archivedAt {
-                                Text(archivedAt.formatted(date: .abbreviated, time: .omitted))
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
+                    Card {
+                        NavigationLink {
+                            IssueDetailView(issueID: issue.id)
+                        } label: {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(issue.displayTitle)
+                                    .font(.body)
+                                if let archivedAt = issue.archivedAt {
+                                    Text(archivedAt.formatted(date: .abbreviated, time: .omitted))
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
                             }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .foregroundStyle(.primary)
                         }
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .foregroundStyle(.primary)
                     }
-                    .padding(12)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Palette.surface)
-                    .cornerRadius(8)
                 }
             }
             .padding()

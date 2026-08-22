@@ -53,7 +53,7 @@ public struct IssueDetailView: View {
                 Text("よく戻ってくる課題", bundle: .module)
                     .font(.caption)
                     .padding(.horizontal, 8)
-                    .padding(.vertical, 2)
+                    .padding(.vertical, 4)
                     .background(Palette.surfaceRaised)
                     .cornerRadius(4)
             }
@@ -93,11 +93,9 @@ public struct IssueDetailView: View {
         VStack(alignment: .leading, spacing: 8) {
             Text("もとの言葉", bundle: .module)
                 .font(.headline)
-            Text(issue.coachWords)
-                .padding(12)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(Palette.surface)
-                .cornerRadius(8)
+            Card {
+                Text(issue.coachWords)
+            }
             HStack(spacing: 8) {
                 if let coachName = issue.coachName, !coachName.isEmpty {
                     Text(coachName)
@@ -124,7 +122,7 @@ public struct IssueDetailView: View {
     }
 
     @ViewBuilder private func record(_ label: Text, value: String) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
+        VStack(alignment: .leading, spacing: 4) {
             label
                 .font(.caption)
                 .foregroundStyle(.secondary)
@@ -149,7 +147,7 @@ public struct IssueDetailView: View {
                     .foregroundStyle(.secondary)
             } else {
                 ScrollView(.horizontal) {
-                    HStack(spacing: 6) {
+                    HStack(spacing: 8) {
                         ForEach(0..<model.progress.count, id: \.self) { index in
                             progressMark(model.progress[index])
                         }
@@ -198,7 +196,7 @@ public struct IssueDetailView: View {
                     .font(.headline)
             }
             if isShowingAttributes {
-                VStack(alignment: .leading, spacing: 6) {
+                VStack(alignment: .leading, spacing: 8) {
                     attribute(Text("種目", bundle: .module), value: issue.discipline.displayName)
                     attribute(Text("優先度", bundle: .module), value: tierName(issue.tier))
                     if let impact = issue.impact {

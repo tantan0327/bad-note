@@ -101,32 +101,30 @@ public struct HomeView: View {
 
     /// §7.1 数回使った後に 1 度だけ促す。
     @ViewBuilder private var visionPrompt: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("めざす姿を書いてみませんか", bundle: .module)
-                .font(.body)
-            Text("何をめざしているかが決まると、大会と今週の重点に意味が出ます", bundle: .module)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-            HStack(spacing: 8) {
-                NavigationLink {
-                    VisionEditView()
-                } label: {
-                    Text("書く", bundle: .module)
+        Card {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("めざす姿を書いてみませんか", bundle: .module)
+                    .font(.body)
+                Text("何をめざしているかが決まると、大会と今週の重点に意味が出ます", bundle: .module)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                HStack(spacing: 8) {
+                    NavigationLink {
+                        VisionEditView()
+                    } label: {
+                        Text("書く", bundle: .module)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    Button {
+                        model.dismissVisionPrompt()
+                    } label: {
+                        Text("あとで", bundle: .module)
+                    }
+                    .buttonStyle(.bordered)
                 }
-                .buttonStyle(.borderedProminent)
-                Button {
-                    model.dismissVisionPrompt()
-                } label: {
-                    Text("あとで", bundle: .module)
-                }
-                .buttonStyle(.bordered)
+                .font(.footnote)
             }
-            .font(.footnote)
         }
-        .padding(12)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Palette.surface)
-        .cornerRadius(8)
     }
 
     // MARK: - 2. カウントダウン(種目ごと。近いほうを上に大きく)
@@ -156,33 +154,31 @@ public struct HomeView: View {
     }
 
     @ViewBuilder private func countdownCard(_ countdown: HomeModel.Countdown) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            HStack {
-                Text(countdown.discipline.displayName)
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-                Text(countdown.competition.name)
-                    .font(.footnote)
-            }
-            // §5.1 8 週間を境に、大きく出す数字を入れ替える(種目ごとに独立)
-            if countdown.emphasis == HomeEmphasis.countdown {
-                Text(remainingText(countdown))
-                    .font(.system(size: 34, weight: .semibold))
-                Text(buildUpText)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            } else {
-                Text(buildUpText)
-                    .font(.system(size: 34, weight: .semibold))
-                Text(remainingText(countdown))
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+        Card {
+            VStack(alignment: .leading, spacing: 4) {
+                HStack {
+                    Text(countdown.discipline.displayName)
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                    Text(countdown.competition.name)
+                        .font(.footnote)
+                }
+                // §5.1 8 週間を境に、大きく出す数字を入れ替える(種目ごとに独立)
+                if countdown.emphasis == HomeEmphasis.countdown {
+                    Text(remainingText(countdown))
+                        .font(.system(size: 34, weight: .semibold))
+                    Text(buildUpText)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                } else {
+                    Text(buildUpText)
+                        .font(.system(size: 34, weight: .semibold))
+                    Text(remainingText(countdown))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
             }
         }
-        .padding(12)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Palette.surface)
-        .cornerRadius(8)
     }
 
     /// 「あと 42日 / 12回」。回数が推定できないときは日数だけ(§5.2)。
@@ -213,33 +209,31 @@ public struct HomeView: View {
                     .foregroundStyle(.secondary)
             }
             ForEach(model.focusCards) { card in
-                NavigationLink {
-                    IssueDetailView(issueID: card.issue.id)
-                } label: {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(card.issue.displayTitle)
-                            .font(.body)
-                        HStack(spacing: 8) {
-                            Text(card.issue.masteryLevel.displayName)
-                                .font(.caption)
-                                .padding(.horizontal, 8)
-                                .padding(.vertical, 2)
-                                .background(Palette.surfaceRaised)
-                                .cornerRadius(4)
-                            if let result = card.latestResult {
-                                Text(result.displayName)
+                Card {
+                    NavigationLink {
+                        IssueDetailView(issueID: card.issue.id)
+                    } label: {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(card.issue.displayTitle)
+                                .font(.body)
+                            HStack(spacing: 8) {
+                                Text(card.issue.masteryLevel.displayName)
                                     .font(.caption)
-                                    .foregroundStyle(.secondary)
+                                    .padding(.horizontal, 8)
+                                    .padding(.vertical, 4)
+                                    .background(Palette.surfaceRaised)
+                                    .cornerRadius(4)
+                                if let result = card.latestResult {
+                                    Text(result.displayName)
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
                             }
                         }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .foregroundStyle(.primary)
                     }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .foregroundStyle(.primary)
                 }
-                .padding(12)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(Palette.surface)
-                .cornerRadius(8)
             }
         }
     }
@@ -252,40 +246,38 @@ public struct HomeView: View {
                 Text("しばらく触れていない課題", bundle: .module)
                     .font(.headline)
                 ForEach(model.staleItems) { item in
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text(item.issue.displayTitle)
-                            .font(.body)
-                        // 理由を添える(§4.3)
-                        Text(item.reason.displayName)
+                    Card {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text(item.issue.displayTitle)
+                                .font(.body)
+                            // 理由を添える(§4.3)
+                            Text(item.reason.displayName)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                            // 3 択をその場で完結させる。別画面に飛ばさない
+                            HStack(spacing: 8) {
+                                Button {
+                                    model.focusOnStaleIssue(item)
+                                } label: {
+                                    Text("今週の重点にする", bundle: .module)
+                                }
+                                .buttonStyle(.borderedProminent)
+                                Button {
+                                    model.postponeStaleIssue(item)
+                                } label: {
+                                    Text("まだいい", bundle: .module)
+                                }
+                                .buttonStyle(.bordered)
+                                Button {
+                                    model.archiveStaleIssue(item)
+                                } label: {
+                                    Text("もう不要", bundle: .module)
+                                }
+                                .buttonStyle(.bordered)
+                            }
                             .font(.caption)
-                            .foregroundStyle(.secondary)
-                        // 3 択をその場で完結させる。別画面に飛ばさない
-                        HStack(spacing: 8) {
-                            Button {
-                                model.focusOnStaleIssue(item)
-                            } label: {
-                                Text("今週の重点にする", bundle: .module)
-                            }
-                            .buttonStyle(.borderedProminent)
-                            Button {
-                                model.postponeStaleIssue(item)
-                            } label: {
-                                Text("まだいい", bundle: .module)
-                            }
-                            .buttonStyle(.bordered)
-                            Button {
-                                model.archiveStaleIssue(item)
-                            } label: {
-                                Text("もう不要", bundle: .module)
-                            }
-                            .buttonStyle(.bordered)
                         }
-                        .font(.caption)
                     }
-                    .padding(12)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Palette.surface)
-                    .cornerRadius(8)
                 }
             }
         }

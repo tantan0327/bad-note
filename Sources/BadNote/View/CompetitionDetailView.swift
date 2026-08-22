@@ -121,12 +121,10 @@ public struct CompetitionDetailView: View {
     // MARK: - 3. 調整期の帯
 
     @ViewBuilder private var adjustmentBanner: some View {
-        Text("調整期です。新しい課題は増やさず、今の 3 つに集中します", bundle: .module)
-            .font(.footnote)
-            .padding(12)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Palette.surfaceRaised)
-            .cornerRadius(8)
+        Card(background: Palette.surfaceRaised) {
+            Text("調整期です。新しい課題は増やさず、今の 3 つに集中します", bundle: .module)
+                .font(.footnote)
+        }
     }
 
     // MARK: - 2. この大会までに
@@ -157,26 +155,24 @@ public struct CompetitionDetailView: View {
                             .foregroundStyle(.secondary)
                     }
                     ForEach(section.issues) { issue in
-                        NavigationLink {
-                            IssueDetailView(issueID: issue.id)
-                        } label: {
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(issue.displayTitle)
-                                    .font(.body)
-                                if section.isTight(issue) {
-                                    // §7.5 控えめに提示する。警告にしない
-                                    Text("この大会では厳しいかもしれません", bundle: .module)
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
+                        Card {
+                            NavigationLink {
+                                IssueDetailView(issueID: issue.id)
+                            } label: {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text(issue.displayTitle)
+                                        .font(.body)
+                                    if section.isTight(issue) {
+                                        // §7.5 控えめに提示する。警告にしない
+                                        Text("この大会では厳しいかもしれません", bundle: .module)
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                    }
                                 }
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .foregroundStyle(.primary)
                             }
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .foregroundStyle(.primary)
                         }
-                        .padding(12)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(Palette.surface)
-                        .cornerRadius(8)
                     }
                 }
             }
@@ -196,38 +192,36 @@ public struct CompetitionDetailView: View {
     }
 
     @ViewBuilder private func reviewForm(_ index: Int) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text(model.reviews[index].discipline.displayName)
-                .font(.subheadline)
+        Card {
+            VStack(alignment: .leading, spacing: 12) {
+                Text(model.reviews[index].discipline.displayName)
+                    .font(.subheadline)
 
-            field(Text("結果", bundle: .module), text: $model.reviews[index].result)
-            field(Text("うまくいったことは何か", bundle: .module), text: $model.reviews[index].wentWell)
-            field(Text("理想の姿に近づくために次にやることは何か", bundle: .module),
-                  text: $model.reviews[index].nextAction)
-            field(Text("そのために必要なもの(人・道具・情報)は何か", bundle: .module),
-                  text: $model.reviews[index].neededResources)
+                field(Text("結果", bundle: .module), text: $model.reviews[index].result)
+                field(Text("うまくいったことは何か", bundle: .module), text: $model.reviews[index].wentWell)
+                field(Text("理想の姿に近づくために次にやることは何か", bundle: .module),
+                      text: $model.reviews[index].nextAction)
+                field(Text("そのために必要なもの(人・道具・情報)は何か", bundle: .module),
+                      text: $model.reviews[index].neededResources)
 
-            HStack(spacing: 8) {
-                Button {
-                    model.saveReview(model.reviews[index])
-                } label: {
-                    Text("保存", bundle: .module)
+                HStack(spacing: 8) {
+                    Button {
+                        model.saveReview(model.reviews[index])
+                    } label: {
+                        Text("保存", bundle: .module)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    // §7.5 3 つ目の回答からそのまま課題を登録できる導線
+                    Button {
+                        model.createIssueFromNextAction(model.reviews[index])
+                    } label: {
+                        Text("次にやることを課題にする", bundle: .module)
+                    }
+                    .buttonStyle(.bordered)
                 }
-                .buttonStyle(.borderedProminent)
-                // §7.5 3 つ目の回答からそのまま課題を登録できる導線
-                Button {
-                    model.createIssueFromNextAction(model.reviews[index])
-                } label: {
-                    Text("次にやることを課題にする", bundle: .module)
-                }
-                .buttonStyle(.bordered)
+                .font(.footnote)
             }
-            .font(.footnote)
         }
-        .padding(12)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Palette.surface)
-        .cornerRadius(8)
     }
 
     @ViewBuilder private func field(_ label: Text, text: Binding<String>) -> some View {

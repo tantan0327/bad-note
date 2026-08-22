@@ -49,28 +49,26 @@ public struct CompetitionListView: View {
             VStack(alignment: .leading, spacing: 8) {
                 title.font(.headline)
                 ForEach(rows) { row in
-                    NavigationLink {
-                        CompetitionDetailView(competitionID: row.competition.id)
-                    } label: {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(row.competition.name)
-                                .font(.body)
-                            Text(dateText(row.competition.eventDate))
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                            if !row.targetDisciplines.isEmpty {
-                                // 目標大会の印(§7.5)
-                                Text(targetText(row.targetDisciplines))
+                    Card {
+                        NavigationLink {
+                            CompetitionDetailView(competitionID: row.competition.id)
+                        } label: {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(row.competition.name)
+                                    .font(.body)
+                                Text(dateText(row.competition.eventDate))
                                     .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                if !row.targetDisciplines.isEmpty {
+                                    // 目標大会の印(§7.5)
+                                    Text(targetText(row.targetDisciplines))
+                                        .font(.caption)
+                                }
                             }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .foregroundStyle(.primary)
                         }
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .foregroundStyle(.primary)
                     }
-                    .padding(12)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Palette.surface)
-                    .cornerRadius(8)
                 }
             }
         }

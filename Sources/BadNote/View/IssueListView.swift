@@ -156,7 +156,7 @@ public struct IssueListView: View {
             Text(verbatim: selected)
                 .font(.footnote)
                 .padding(.horizontal, 12)
-                .padding(.vertical, 6)
+                .padding(.vertical, 8)
                 .background(Palette.accent.opacity(0.2))
                 .cornerRadius(16)
         } else {
@@ -164,7 +164,7 @@ public struct IssueListView: View {
                 .font(.footnote)
                 .foregroundStyle(.secondary)
                 .padding(.horizontal, 12)
-                .padding(.vertical, 6)
+                .padding(.vertical, 8)
                 .background(Palette.surface)
                 .cornerRadius(16)
         }
@@ -208,7 +208,7 @@ public struct IssueListView: View {
         NavigationLink {
             IssueDetailView(issueID: issue.id)
         } label: {
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: 4) {
                 Text(issue.displayTitle)
                     .font(.body)
                 Text(issue.masteryLevel.displayName)

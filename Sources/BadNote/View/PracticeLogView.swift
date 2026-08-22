@@ -64,54 +64,50 @@ public struct PracticeLogView: View {
 
             // §3.2 done が 3 回連続した課題のレベルアップ提案
             ForEach(model.levelUpProposals) { proposal in
-                VStack(alignment: .leading, spacing: 8) {
-                    Text(proposal.issue.displayTitle)
-                        .font(.body)
-                    Text(verbatim: "「\(proposal.suggestedLevel.displayName)」に上げますか?")
+                Card {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text(proposal.issue.displayTitle)
+                            .font(.body)
+                        Text(verbatim: "「\(proposal.suggestedLevel.displayName)」に上げますか?")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                        HStack(spacing: 8) {
+                            Button {
+                                model.acceptLevelUp(proposal)
+                            } label: {
+                                Text("上げる", bundle: .module)
+                            }
+                            .buttonStyle(.borderedProminent)
+                            Button {
+                                model.declineLevelUp(proposal)
+                            } label: {
+                                Text("今はしない", bundle: .module)
+                            }
+                            .buttonStyle(.bordered)
+                        }
                         .font(.footnote)
-                        .foregroundStyle(.secondary)
-                    HStack(spacing: 8) {
-                        Button {
-                            model.acceptLevelUp(proposal)
-                        } label: {
-                            Text("上げる", bundle: .module)
-                        }
-                        .buttonStyle(.borderedProminent)
-                        Button {
-                            model.declineLevelUp(proposal)
-                        } label: {
-                            Text("今はしない", bundle: .module)
-                        }
-                        .buttonStyle(.bordered)
                     }
-                    .font(.footnote)
                 }
-                .padding(12)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(Palette.surface)
-                .cornerRadius(8)
             }
 
             // §5.3 未整理の促し。ここでだけ聞く(常設のバッジにはしない)
             if model.unorganizedCount > 0 {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text(verbatim: "\(model.unorganizedCount) 件が未整理です")
-                        .font(.body)
-                    Text("いま整理しますか?", bundle: .module)
+                Card {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text(verbatim: "\(model.unorganizedCount) 件が未整理です")
+                            .font(.body)
+                        Text("いま整理しますか?", bundle: .module)
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                        NavigationLink {
+                            InboxTriageView()
+                        } label: {
+                            Text("整理する", bundle: .module)
+                        }
+                        .buttonStyle(.bordered)
                         .font(.footnote)
-                        .foregroundStyle(.secondary)
-                    NavigationLink {
-                        InboxTriageView()
-                    } label: {
-                        Text("整理する", bundle: .module)
                     }
-                    .buttonStyle(.bordered)
-                    .font(.footnote)
                 }
-                .padding(12)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(Palette.surface)
-                .cornerRadius(8)
             }
 
             Button {
@@ -235,19 +231,18 @@ public struct PracticeLogView: View {
                     .foregroundStyle(.secondary)
             }
             ForEach(model.focusInputs) { input in
-                VStack(alignment: .leading, spacing: 8) {
-                    Text(input.title)
-                        .font(.body)
-                    HStack(spacing: 8) {
-                        resultButton(Text(FocusResult.done.displayName), result: .done, input: input)
-                        resultButton(Text(FocusResult.closer.displayName), result: .closer, input: input)
-                        resultButton(Text(FocusResult.next.displayName), result: .next, input: input)
+                Card {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text(input.title)
+                            .font(.body)
+                        HStack(spacing: 8) {
+                            resultButton(Text(FocusResult.done.displayName), result: .done, input: input)
+                            resultButton(Text(FocusResult.closer.displayName), result: .closer, input: input)
+                            resultButton(Text(FocusResult.next.displayName), result: .next, input: input)
+                        }
+                        .font(.footnote)
                     }
-                    .font(.footnote)
                 }
-                .padding(12)
-                .background(Palette.surface)
-                .cornerRadius(8)
             }
         }
     }

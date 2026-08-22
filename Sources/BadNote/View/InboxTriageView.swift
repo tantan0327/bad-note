@@ -66,11 +66,9 @@ public struct InboxTriageView: View {
         VStack(alignment: .leading, spacing: 8) {
             Text("もとの言葉", bundle: .module)
                 .font(.headline)
-            Text(issue.coachWords)
-                .padding(12)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(Palette.surface)
-                .cornerRadius(8)
+            Card {
+                Text(issue.coachWords)
+            }
         }
     }
 

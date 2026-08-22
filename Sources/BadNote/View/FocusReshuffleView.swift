@@ -142,7 +142,7 @@ public struct FocusReshuffleView: View {
                         model.remove(issue)
                     } label: {
                         HStack {
-                            VStack(alignment: .leading, spacing: 2) {
+                            VStack(alignment: .leading, spacing: 4) {
                                 Text(issue.displayTitle)
                                     .font(.body)
                                 Text(issue.masteryLevel.displayName)
@@ -176,7 +176,7 @@ public struct FocusReshuffleView: View {
                         model.add(issue)
                     } label: {
                         HStack {
-                            VStack(alignment: .leading, spacing: 2) {
+                            VStack(alignment: .leading, spacing: 4) {
                                 Text(issue.displayTitle)
                                     .font(.body)
                                 Text(issue.masteryLevel.displayName)

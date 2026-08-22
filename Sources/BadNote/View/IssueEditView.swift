@@ -64,11 +64,9 @@ public struct IssueEditView: View {
                     .foregroundStyle(.secondary)
             } else {
                 // 原文は編集しない(用語集)
-                Text(model.coachWords)
-                    .padding(12)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Palette.surface)
-                    .cornerRadius(8)
+                Card {
+                    Text(model.coachWords)
+                }
                 TextField(text: $model.coachName) {
                     Text("コーチ名(任意)", bundle: .module)
                 }
