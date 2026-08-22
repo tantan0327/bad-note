@@ -154,6 +154,7 @@ public struct FocusReshuffleView: View {
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
+                        .foregroundStyle(.primary)
                     }
                 }
             } header: {
@@ -187,6 +188,7 @@ public struct FocusReshuffleView: View {
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
+                        .foregroundStyle(.primary)
                     }
                 }
             } header: {

@@ -65,6 +65,7 @@ public struct CompetitionListView: View {
                             }
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
+                        .foregroundStyle(.primary)
                     }
                     .padding(12)
                     .frame(maxWidth: .infinity, alignment: .leading)

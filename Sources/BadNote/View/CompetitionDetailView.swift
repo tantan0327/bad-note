@@ -166,6 +166,7 @@ public struct CompetitionDetailView: View {
                                 }
                             }
                             .frame(maxWidth: .infinity, alignment: .leading)
+                            .foregroundStyle(.primary)
                         }
                         .padding(12)
                         .frame(maxWidth: .infinity, alignment: .leading)

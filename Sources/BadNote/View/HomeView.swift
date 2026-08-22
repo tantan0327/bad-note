@@ -83,6 +83,8 @@ public struct HomeView: View {
                     Text(model.vision.body)
                         .font(.title3)
                         .frame(maxWidth: .infinity, alignment: .leading)
+                        // 本文なのでリンク色にしない
+                        .foregroundStyle(.primary)
                 }
             }
             if model.isPromptingVision {
@@ -226,6 +228,7 @@ public struct HomeView: View {
                         }
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
+                    .foregroundStyle(.primary)
                 }
                 .padding(12)
                 .frame(maxWidth: .infinity, alignment: .leading)
