@@ -80,6 +80,8 @@ SkipSQL (SQLContext)
 - `CompetitionRepository`
 - `VisionRepository`
 - `TagRepository`
+- `TrainingRepository`(§10 家トレ)
+- `StatsRepository`(§10.3 積み上げ集計の唯一の入り口。累計はここ以外で足さない)
 
 ### スキーマ管理
 
@@ -109,6 +111,9 @@ SkipSQL のバージョンベースのマイグレーション機能を使う。
 | 影響度 | `impact` | 1〜3 |
 | 習得コスト | `cost` | 1〜3 |
 | しばらく触れていない | `stale` | 忘れかけの課題。再浮上の対象 |
+| 家トレ | `Training` | 家でのトレーニング(§10)。「今日これをやる」の毎日のリスト |
+| メニュー | `TrainingMenu` | 繰り返しやる家トレの決めごと。目安の分数は任意 |
+| 実施記録 | `TrainingLog` | 日 × メニューで 1 行。チェック時点の分数を写して固定 |
 
 ### 習熟度 4 段階
 

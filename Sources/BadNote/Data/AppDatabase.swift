@@ -73,6 +73,10 @@ public struct AppDatabase {
                 try context.exec(sql: AppDatabase.createIssueCompetitionTable)
                 try context.exec(sql: AppDatabase.createCompetitionReviewTable)
             },
+            { context in
+                try context.exec(sql: AppDatabase.createTrainingMenuTable)
+                try context.exec(sql: AppDatabase.createTrainingLogTable)
+            },
         ])
     }
 
@@ -224,6 +228,31 @@ public struct AppDatabase {
           issue_id       INTEGER NOT NULL REFERENCES issue(id) ON DELETE CASCADE,
           competition_id INTEGER NOT NULL REFERENCES competition(id) ON DELETE CASCADE,
           PRIMARY KEY (issue_id, competition_id)
+        )
+        """
+
+    /// 家トレのメニュー(§10.4)。繰り返しやる決めごと。削除ではなくアーカイブ。
+    static let createTrainingMenuTable = """
+        CREATE TABLE training_menu (
+          id          INTEGER PRIMARY KEY AUTOINCREMENT,
+          name        TEXT NOT NULL,
+          minutes     INTEGER,
+          sort_order  INTEGER NOT NULL DEFAULT 0,
+          is_archived INTEGER NOT NULL DEFAULT 0,
+          created_at  TEXT NOT NULL
+        )
+        """
+
+    /// 家トレの実施記録(§10.4)。1 日 × 1 メニューで 1 行。
+    /// `training_date` はローカルの暦日の TEXT(`2026-08-22`)。タイムスタンプではない。
+    static let createTrainingLogTable = """
+        CREATE TABLE training_log (
+          id            INTEGER PRIMARY KEY AUTOINCREMENT,
+          menu_id       INTEGER NOT NULL REFERENCES training_menu(id) ON DELETE CASCADE,
+          training_date TEXT NOT NULL,
+          minutes       INTEGER,
+          done_at       TEXT,
+          UNIQUE (menu_id, training_date)
         )
         """
 

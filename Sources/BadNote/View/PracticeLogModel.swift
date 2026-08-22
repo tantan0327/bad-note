@@ -173,7 +173,8 @@ import SkipSQL
             }
 
             let month = MonthRange.containing(practice.practiceDate)
-            let monthTotal = try practices.totalMinutes(from: month.start, to: month.end)
+            // 家トレも合算した累計(§10.3)
+            let monthTotal = try StatsRepository(db: db).totalMinutes(from: month.start, to: month.end)
             summaryText = PracticeLogModel.summary(recordedMinutes: practice.minutes, monthTotalMinutes: monthTotal)
             levelUpProposals = try collectLevelUpProposals(practices: practices, issues: issues)
             unorganizedCount = try issues.fetch(statuses: [.inbox]).count

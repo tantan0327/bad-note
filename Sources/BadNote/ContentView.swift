@@ -1,11 +1,12 @@
 import SwiftUI
 
 enum ContentTab: String, Hashable {
-    case home, issues, competitions
+    case home, training, issues, competitions
 }
 
-/// タブは「往復するもの」だけ。3 つに絞っている。
+/// タブは「往復するもの」だけ。ホーム / 家トレ / 課題 / 大会 の 4 つ。
 ///
+/// - **家トレ**(§10)は毎日開く画面なのでホームの隣(2 番目)
 /// - **練習ログ入力**(§7.2)はホームのボタンからシートで開く(ヘッダーが ✕ / 保存 のモーダル)
 /// - **課題詳細**(§7.3)は課題一覧からプッシュ
 /// - **設定**は日常操作ではないのでホームのツールバーに置く
@@ -25,6 +26,18 @@ struct ContentView: View {
                 }
             }
             .tag(ContentTab.home)
+
+            NavigationStack {
+                TrainingView()
+            }
+            .tabItem {
+                Label {
+                    Text("家トレ", bundle: .module, comment: "training tab label")
+                } icon: {
+                    Image("fitness_center", bundle: .module)
+                }
+            }
+            .tag(ContentTab.training)
 
             NavigationStack {
                 IssueListView()

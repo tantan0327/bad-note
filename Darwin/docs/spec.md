@@ -525,7 +525,72 @@ WHERE f.issue_id = ?;
 
 ---
 
-## 10. 実装順序
+## 10. 家でのトレーニング(家トレ)
+
+Phase 1 の後に追加した機能(2026-08-22 決定)。練習ログ(§7.2)が「1 回の練習」を
+**後から**記録するのに対し、家トレは「今日これをやる」という**前向きの毎日のリスト**。
+タブの 2 番目に置く(ホーム / **家トレ** / 課題 / 大会)。
+
+### 10.1 概念
+
+- **メニュー**(`TrainingMenu`) — 繰り返しやる決めごと(素振り 50 回 / 体幹 10 分 …)。
+  目安の分数を持てる(任意)
+- **実施記録**(`TrainingLog`) — 日 × メニューで 1 行。チェックした事実と、
+  チェック時点の分数の写し
+
+### 10.2 画面
+
+- その日のメニュー一覧。行をタップでチェック、もう一度タップで取り消し
+  (押し間違いは必ず起きる)
+- 日付を選べば昨日以前もさかのぼって付けられる(忘れた日が永久に空かないように)
+- **チェックが付いた分だけの合計を出す。未達の数(残り N 件)は出さない**(§5.3)
+- メニューの管理(追加 / 編集 / 並び替え / アーカイブ)は別画面。
+  メニューは削除ではなく**アーカイブ**(過去の実施記録を守る)。
+  目安の分数は入力を**勧める**が必須にしない(§5.3 入力は任意)
+- 曜日ごとの既定メニューは持たない(要ると分かってから足す)
+
+### 10.3 積み上げへの合算
+
+家トレの分数は練習時間の積み上げに**合算する**。ただし `practice` に行は入れない
+(練習ログの一覧・編集に家トレが混ざり、編集で壊せてしまうため)。合算は集計側で行う:
+
+- **集計の入り口は `StatsRepository.totalMinutes(from:to:)` の 1 つだけ。**
+  `practice` と `training_log` を合算して返す。画面の累計はすべてここから取る
+- `PracticeRepository.totalMinutes(from:to:)` は「練習ログだけ」の意味で残す(種類別の内訳用)
+- チェック時にメニューの分数を `training_log.minutes` へ**写して固定する**。
+  後からメニューの目安を直しても過去の積み上げは変わらない。
+  分数の無いメニューは 0 分として入る
+
+### 10.4 テーブル
+
+```sql
+-- 繰り返し使うメニュー
+CREATE TABLE training_menu (
+  id          INTEGER PRIMARY KEY AUTOINCREMENT,
+  name        TEXT NOT NULL,
+  minutes     INTEGER,                        -- 目安。任意なので NULL 可
+  sort_order  INTEGER NOT NULL DEFAULT 0,
+  is_archived INTEGER NOT NULL DEFAULT 0,
+  created_at  TEXT NOT NULL
+);
+
+-- 日ごとの実施記録。1 日 × 1 メニューで 1 行
+CREATE TABLE training_log (
+  id            INTEGER PRIMARY KEY AUTOINCREMENT,
+  menu_id       INTEGER NOT NULL REFERENCES training_menu(id) ON DELETE CASCADE,
+  training_date TEXT NOT NULL,
+  minutes       INTEGER,                      -- チェック時に menu からコピー。NULL 可
+  done_at       TEXT,                         -- NULL = まだ
+  UNIQUE (menu_id, training_date)
+);
+```
+
+`training_date` は**ローカルの暦日**の TEXT(`2026-08-22`)。「その日やったか」の単位が
+暦日だから。`practice_date`(UTC の ISO 8601 タイムスタンプ)とは形式が違う。
+
+---
+
+## 11. 実装順序
 
 1. Skip プロジェクトの雛形、iOS / Android 両方で起動確認
 2. **SkipSQL で CRUD だけの検証画面**(最大の関門)

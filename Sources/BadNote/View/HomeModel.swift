@@ -286,7 +286,8 @@ import SkipSQL
 
     private func loadBuildUp(db: SQLContext, now: Date) throws {
         let month = MonthRange.containing(now)
-        monthMinutes = try PracticeRepository(db: db).totalMinutes(from: month.start, to: month.end)
+        // 家トレも合算した累計(§10.3)。PracticeRepository 直では家トレの分が落ちる
+        monthMinutes = try StatsRepository(db: db).totalMinutes(from: month.start, to: month.end)
         monthLevelUps = try IssueRepository(db: db).countLevelUps(from: month.start, to: month.end)
     }
 
