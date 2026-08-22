@@ -31,7 +31,12 @@ public struct IssueDetailView: View {
             }
             .padding()
         }
-        .navigationTitle(Text("課題", bundle: .module))
+        // タイトルは「課題」ではなく課題名そのもの。画面でいちばん大きい文字は
+        // 中身のある言葉にする(tasks.md 1.2)
+        .navigationTitle(Text(model.issue?.displayTitle ?? ""))
+        #if os(iOS) || os(Android)
+        .navigationBarTitleDisplayMode(.inline)
+        #endif
         .onAppear {
             model.load()
         }

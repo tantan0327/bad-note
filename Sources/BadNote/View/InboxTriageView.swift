@@ -67,7 +67,6 @@ public struct InboxTriageView: View {
             Text("もとの言葉", bundle: .module)
                 .font(.headline)
             Text(issue.coachWords)
-                .font(.title3)
                 .padding(12)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .background(Palette.surface)

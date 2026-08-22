@@ -40,7 +40,11 @@ public struct CompetitionDetailView: View {
             }
             .padding()
         }
-        .navigationTitle(Text("大会", bundle: .module))
+        // タイトルは「大会」ではなく大会名そのもの(tasks.md 1.2)
+        .navigationTitle(Text(model.competition?.name ?? ""))
+        #if os(iOS) || os(Android)
+        .navigationBarTitleDisplayMode(.inline)
+        #endif
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 // 削除はメニューの奥に置く。気軽に消せる場所に置かない(§7.5)
@@ -94,8 +98,9 @@ public struct CompetitionDetailView: View {
                     .foregroundStyle(.secondary)
             }
             if !model.isFinished {
+                // 画面の主数字はホームのカウントダウンと同じ大きさ(tasks.md 1.2)
                 Text(remainingText())
-                    .font(.system(size: 28, weight: .semibold))
+                    .font(.system(size: 34, weight: .semibold))
             } else {
                 Text("終了しました", bundle: .module)
                     .font(.body)

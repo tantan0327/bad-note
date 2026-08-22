@@ -29,7 +29,11 @@ public struct HomeView: View {
             }
             .padding()
         }
+        // 大タイトル「ホーム」は出さない。いちばん上の場所はめざす姿に譲る(tasks.md 1.2)
         .navigationTitle(Text("ホーム", bundle: .module))
+        #if os(iOS) || os(Android)
+        .navigationBarTitleDisplayMode(.inline)
+        #endif
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 NavigationLink {
@@ -68,8 +72,10 @@ public struct HomeView: View {
 
     @ViewBuilder private var visionSection: some View {
         VStack(alignment: .leading, spacing: 8) {
+            // §7.1 の主役。見出しは小さく添えるだけにして、本文を画面最大の文字にする(tasks.md 1.2)
             Text("めざす姿", bundle: .module)
-                .font(.headline)
+                .font(.caption)
+                .foregroundStyle(.secondary)
             NavigationLink {
                 VisionEditView()
             } label: {
@@ -81,7 +87,7 @@ public struct HomeView: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                 } else {
                     Text(model.vision.body)
-                        .font(.title3)
+                        .font(.title2)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         // 本文なのでリンク色にしない
                         .foregroundStyle(.primary)
