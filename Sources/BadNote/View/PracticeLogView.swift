@@ -148,11 +148,26 @@ public struct PracticeLogView: View {
         VStack(alignment: .leading, spacing: 12) {
             sectionTitle(Text("練習時間", bundle: .module))
 
-            HStack(alignment: .firstTextBaseline, spacing: 4) {
-                Text("\(model.minutes)")
-                    .font(.system(size: 52, weight: .semibold))
+            // §7.2「大きい数字 + チップ + リセット。直接入力も可」——
+            // 大きい数字そのものを入力欄にして、表示と入力を 1 つにまとめている
+            //
+            // `#if !os(macOS)` だと Skip が Android 側でも中身を落とすため、
+            // 対象 OS を並べて書く。落ちるとフルキーボードが出てしまう。
+            HStack(spacing: 8) {
+                TextField(text: $model.minutesText) {
+                    Text(verbatim: "0")
+                }
+                .font(.system(size: 52, weight: .semibold))
+                .multilineTextAlignment(.center)
+                // 枠が無いと、iOS では大きい数字がただの表示に見えて押されない
+                .textFieldStyle(.roundedBorder)
+                .frame(width: 150)
+                #if os(iOS) || os(Android)
+                .keyboardType(.numberPad)
+                #endif
                 Text("分", bundle: .module)
                     .font(.title3)
+                Spacer()
             }
 
             HStack(spacing: 8) {
@@ -166,14 +181,6 @@ public struct PracticeLogView: View {
                 }
                 .buttonStyle(.bordered)
             }
-
-            TextField(text: $model.minutesText) {
-                Text("直接入力", bundle: .module)
-            }
-            .textFieldStyle(.roundedBorder)
-            #if !os(macOS)
-            .keyboardType(.numberPad)
-            #endif
         }
     }
 

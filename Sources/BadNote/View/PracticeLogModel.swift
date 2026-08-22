@@ -29,7 +29,9 @@ import SkipSQL
 
     public var practiceDate = Date()
     /// 直接入力もできるので文字列で持つ。数値は `minutes` で取る。
-    public var minutesText = "0"
+    ///
+    /// **0 は空文字で持つ。** 「0」が入っていると、直接入力するのにまず消す手間がかかる。
+    public var minutesText = ""
     public var kind: PracticeKind? = nil
     public var focusInputs: [FocusInput] = []
     /// 「＋ もう 1 件追加」で確定した行
@@ -93,7 +95,7 @@ import SkipSQL
     }
 
     public func resetMinutes() {
-        minutesText = "0"
+        minutesText = ""
     }
 
     /// 同じ種類をもう一度押したら未選択に戻す。全項目任意なので選ばない状態を作れること。
