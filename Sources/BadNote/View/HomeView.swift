@@ -119,7 +119,7 @@ public struct HomeView: View {
         }
         .padding(12)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.secondary.opacity(0.1))
+        .background(Palette.surface)
         .cornerRadius(8)
     }
 
@@ -175,7 +175,7 @@ public struct HomeView: View {
         }
         .padding(12)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.secondary.opacity(0.1))
+        .background(Palette.surface)
         .cornerRadius(8)
     }
 
@@ -218,7 +218,7 @@ public struct HomeView: View {
                                 .font(.caption)
                                 .padding(.horizontal, 8)
                                 .padding(.vertical, 2)
-                                .background(Color.secondary.opacity(0.2))
+                                .background(Palette.surfaceRaised)
                                 .cornerRadius(4)
                             if let result = card.latestResult {
                                 Text(result.displayName)
@@ -232,7 +232,7 @@ public struct HomeView: View {
                 }
                 .padding(12)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .background(Color.secondary.opacity(0.1))
+                .background(Palette.surface)
                 .cornerRadius(8)
             }
         }
@@ -278,7 +278,7 @@ public struct HomeView: View {
                     }
                     .padding(12)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Color.secondary.opacity(0.1))
+                    .background(Palette.surface)
                     .cornerRadius(8)
                 }
             }

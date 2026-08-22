@@ -88,7 +88,7 @@ public struct PracticeLogView: View {
                 }
                 .padding(12)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .background(Color.secondary.opacity(0.1))
+                .background(Palette.surface)
                 .cornerRadius(8)
             }
 
@@ -110,7 +110,7 @@ public struct PracticeLogView: View {
                 }
                 .padding(12)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .background(Color.secondary.opacity(0.1))
+                .background(Palette.surface)
                 .cornerRadius(8)
             }
 
@@ -246,7 +246,7 @@ public struct PracticeLogView: View {
                     .font(.footnote)
                 }
                 .padding(12)
-                .background(Color.secondary.opacity(0.1))
+                .background(Palette.surface)
                 .cornerRadius(8)
             }
         }

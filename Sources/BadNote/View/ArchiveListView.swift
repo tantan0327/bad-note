@@ -73,7 +73,7 @@ public struct ArchiveListView: View {
                     }
                     .padding(12)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Color.secondary.opacity(0.1))
+                    .background(Palette.surface)
                     .cornerRadius(8)
                 }
             }

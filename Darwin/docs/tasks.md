@@ -100,26 +100,26 @@ Android エミュレータ(API 34 / SQLite 3.39.2)で DB 作成・マイグレ�
 **見た目の作業はここから。** 個々の画面をきれいにしても、色と文字の段階が決まっていないと
 画面ごとにばらつく。1.1 → 1.2 → 1.3 の順で、**全画面に効く決めごと**から固める。
 
-### 1.1 色が決まっていない ★最優先
+### 1.1 色が決まっていない ★最優先 —— **済(2026-08-22)**
 
-**`Darwin/Assets.xcassets/AccentColor.colorset/Contents.json` に色が入っていない。**
-中身は `{"idiom": "universal"}` だけ。そのため:
+**ブランド色はインディゴ**(light `#5C6BC0` / dark `#7986CB`)。
+1.5 のアイコン想定色(`#5C6BC0`)と揃えた。
 
-- iOS は**システム青**(#007AFF)、Android は Material 3 の既定(紺紫)になる。
-  ホームの「練習を記録する」が、**同じアプリなのに別の色**で出る
-- 面の色が **20 箇所すべて `Color.secondary.opacity(0.1)`**。文字色を薄めた灰色なので、
-  カードが「灰色の帯」にしかならず奥行きが出ない
-- 手応えの色が `Color.green` / `.orange` / `.blue` の直書き(`IssueDetailView.swift:164`)。
-  ブランドと無関係で、ダークモードの調整もできない
-
-やること:
-
-1. **ブランド色を 1 つ決める。** `AccentColor.colorset` に light / dark の 2 値を入れる。
-   iOS はこれを直接、Android は SkipUI の `material3ColorScheme` を通して使う
-2. **意味を名前で持つ** —— `Sources/BadNote/View/Palette.swift` に集約し、
-   `Palette.surface` / `.surfaceRaised` / `.accent` / `.done` / `.closer` / `.next` を定義。
-   **View から `Color.secondary.opacity(0.1)` を直接書かない**
-3. **手応えの 3 色は色だけに頼らない**(6.1 のアクセシビリティと同じ話)
+- `Darwin/Assets.xcassets/AccentColor.colorset` に light / dark の 2 値を入れた
+  (iOS の tint。`BadNote.xcconfig` の `ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME` が参照)
+- **Android は `material3ColorScheme` を書かずに済んだ** —— SkipUI は `Bundle.main`
+  (Android では = `Sources/BadNote/Resources/`)の asset catalog から `AccentColor` を探し、
+  Material 3 の `primary` に**自動適用**する(skip-ui `ColorScheme.asMaterialTheme`)。
+  そのため `Sources/BadNote/Resources/Module.xcassets/AccentColor.colorset` にも同じ 2 値を置いた。
+  **Darwin 側と Module 側の値は同じに保つこと**
+- **意味の色は `View/Palette.swift`** —— `accent` / `surface` / `surfaceRaised` /
+  `done` / `closer` / `next` の 6 トークン。実体は `Module.xcassets` の colorset
+  (light / dark の 2 値)なので、色替えは JSON を直すだけで両プラットフォームに効く。
+  `Color.secondary.opacity(0.1)` の直書き 20 箇所はすべて `Palette.surface` / `.surfaceRaised` に置換。
+  面はインディゴを薄く含む色にした(light `#F1F2F9` / dark `#232638`)
+- **手応えは色 + 形**(課題詳細の進み方)—— できた = 塗り丸(緑)/ 近づいた = 輪(琥珀)/
+  次にやる = 四角(青)/ 記録なし = 小さな灰点。色だけに頼らない(6.1)
+- **実機での見た目確認(両 OS × ライト / ダーク)はまだ。** 3 の画面作り直しの前に一度眺める
 
 ### 1.2 文字の大きさが情報の重要度と逆
 
@@ -150,14 +150,15 @@ Android エミュレータ(API 34 / SQLite 3.39.2)で DB 作成・マイグレ�
 
 ### 1.4 ダークモード(旧 4.2)
 
-破綻はしていない(2026-08-22 に Android で確認)。ただし面の色が `Color.secondary.opacity(0.1)`
-なので、暗い地の上ではほとんど沈む。**1.1 でトークンを作れば片付く。単独では着手しない。**
+破綻はしていない(2026-08-22 に Android で確認)。面の色は 1.1 のトークン化で
+light / dark の 2 値になったので、暗い地で沈む問題は解消しているはず。
+**残っているのは実機での見た目確認だけ**(1.1 の宿題と一緒にやる)。
 
 ### 1.5 アプリアイコン(旧 1.1)
 
 **テンプレートのまま。** `Darwin/Assets.xcassets/AppIcon.appiconset/` は `Contents.json` だけで、
 Android の `mipmap-*` も無い。**アイコンが無いと申請できない。**
-1.1 でブランド色が決まってから作る。
+ブランド色は決まった(1.1、`#5C6BC0`)のでいつでも作れる。
 
 ```
 skip icon --background "#5C6BC0" symbol.svg
@@ -563,6 +564,15 @@ return AnyView(TabView(selection: $tab) { ... })
 
 を入れてビルドし、`xcrun simctl io <UDID> screenshot` を撮ってから元に戻す。
 **戻したあと `git diff` が空になることを必ず確認する。**
+
+### 色は asset catalog 経由で両プラットフォームに効く(2026-08-22)
+
+`Color("名前", bundle: .module)` は Android でも動く —— SkipUI が `Module.xcassets` の
+colorset を読み、light / dark の appearances も解釈する。さらに **`AccentColor` という名前の
+colorset が `Bundle.main` にあると、SkipUI が Material 3 の `primary` に自動適用する**。
+Android の `Bundle.main` は「メインモジュールの `Resources/`」を指すので、
+アプリのアクセントを変えるときは `Module.xcassets` 側の `AccentColor` を直すこと
+(`Darwin/Assets.xcassets` は iOS にしか効かない。2 か所の値を揃える)。
 
 ### Skip の落とし穴(実際に踏んだもの)
 

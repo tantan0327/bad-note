@@ -70,7 +70,7 @@ public struct InboxTriageView: View {
                 .font(.title3)
                 .padding(12)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .background(Color.secondary.opacity(0.1))
+                .background(Palette.surface)
                 .cornerRadius(8)
         }
     }

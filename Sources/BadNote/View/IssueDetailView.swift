@@ -49,7 +49,7 @@ public struct IssueDetailView: View {
                     .font(.caption)
                     .padding(.horizontal, 8)
                     .padding(.vertical, 2)
-                    .background(Color.secondary.opacity(0.2))
+                    .background(Palette.surfaceRaised)
                     .cornerRadius(4)
             }
         }
@@ -64,7 +64,7 @@ public struct IssueDetailView: View {
             ForEach(MasteryLevel.allCases, id: \.rawValue) { level in
                 HStack(spacing: 8) {
                     Text(verbatim: level.rawValue <= issue.masteryLevel.rawValue ? "●" : "○")
-                        .foregroundStyle(level == issue.masteryLevel ? Color.accentColor : Color.secondary)
+                        .foregroundStyle(level == issue.masteryLevel ? Palette.accent : Color.secondary)
                     Text(level.displayName)
                         .font(level == issue.masteryLevel ? .body : .footnote)
                         .foregroundStyle(level == issue.masteryLevel ? Color.primary : Color.secondary)
@@ -91,7 +91,7 @@ public struct IssueDetailView: View {
             Text(issue.coachWords)
                 .padding(12)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .background(Color.secondary.opacity(0.1))
+                .background(Palette.surface)
                 .cornerRadius(8)
             HStack(spacing: 8) {
                 if let coachName = issue.coachName, !coachName.isEmpty {
@@ -146,9 +146,7 @@ public struct IssueDetailView: View {
                 ScrollView(.horizontal) {
                     HStack(spacing: 6) {
                         ForEach(0..<model.progress.count, id: \.self) { index in
-                            Circle()
-                                .fill(color(for: model.progress[index]))
-                                .frame(width: 12, height: 12)
+                            progressMark(model.progress[index])
                         }
                     }
                 }
@@ -156,14 +154,31 @@ public struct IssueDetailView: View {
         }
     }
 
-    private func color(for result: FocusResult?) -> Color {
-        guard let result = result else {
-            return Color.secondary.opacity(0.3)
-        }
-        switch result {
-        case .done: return Color.green
-        case .closer: return Color.orange
-        case .next: return Color.blue
+    /// 手応えは色と形の両方で区別する(色だけに頼らない。tasks.md 1.1 / 6.1)。
+    /// できた = 塗り丸 / 近づいた = 輪 / 次にやる = 四角 / 記録なし = 小さな点。
+    @ViewBuilder private func progressMark(_ result: FocusResult?) -> some View {
+        if let result = result {
+            switch result {
+            case .done:
+                Circle()
+                    .fill(Palette.done)
+                    .frame(width: 12, height: 12)
+            case .closer:
+                Circle()
+                    .stroke(Palette.closer, lineWidth: 3)
+                    .frame(width: 9, height: 9)
+                    .frame(width: 12, height: 12)
+            case .next:
+                RoundedRectangle(cornerRadius: 2)
+                    .fill(Palette.next)
+                    .frame(width: 11, height: 11)
+                    .frame(width: 12, height: 12)
+            }
+        } else {
+            Circle()
+                .fill(Color.secondary.opacity(0.3))
+                .frame(width: 5, height: 5)
+                .frame(width: 12, height: 12)
         }
     }
 

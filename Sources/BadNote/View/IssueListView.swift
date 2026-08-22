@@ -157,7 +157,7 @@ public struct IssueListView: View {
                 .font(.footnote)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 6)
-                .background(Color.accentColor.opacity(0.2))
+                .background(Palette.accent.opacity(0.2))
                 .cornerRadius(16)
         } else {
             placeholder
@@ -165,7 +165,7 @@ public struct IssueListView: View {
                 .foregroundStyle(.secondary)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 6)
-                .background(Color.secondary.opacity(0.1))
+                .background(Palette.surface)
                 .cornerRadius(16)
         }
     }

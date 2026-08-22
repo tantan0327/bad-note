@@ -67,7 +67,7 @@ public struct IssueEditView: View {
                 Text(model.coachWords)
                     .padding(12)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Color.secondary.opacity(0.1))
+                    .background(Palette.surface)
                     .cornerRadius(8)
                 TextField(text: $model.coachName) {
                     Text("コーチ名(任意)", bundle: .module)
