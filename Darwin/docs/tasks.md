@@ -131,19 +131,13 @@ iOS と Android の両方を 1 コマンドで生成できる(`skip-icons` ス�
 
 効果の大きい順。**すべて実機のスクリーンショットで確認した実在の問題。**
 
-### 2.1 種類のチップが折り返して崩れる
-
-`全体練習` が「全体練 習」と 2 行に割れている(4 つを 1 行に詰めているため)。
-**練習時間の `リセット` も同じ理由で「リセッ ト」に割れている。** どちらも Android だけ。
-2 行に分ける、`.lineLimit(1)` + `.minimumScaleFactor`、横スクロールのいずれか。
-
-### 2.2 通知時刻の指定が −/+ ボタン
+### 2.1 通知時刻の指定が −/+ ボタン
 
 1 時間ずつ押す作りで、18 時 → 7 時に変えるのに 11 回押す。
 `DatePicker(displayedComponents: .hourAndMinute)` が素直
 (SkipUI 対応済み。§8 は時刻の指定方法まで決めていない)。
 
-### 2.3 重点の空き枠が見えない
+### 2.2 重点の空き枠が見えない
 
 ホームは重点が 1 件だと 1 枚しか出ない。§7.1 は「カード 3 枚」「スクロールなしで
 3 つ見える」と書いており、**空き枠が見えること自体が「あと 2 つ選べる」の合図**になる。
@@ -314,6 +308,18 @@ adb -s emulator-5554 logcat -d | grep -iE "FATAL|SQLite"
 
 **既定タブは Welcome(テンプレート)なので、ホームに移動するまで DB は開かれない。**
 
+iOS シミュレータは **画面を叩けない**(`simctl` にタップが無く、`osascript` は
+補助アクセスが無いので System Events も使えない)。深い画面の見た目を確かめたいときは、
+`ContentView.body` の先頭に一時的に
+
+```swift
+if true { return AnyView(PracticeLogView()) }
+return AnyView(TabView(selection: $tab) { ... })
+```
+
+を入れてビルドし、`xcrun simctl io <UDID> screenshot` を撮ってから元に戻す。
+**戻したあと `git diff` が空になることを必ず確認する。**
+
 ### Skip の落とし穴(実際に踏んだもの)
 
 - **`sorted()` / `map` / `filter` の戻り値は変更不可** — `insert` / `append` すると Android だけ
@@ -338,5 +344,8 @@ adb -s emulator-5554 logcat -d | grep -iE "FATAL|SQLite"
   Swift 側では通るので Android のコンパイルまで気づけない。
   `selectFoo(...)` / `updateFoo(...)` のように改名する。
   **`var isEnabled` の setter は `setEnabled()`** になるので、`setEnabled(_:)` も衝突する
+- **`.frame(maxWidth: .infinity)` はボタンの枠を広げない** — 広がるのは置き場所だけで、
+  ボタン自体は中央に寄る。均等幅のチップにするには**ラベル側にも**同じ指定が要る。
+  `SelectableChip`(`View/ChipStyle.swift`)にまとめてある(2026-08-22)
 - **`PhotosPicker` は使えない** — `UIViewRepresentable` / `TimelineView` / `matchedGeometryEffect` も同様。
   `building-skip-ui` スキルの `references/components.md` の "Not Available in SkipUI" を先に見る

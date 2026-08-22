@@ -170,16 +170,20 @@ public struct PracticeLogView: View {
                 Spacer()
             }
 
+            // 足すチップとリセットは役割が違う。同じ枠のボタンで横に並べると
+            // 幅を取り合って「リセッ ト」と割れるので、リセットは文字だけにして右端に置く
             HStack(spacing: 8) {
                 minutesChip(Text("+15分", bundle: .module), amount: 15)
                 minutesChip(Text("+30分", bundle: .module), amount: 30)
                 minutesChip(Text("+60分", bundle: .module), amount: 60)
+                Spacer()
                 Button {
                     model.resetMinutes()
                 } label: {
                     Text("リセット", bundle: .module)
                 }
-                .buttonStyle(.bordered)
+                .buttonStyle(.borderless)
+                .chipLabelFit()
             }
         }
     }
@@ -191,6 +195,7 @@ public struct PracticeLogView: View {
             label
         }
         .buttonStyle(.bordered)
+        .chipLabelFit()
     }
 
     // MARK: - 3. 種類
@@ -198,31 +203,24 @@ public struct PracticeLogView: View {
     @ViewBuilder private var kindSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             sectionTitle(Text("種類", bundle: .module))
-            HStack(spacing: 8) {
-                kindButton(Text(PracticeKind.whole.displayName), kind: .whole)
-                kindButton(Text(PracticeKind.individual.displayName), kind: .individual)
-                kindButton(Text(PracticeKind.game.displayName), kind: .game)
-                kindButton(Text(PracticeKind.strength.displayName), kind: .strength)
+            // 4 つを 1 行に詰めると Android で「全体練 習」と割れる。
+            // 2 行に分けて均等幅にすると、文字を小さくしなくても収まる
+            VStack(spacing: 8) {
+                HStack(spacing: 8) {
+                    kindButton(Text(PracticeKind.whole.displayName), kind: .whole)
+                    kindButton(Text(PracticeKind.individual.displayName), kind: .individual)
+                }
+                HStack(spacing: 8) {
+                    kindButton(Text(PracticeKind.game.displayName), kind: .game)
+                    kindButton(Text(PracticeKind.strength.displayName), kind: .strength)
+                }
             }
-            .font(.footnote)
         }
     }
 
     @ViewBuilder private func kindButton(_ label: Text, kind: PracticeKind) -> some View {
-        if model.kind == kind {
-            Button {
-                model.toggleKind(kind)
-            } label: {
-                label
-            }
-            .buttonStyle(.borderedProminent)
-        } else {
-            Button {
-                model.toggleKind(kind)
-            } label: {
-                label
-            }
-            .buttonStyle(.bordered)
+        SelectableChip(label: label, isSelected: model.kind == kind) {
+            model.toggleKind(kind)
         }
     }
 
@@ -255,20 +253,8 @@ public struct PracticeLogView: View {
     }
 
     @ViewBuilder private func resultButton(_ label: Text, result: FocusResult, input: PracticeLogModel.FocusInput) -> some View {
-        if input.result == result {
-            Button {
-                model.toggleResult(result, for: input.id)
-            } label: {
-                label
-            }
-            .buttonStyle(.borderedProminent)
-        } else {
-            Button {
-                model.toggleResult(result, for: input.id)
-            } label: {
-                label
-            }
-            .buttonStyle(.bordered)
+        SelectableChip(label: label, isSelected: input.result == result) {
+            model.toggleResult(result, for: input.id)
         }
     }
 
