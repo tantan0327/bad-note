@@ -5,8 +5,9 @@ import XCTest
 final class MilestoneTests: XCTestCase {
 
     func testNoneBeforeFirstMilestone() {
-        XCTAssertEqual(Milestone.reachedHours(minutes: 0), [])
-        XCTAssertEqual(Milestone.reachedHours(minutes: 59), [])
+        // 空配列リテラル `[]` は Kotlin で Element の型推論ができない(開発メモ)
+        XCTAssertEqual(Milestone.reachedHours(minutes: 0), [Int]())
+        XCTAssertEqual(Milestone.reachedHours(minutes: 59), [Int]())
     }
 
     func testFirstAtOneHour() {

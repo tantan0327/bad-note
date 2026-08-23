@@ -202,8 +202,15 @@ public struct HomeView: View {
 
     @ViewBuilder private var focusSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("今週の重点", bundle: .module)
-                .font(.headline)
+            HStack {
+                Text("今週の重点", bundle: .module)
+                    .font(.headline)
+                Spacer()
+                // 一覧側と同じ「1/3」。あと何枠選べるかが分かる(2.1)
+                Text(verbatim: "\(model.focusCards.count)/\(FocusBoard.focusCapacity)")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
             if model.focusCards.isEmpty {
                 // 次の 1 手 —— 組み替えモードで重点を選ぶ(2.4)
                 EmptyStateView(icon: "checklist",
@@ -245,7 +252,33 @@ public struct HomeView: View {
                     }
                 }
             }
+            // §7.1 カード 3 枚。空き枠が見えること自体が「あと N 個選べる」の合図(2.1)。
+            // 0 件のときは上の EmptyStateView に譲る
+            if !model.focusCards.isEmpty && model.focusCards.count < FocusBoard.focusCapacity {
+                ForEach(0..<(FocusBoard.focusCapacity - model.focusCards.count), id: \.self) { index in
+                    emptyFocusSlot(index)
+                }
+            }
         }
+    }
+
+    /// 空き枠。押すと組み替えモードへ。宿題に見せない(§5.3)—— 件数の催促はしない。
+    @ViewBuilder private func emptyFocusSlot(_ index: Int) -> some View {
+        Card {
+            NavigationLink {
+                FocusReshuffleView()
+            } label: {
+                HStack {
+                    Text("空き枠", bundle: .module)
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                    Text("選ぶ", bundle: .module)
+                        .font(.footnote)
+                }
+            }
+        }
+        .accessibilityIdentifier("home-focus-empty-slot-\(index)")
     }
 
     // MARK: - 4. しばらく触れていない課題(該当時のみ)
@@ -293,25 +326,36 @@ public struct HomeView: View {
         }
     }
 
-    // MARK: - 5. 積み上げ画面への導線(通算・月ごと・種類の内訳)
+    // MARK: - 5. 積み上げ(通算はホームにも大きく出す —— 2.1 で決定)
 
     @ViewBuilder private var statsLink: some View {
-        Card {
-            NavigationLink {
-                StatsView()
-            } label: {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("積み上げ", bundle: .module)
-                        .font(.headline)
-                    // 減らない数字だけを添える(§5.3)
-                    Text("通算・月ごと・種類の内訳", bundle: .module)
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
+        VStack(alignment: .leading, spacing: 8) {
+            Text("積み上げ", bundle: .module)
+                .font(.headline)
+            Card {
+                NavigationLink {
+                    StatsView()
+                } label: {
+                    VStack(alignment: .leading, spacing: 4) {
+                        if model.lifetimeMinutes > 0 {
+                            // 減らない数字(§5.3)。分まで出すのは積み上げ画面の主役と同じ
+                            Text(StatsView.heroTimeText(model.lifetimeMinutes))
+                                .font(.system(size: 34, weight: .semibold))
+                                .foregroundStyle(.primary)
+                            Text("通算の練習時間。月ごとと種類の内訳を見る", bundle: .module)
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
+                        } else {
+                            // まだ 0 のときに大きな「0分」を出さない(空の状態は静かに)
+                            Text("記録すると、ここに通算の時間が積み上がっていきます", bundle: .module)
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .foregroundStyle(.primary)
+                .accessibilityIdentifier("home-stats-link")
             }
-            .accessibilityIdentifier("home-stats-link")
         }
     }
 

@@ -53,6 +53,8 @@ import SkipSQL
     public private(set) var focusCards: [FocusCard] = []
     /// 今月の練習時間(分)
     public private(set) var monthMinutes = 0
+    /// 通算の練習時間(分)。積み上げカードの主数字(2.1)。減らない数字
+    public private(set) var lifetimeMinutes = 0
     /// 今月のレベルアップ回数
     public private(set) var monthLevelUps = 0
     /// 目標大会が 1 つも無い(§7.1 大会未登録の扱い)
@@ -287,7 +289,9 @@ import SkipSQL
     private func loadBuildUp(db: SQLContext, now: Date) throws {
         let month = MonthRange.containing(now)
         // 家トレも合算した累計(§10.3)。PracticeRepository 直では家トレの分が落ちる
-        monthMinutes = try StatsRepository(db: db).totalMinutes(from: month.start, to: month.end)
+        let stats = StatsRepository(db: db)
+        monthMinutes = try stats.totalMinutes(from: month.start, to: month.end)
+        lifetimeMinutes = try stats.lifetimeMinutes()
         monthLevelUps = try IssueRepository(db: db).countLevelUps(from: month.start, to: month.end)
     }
 
