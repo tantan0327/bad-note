@@ -144,6 +144,8 @@ public struct StatsView: View {
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity)
+        .accessibilityLabel(label)
+        .accessibilityValue(Text(verbatim: "\(value)"))
     }
 
     /// 通算を 0 から実値へ伸ばす。約 0.5 秒。数字が動いて量感が伝わる。
@@ -196,6 +198,7 @@ public struct StatsView: View {
             .padding(.vertical, 4)
             .background(isLatest ? Palette.accent : Palette.surfaceRaised)
             .cornerRadius(4)
+            .accessibilityLabel(Text(verbatim: "\(hours)時間 達成"))
     }
 
     /// 究極の目標のチップ。まだ先なので **枠線だけ**(埋めない)—— 目指す先を静かに示す。
@@ -217,6 +220,9 @@ public struct StatsView: View {
             RoundedRectangle(cornerRadius: 4)
                 .stroke(Palette.accent, lineWidth: 1)
         )
+        .accessibilityLabel(reached
+                            ? Text(verbatim: "1万時間 達成")
+                            : Text("究極の目標 1 万時間", bundle: .module))
     }
 
     // MARK: - 3. 月ごと(1 本ずつ伸びるのが見える)
@@ -240,14 +246,18 @@ public struct StatsView: View {
         let lastIndex = model.monthly.count - 1
         HStack(alignment: .bottom, spacing: 8) {
             ForEach(0..<model.monthly.count, id: \.self) { index in
-                monthColumn(model.monthly[index], isCurrent: index == lastIndex, max: maxMinutes)
+                // 年の変わり目(1 月)と左端は年を添える —— 「8」だけだと年またぎが分からない(⑤)
+                monthColumn(model.monthly[index],
+                            isCurrent: index == lastIndex,
+                            showYear: index == 0 || StatsView.isJanuary(model.monthly[index].month),
+                            max: maxMinutes)
             }
         }
-        .frame(height: 160)
+        .frame(height: 176)
         .accessibilityIdentifier("stats-monthly")
     }
 
-    @ViewBuilder private func monthColumn(_ entry: MonthlyMinutes, isCurrent: Bool, max maxMinutes: Int) -> some View {
+    @ViewBuilder private func monthColumn(_ entry: MonthlyMinutes, isCurrent: Bool, showYear: Bool, max maxMinutes: Int) -> some View {
         VStack(spacing: 4) {
             // 今月だけ値を上に出す。短い棒でも「途中」だと伝わり、下降に見えない(④)
             Text(verbatim: isCurrent && entry.minutes > 0 ? StatsView.timeText(entry.minutes) : " ")
@@ -260,13 +270,19 @@ public struct StatsView: View {
                 .frame(height: StatsView.monthBarHeight(entry.minutes, max: maxMinutes))
                 .cornerRadius(4)
                 .frame(maxHeight: .infinity, alignment: .bottom)
-            // 今月は数字ではなく「今月」と出して、進行中だと分かるように
-            monthLabel(entry, isCurrent: isCurrent)
-                .font(.caption)
-                .foregroundStyle(isCurrent ? Palette.accent : Color.secondary)
+            // 月ラベル(2 行分を確保して棒の底を揃える)。今月は数字でなく「今月」
+            VStack(spacing: 1) {
+                monthLabel(entry, isCurrent: isCurrent)
+                    .font(.caption)
+                    .foregroundStyle(isCurrent ? Palette.accent : Color.secondary)
+                Text(verbatim: showYear && !isCurrent ? StatsView.yearLabel(entry.month) : " ")
+                    .font(.system(size: 9))
+                    .foregroundStyle(.secondary)
+            }
+            .frame(height: 28)
         }
         .frame(maxWidth: .infinity)
-        .accessibilityLabel(Text(verbatim: "\(StatsView.monthLabel(entry.month))月 \(StatsView.timeText(entry.minutes))"))
+        .accessibilityLabel(Text(verbatim: "\(StatsView.yearLabel(entry.month)) \(StatsView.monthLabel(entry.month))月 \(StatsView.timeText(entry.minutes))"))
     }
 
     private func monthLabel(_ entry: MonthlyMinutes, isCurrent: Bool) -> Text {
@@ -355,9 +371,23 @@ public struct StatsView: View {
         return "\(minutes) 分"
     }
 
-    /// 月ラベル(「8」)。年はまたいでも月の数字だけで足りる。
+    /// 月ラベル(「8」)。年の情報は `yearLabel` で別に添える(⑤)。
     static func monthLabel(_ month: Date) -> String {
         return "\(Calendar.current.component(Calendar.Component.month, from: month))"
+    }
+
+    /// その月が 1 月か(年の変わり目の判定に使う)。
+    static func isJanuary(_ month: Date) -> Bool {
+        return Calendar.current.component(Calendar.Component.month, from: month) == 1
+    }
+
+    /// 年ラベル(「'26」)。年の変わり目と左端にだけ添える(⑤)。
+    static func yearLabel(_ month: Date) -> String {
+        let year = Calendar.current.component(Calendar.Component.year, from: month) % 100
+        if year < 10 {
+            return "'0\(year)"
+        }
+        return "'\(year)"
     }
 
     private static let chartHeight = 120.0
