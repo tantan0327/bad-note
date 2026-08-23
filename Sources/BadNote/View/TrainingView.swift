@@ -41,6 +41,11 @@ public struct TrainingView: View {
         .onChange(of: model.date) { _, _ in
             model.load()
         }
+        // 3.1 チェックの手触り。ふだんは選択の軽い振動、その日の分が全部
+        // 済んだ瞬間だけ成功の振動。日付の切り替えでは鳴らない(トリガーは操作回数)
+        .sensoryFeedback(trigger: model.toggleCount) { _, _ in
+            model.isAllDone ? SensoryFeedback.success : SensoryFeedback.selection
+        }
     }
 
     // MARK: - 日付(さかのぼって付けられる)
@@ -72,17 +77,31 @@ public struct TrainingView: View {
             }
         } footer: {
             // §5.3 チェックが付いた分だけが見える。残り件数は出さない
-            if model.doneMinutes > 0 {
-                Text(verbatim: model.isToday
-                     ? "今日の家トレ \(model.doneMinutes) 分"
-                     : "この日の家トレ \(model.doneMinutes) 分")
+            if model.isAllDone {
+                // 3.1 全部できた日の静かな強調。件数もストリークも出さない
+                Text(verbatim: footerText() + " ✓")
+                    .foregroundStyle(Palette.done)
+            } else if model.doneMinutes > 0 {
+                Text(verbatim: footerText())
             }
         }
     }
 
+    private func footerText() -> String {
+        let day = model.isToday ? "今日" : "この日"
+        // 分数の無いメニューだけの日は 0 分表記を出さない(チェックの事実だけ祝う)
+        if model.doneMinutes > 0 {
+            return "\(day)の家トレ \(model.doneMinutes) 分"
+        }
+        return "\(day)の家トレ"
+    }
+
     @ViewBuilder private func menuRow(_ menu: TrainingMenu) -> some View {
         Button {
-            model.toggle(menu)
+            // 3.1 速く小さく動かす(フッターの合計の出入りも一緒に animate される)
+            withAnimation(.easeOut(duration: 0.15)) {
+                model.toggle(menu)
+            }
         } label: {
             HStack(spacing: 12) {
                 // 済 / 未 は色 + 形(チェック入りの丸 / 空の輪)で区別する

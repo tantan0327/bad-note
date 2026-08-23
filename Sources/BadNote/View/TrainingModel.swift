@@ -13,6 +13,9 @@ import SkipSQL
     public private(set) var menus: [TrainingMenu] = []
     /// 表示中の日の実施記録。メニュー id 引き。
     public private(set) var logs: [Int64: TrainingLog] = [:]
+    /// チェック操作の通し回数。触覚フィードバックのトリガー(3.1)。
+    /// 日付の切り替えや再読み込みでは増えない(眺めただけで振動させない)。
+    public private(set) var toggleCount = 0
     public var errorText: String? = nil
 
     private var database: SQLContext? = nil
@@ -52,6 +55,7 @@ import SkipSQL
             } else {
                 logs[menu.id] = try repo.check(menuId: menu.id, on: date)
             }
+            toggleCount += 1
             errorText = nil
         } catch {
             errorText = "記録に失敗しました: \(error)"
@@ -65,6 +69,19 @@ import SkipSQL
             total += log.minutes ?? 0
         }
         return total
+    }
+
+    /// その日の分を全部チェックできたか(3.1 の静かな強調)。メニューが無い日は false。
+    public var isAllDone: Bool {
+        if menus.isEmpty {
+            return false
+        }
+        for menu in menus {
+            if !isDone(menu) {
+                return false
+            }
+        }
+        return true
     }
 
     public var isToday: Bool {

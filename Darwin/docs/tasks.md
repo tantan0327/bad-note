@@ -197,17 +197,10 @@ Android エミュレータ(API 34 / SQLite 3.39.2)で DB 作成・マイグレ�
 2026-08-24 にメニュー複数・チェック混在の状態で全画面を眺めて洗い出した。
 §5.3(未達を数えない・ストリークなし)と §10.2 の決めごとを守ったまま磨く。
 
-### 3.1 チェックの瞬間が無音
+### 3.1 チェックの瞬間が無音 —— **済(2026-08-24)**
 
-このアプリでいちばん回数の多い操作なのに、押しても**アイコンが差し替わるだけ**。
-アニメーションも触覚も無く、フッターの合計も無言で変わる。
-習慣の核になる瞬間なので、ここの手応えがいちばん効く。
-
-- チェックの切り替えに `withAnimation`(速く小さく。5.1 と同じ方針)。
-  フッターの合計の変化も一緒に動かす
-- **全部チェックした日はフッターを静かに強調**(「今日の家トレ 25 分 ✓」程度。
-  残り件数のカウントダウンやストリークには**しない** §5.3)
-- 触覚フィードバックは 5.2 と合流(SkipUI に相当機能があるか要確認)
+`withAnimation` + 触覚(`sensoryFeedback`)+ 全部できた日の静かな強調。
+内訳は末尾「完了したこと」。**実機確認はまだ**(触覚はエミュレータでは分からない)。
 
 ### 3.2 「今日」感が無い
 
@@ -280,7 +273,10 @@ Android エミュレータ(API 34 / SQLite 3.39.2)で DB 作成・マイグレ�
 ### 5.2 触覚フィードバックが無い
 
 手応えの選択・層の移動・保存は、画面を見ずに操作することがある。
-SkipUI に `UIImpactFeedbackGenerator` 相当があるか要確認。
+**SkipUI に `.sensoryFeedback` がある**(iOS 17 の API。Android は `VibrationEffect` で近似)
+—— 3.1 で家トレのチェックに適用済み。トリガーは**操作回数のカウンタ**にすること
+(状態値そのものだと画面遷移や再読み込みでも鳴ってしまう。家トレの実装を参照)。
+残り: 手応えの選択 / 層の移動 / 保存への適用。
 
 ### 5.3 iOS と Android で細部が別物
 
@@ -394,6 +390,14 @@ skip icon --background "#5C6BC0" symbol.svg
 
 新しい順。基盤(Phase 1 とデザイン土台)の詳しい内訳は「現状」を見る。
 
+- **3.1 家トレ: チェックの手応え**(2026-08-24)—— ① トグルを
+  `withAnimation(.easeOut(duration: 0.15))` で包み、フッターの合計の出入りも一緒に動くように。
+  ② **触覚**: `.sensoryFeedback`(SkipUI 対応を確認 —— Android は `VibrationEffect` 近似)。
+  ふだんは `.selection`、**その日の分が全部済んだ瞬間だけ `.success`**。トリガーは
+  `TrainingModel.toggleCount`(操作回数)—— 日付の切り替えや再読み込みでは鳴らない。
+  ③ **全部できた日はフッターを `Palette.done` で静かに強調**(「今日の家トレ 25 分 ✓」。
+  分数なしメニューだけの日は「今日の家トレ ✓」)。残り件数もストリークも出さない(§5.3)。
+  `TrainingModel.isAllDone` を追加。**実機確認はまだ。**
 - **2.6 設定画面**(2026-08-24)—— ① **stale 閾値の設定を追加**: `View/StaleSettingsView.swift`
   を新設(§4.2 の `stale_days` / `stale_practice_count` を `Stepper` で編集。
   範囲は 7〜90 日 / 1〜30 回にモデル側でクランプ —— SkipUI の `Stepper` に `in:` が無いため。
@@ -579,6 +583,10 @@ Android の `Bundle.main` は「メインモジュールの `Resources/`」を�
 - **`Int64` と `Int` リテラルの `==` / `!=` は Kotlin で通らない** — 比較演算子(`<` `>`)は通るので
   Swift 側では気づけない。`Int64(0)` のように型を揃える
 - **`XCTUnwrap` の戻り値から型を辿れない** — `var x: Issue = try XCTUnwrap(...)` と明示する
+- **`.sensoryFeedback` は Android で `VIBRATE` パーミッションが要る** — 無くてもビルドは通り、
+  **振動する瞬間に `SecurityException` でクラッシュする**(Robolectric のテストでも出ない)。
+  `Android/app/src/main/AndroidManifest.xml` に
+  `<uses-permission android:name="android.permission.VIBRATE" />` を足す(2026-08-24 に踏んだ)
 - **`Stepper(value:label:)` は Kotlin でオーバーロード解決できない** — Int 版と Double 版が
   ジェネリクス消去で衝突し `None of the following candidates is applicable` になる。
   `Stepper(タイトル文字列, onIncrement:onDecrement:)` の形にする(タイトルは
