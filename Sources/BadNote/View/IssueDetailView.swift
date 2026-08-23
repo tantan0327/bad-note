@@ -2,7 +2,8 @@ import SwiftUI
 
 /// 課題詳細(§7.3)。
 ///
-/// 上から できている状態 / 習熟度 / もとの言葉 / 記録 / 進み方 / 属性 / アクション。
+/// 上から できている状態 / 習熟度 / もとの言葉 / 記録 / 進み方 / アクション / 属性。
+/// 属性は日常で使わないのでいちばん下(「克服した」を折り返しの外に沈めない。2.2)。
 public struct IssueDetailView: View {
     @State private var model: IssueDetailModel
     @State private var isShowingAttributes = false
@@ -25,8 +26,8 @@ public struct IssueDetailView: View {
                     coachWordsSection(issue)
                     recordSection(issue)
                     progressSection
-                    attributesSection(issue)
                     actionSection(issue)
+                    attributesSection(issue)
                 }
             }
             .padding()
@@ -60,21 +61,24 @@ public struct IssueDetailView: View {
         }
     }
 
-    // MARK: - 2. 習熟度(4 段階のステップ表示)
+    // MARK: - 2. 習熟度(横 4 分割のバー)
 
     @ViewBuilder private func masterySection(_ issue: Issue) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("習熟度", bundle: .module)
                 .font(.headline)
-            ForEach(MasteryLevel.allCases, id: \.rawValue) { level in
-                HStack(spacing: 8) {
-                    Text(verbatim: level.rawValue <= issue.masteryLevel.rawValue ? "●" : "○")
-                        .foregroundStyle(level == issue.masteryLevel ? Palette.accent : Color.secondary)
-                    Text(level.displayName)
-                        .font(level == issue.masteryLevel ? .body : .footnote)
-                        .foregroundStyle(level == issue.masteryLevel ? Color.primary : Color.secondary)
+            // ●○ の文字をやめ、進み具合の部品にする(2.2)。埋まった数 = 現在のレベル
+            HStack(spacing: 4) {
+                ForEach(MasteryLevel.allCases, id: \.rawValue) { level in
+                    RoundedRectangle(cornerRadius: 2)
+                        .fill(level.rawValue <= issue.masteryLevel.rawValue ? Palette.accent : Palette.surfaceRaised)
+                        .frame(height: 8)
                 }
             }
+            .accessibilityLabel(Text("習熟度", bundle: .module))
+            .accessibilityValue(Text(verbatim: "\(issue.masteryLevel.rawValue)/4 \(issue.masteryLevel.displayName)"))
+            Text(issue.masteryLevel.displayName)
+                .font(.body)
             if let next = model.nextLevel {
                 Button {
                     model.raiseLevel()
@@ -113,26 +117,30 @@ public struct IssueDetailView: View {
         VStack(alignment: .leading, spacing: 8) {
             Text("記録", bundle: .module)
                 .font(.headline)
-            HStack(spacing: 24) {
-                record(Text("累計時間", bundle: .module), value: timeText(model.totalMinutes))
-                record(Text("重点にした", bundle: .module), value: "\(model.focusCount) 回")
-                record(Text("再浮上", bundle: .module), value: "\(issue.resurfaceCount) 回")
+            // 数字が主役の場所なので面に載せ、積み上げ画面と同じ形にする(2.2)
+            Card {
+                HStack(spacing: 12) {
+                    StatItem(value: timeValue(model.totalMinutes),
+                             unit: timeUnit(model.totalMinutes),
+                             label: Text("累計時間", bundle: .module))
+                    StatItem(value: model.focusCount,
+                             unit: Text("回", bundle: .module),
+                             label: Text("重点にした", bundle: .module))
+                    StatItem(value: issue.resurfaceCount,
+                             unit: Text("回", bundle: .module),
+                             label: Text("再浮上", bundle: .module))
+                }
             }
         }
     }
 
-    @ViewBuilder private func record(_ label: Text, value: String) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            label
-                .font(.caption)
-                .foregroundStyle(.secondary)
-            Text(verbatim: value)
-                .font(.title3)
-        }
+    /// 60 分以上は時間で、未満は分で出す(値と単位に分ける。形は `StatItem`)。
+    private func timeValue(_ minutes: Int) -> Int {
+        return minutes >= 60 ? minutes / 60 : minutes
     }
 
-    private func timeText(_ minutes: Int) -> String {
-        return minutes >= 60 ? "\(minutes / 60) 時間" : "\(minutes) 分"
+    private func timeUnit(_ minutes: Int) -> Text {
+        return minutes >= 60 ? Text("時間", bundle: .module) : Text("分", bundle: .module)
     }
 
     // MARK: - 5. 進み方(色分けした点。文字にしない)
@@ -186,37 +194,41 @@ public struct IssueDetailView: View {
         }
     }
 
-    // MARK: - 6. 属性(折りたたみ)
+    // MARK: - 7. 属性(折りたたみ。日常で使わないのでいちばん下)
 
     @ViewBuilder private func attributesSection(_ issue: Issue) -> some View {
         VStack(alignment: .leading, spacing: 8) {
+            // 導線は他の画面と同じ形(bordered + footnote)。裸の青リンクにしない(2.2)
             Button {
                 isShowingAttributes = !isShowingAttributes
             } label: {
                 Text(isShowingAttributes ? "属性を閉じる" : "属性を見る", bundle: .module)
-                    .font(.headline)
+                    .font(.footnote)
             }
+            .buttonStyle(.bordered)
             if isShowingAttributes {
-                VStack(alignment: .leading, spacing: 8) {
-                    attribute(Text("種目", bundle: .module), value: issue.discipline.displayName)
-                    attribute(Text("優先度", bundle: .module), value: tierName(issue.tier))
-                    if let impact = issue.impact {
-                        attribute(Text("影響度", bundle: .module), value: ScaleLabel.impact(impact))
+                Card {
+                    VStack(alignment: .leading, spacing: 8) {
+                        attribute(Text("種目", bundle: .module), value: issue.discipline.displayName)
+                        attribute(Text("優先度", bundle: .module), value: tierName(issue.tier))
+                        if let impact = issue.impact {
+                            attribute(Text("影響度", bundle: .module), value: ScaleLabel.impact(impact))
+                        }
+                        if let cost = issue.cost {
+                            attribute(Text("習得コスト", bundle: .module), value: ScaleLabel.cost(cost))
+                        }
+                        if !model.tags.isEmpty {
+                            attribute(Text("タグ", bundle: .module), value: tagText())
+                        }
+                        NavigationLink {
+                            IssueEditView(issueID: issue.id)
+                        } label: {
+                            Text("編集する", bundle: .module)
+                                .font(.footnote)
+                        }
                     }
-                    if let cost = issue.cost {
-                        attribute(Text("習得コスト", bundle: .module), value: ScaleLabel.cost(cost))
-                    }
-                    if !model.tags.isEmpty {
-                        attribute(Text("タグ", bundle: .module), value: tagText())
-                    }
-                    NavigationLink {
-                        IssueEditView(issueID: issue.id)
-                    } label: {
-                        Text("編集する", bundle: .module)
-                            .font(.footnote)
-                    }
+                    .font(.footnote)
                 }
-                .font(.footnote)
             }
         }
     }
@@ -245,7 +257,7 @@ public struct IssueDetailView: View {
         return names.joined(separator: " / ")
     }
 
-    // MARK: - 7. アクション
+    // MARK: - 6. アクション(属性より上。折り返しの外に沈めない)
 
     @ViewBuilder private func actionSection(_ issue: Issue) -> some View {
         VStack(alignment: .leading, spacing: 12) {

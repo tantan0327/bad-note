@@ -118,34 +118,17 @@ public struct StatsView: View {
     }
 
     /// 上達と克服。時間だけでなく「上手くなった / 乗り越えた」を出して自信につなげる。
+    /// 数字の形は課題詳細の「記録」と共通(`StatItem`。tasks.md 2.2)。
     @ViewBuilder private var secondaryStats: some View {
         HStack(spacing: 12) {
-            statItem(value: model.lifetimeLevelUps,
+            StatItem(value: model.lifetimeLevelUps,
                      unit: Text("回", bundle: .module),
                      label: Text("レベルアップ", bundle: .module))
-            statItem(value: model.settledCount,
+            StatItem(value: model.settledCount,
                      unit: Text("件", bundle: .module),
                      label: Text("定着した課題", bundle: .module))
         }
         .padding(.top, 4)
-    }
-
-    @ViewBuilder private func statItem(value: Int, unit: Text, label: Text) -> some View {
-        VStack(spacing: 2) {
-            HStack(alignment: .firstTextBaseline, spacing: 2) {
-                Text(verbatim: "\(value)")
-                    .font(.system(size: 22, weight: .semibold))
-                unit
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-            label
-                .font(.caption)
-                .foregroundStyle(.secondary)
-        }
-        .frame(maxWidth: .infinity)
-        .accessibilityLabel(label)
-        .accessibilityValue(Text(verbatim: "\(value)"))
     }
 
     /// 通算を 0 から実値へ伸ばす。約 0.5 秒。数字が動いて量感が伝わる。
