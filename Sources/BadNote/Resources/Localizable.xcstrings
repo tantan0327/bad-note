@@ -1,644 +1,1104 @@
 {
-  "sourceLanguage": "en",
-  "strings": {
-    "%lld": {},
-    "%lld Items": {
-      "comment": "Header title for a list that contains the number of items",
-      "extractionState": "stale",
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld elementos"
+  "sourceLanguage" : "en",
+  "strings" : {
+    "" : {
+
+    },
+    "%lld" : {
+
+    },
+    "%lld Items" : {
+      "comment" : "Header title for a list that contains the number of items",
+      "extractionState" : "stale",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld elementos"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld éléments"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld éléments"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "アイテム数 %lld"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "アイテム数 %lld"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld 个条目"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld 个条目"
           }
         }
       }
     },
-    "+15分": {},
-    "+30分": {},
-    "+60分": {},
-    "Add": {
-      "comment": "Button in items list that will cause a new item to be added",
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Añadir"
+    "＋ もう 1 件追加" : {
+
+    },
+    "+15分" : {
+
+    },
+    "+30分" : {
+
+    },
+    "+60分" : {
+
+    },
+    "★ 目標大会" : {
+
+    },
+    "1 日 1 通までにしています" : {
+
+    },
+    "Add" : {
+      "comment" : "Button in items list that will cause a new item to be added",
+      "extractionState" : "stale",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Añadir"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ajouter"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajouter"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "追加"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "追加"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "添加"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "添加"
           }
         }
       }
     },
-    "Appearance": {
-      "comment": "Settings select label for the interface style of the controls (light, dark, or default)",
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Apariencia"
+    "Appearance" : {
+      "comment" : "Settings select label for the interface style of the controls (light, dark, or default)",
+      "extractionState" : "stale",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apariencia"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Apparence"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apparence"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "外観"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "外観"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "外观"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "外观"
           }
         }
       }
     },
-    "Cancel": {
-      "comment": "Button title indicating that the operation should be cancelled",
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Cancelar"
+    "Cancel" : {
+      "comment" : "Button title indicating that the operation should be cancelled",
+      "extractionState" : "stale",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cancelar"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Annuler"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Annuler"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "キャンセル"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "キャンセル"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "取消"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "取消"
           }
         }
       }
     },
-    "Dark": {
-      "comment": "Menu item indicating that the appearance should be in dark mode",
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Oscuro"
+    "Dark" : {
+      "comment" : "Menu item indicating that the appearance should be in dark mode",
+      "extractionState" : "stale",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Oscuro"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Sombre"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sombre"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ダーク"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ダーク"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "深色"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "深色"
           }
         }
       }
     },
-    "Date": {
-      "comment": "Item editor form label for the Date field",
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Fecha"
+    "Date" : {
+      "comment" : "Item editor form label for the Date field",
+      "extractionState" : "stale",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fecha"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Date"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Date"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "日付"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "日付"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "日期"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "日期"
           }
         }
       }
     },
-    "Favorite": {
-      "comment": "Item editor title label for marking the item as a favorite",
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Favorito"
+    "Favorite" : {
+      "comment" : "Item editor title label for marking the item as a favorite",
+      "extractionState" : "stale",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Favorito"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Favori"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Favori"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "お気に入り"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "お気に入り"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "收藏"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "收藏"
           }
         }
       }
     },
-    "Hello [%@](https://skip.dev)!": {
-      "comment": "Welcome tab contents",
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "¡Hola [%@](https://skip.dev)!"
+    "Hello [%@](https://skip.dev)!" : {
+      "comment" : "Welcome tab contents",
+      "extractionState" : "stale",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¡Hola [%@](https://skip.dev)!"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Bonjour [%@](https://skip.dev)!"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bonjour [%@](https://skip.dev)!"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "こんにちは [%@](https://skip.dev)"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "こんにちは [%@](https://skip.dev)"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "你好 [%@](https://skip.dev)"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你好 [%@](https://skip.dev)"
           }
         }
       }
     },
-    "Home": {
-      "comment": "Tab bar item title for the Home tab",
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Inicio"
+    "Home" : {
+      "comment" : "Tab bar item title for the Home tab",
+      "extractionState" : "stale",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inicio"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Accueil"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Accueil"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ホーム"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ホーム"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "首页"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "首页"
           }
         }
       }
     },
-    "Light": {
-      "comment": "Menu item indicating that the appearance should be in light mode",
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Claro"
+    "Light" : {
+      "comment" : "Menu item indicating that the appearance should be in light mode",
+      "extractionState" : "stale",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Claro"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Clair"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clair"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "明るい"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "明るい"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "浅色"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "浅色"
           }
         }
       }
     },
-    "Name": {
-      "comment": "Placeholder title for the Name field in a form",
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nombre"
+    "Name" : {
+      "comment" : "Placeholder title for the Name field in a form",
+      "extractionState" : "stale",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nombre"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nom"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nom"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "名前"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "名前"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "姓名"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "姓名"
           }
         }
       }
     },
-    "Notes": {
-      "comment": "Item editor form label for the Notes field",
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Notas"
+    "Notes" : {
+      "comment" : "Item editor form label for the Notes field",
+      "extractionState" : "stale",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notas"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Notes"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notes"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ノート"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ノート"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "笔记"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "笔记"
           }
         }
       }
     },
-    "Powered by [Skip](https://skip.dev)": {
-      "comment": "Link markdown text for the Powered by… label",
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Impulsado por [Skip](https://skip.dev)"
+    "Powered by [Skip](https://skip.dev)" : {
+      "comment" : "Link markdown text for the Powered by… label",
+      "extractionState" : "stale",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impulsado por [Skip](https://skip.dev)"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Fonctionnalités offertes par [Skip](https://skip.dev)"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fonctionnalités offertes par [Skip](https://skip.dev)"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "[Skip](https://skip.dev) を使って動かしています"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "[Skip](https://skip.dev) を使って動かしています"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "由[Skip](https://skip.dev)提供支持"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "由[Skip](https://skip.dev)提供支持"
           }
         }
       }
     },
-    "Save": {
-      "comment": "Button title indicating that the current contents should be saved",
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Guardar"
+    "Save" : {
+      "comment" : "Button title indicating that the current contents should be saved",
+      "extractionState" : "stale",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Guardar"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Enregistrer"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enregistrer"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "保存"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "保存"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "保存"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "保存"
           }
         }
       }
     },
-    "Settings": {
-      "comment": "Tab bar item title for the Settings tab",
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Configuración"
+    "Settings" : {
+      "comment" : "Tab bar item title for the Settings tab",
+      "extractionState" : "stale",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Configuración"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Paramètres"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paramètres"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "設定"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "設定"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "设置"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "设置"
           }
         }
       }
     },
-    "System": {
-      "comment": "Menu item indicating that the appearance should be in the default system mode",
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Sistema"
+    "System" : {
+      "comment" : "Menu item indicating that the appearance should be in the default system mode",
+      "extractionState" : "stale",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sistema"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Système"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Système"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "システム"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "システム"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "系统"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "系统"
           }
         }
       }
     },
-    "Title": {
-      "comment": "Label for the item editor form indicating the title of the item",
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Título"
+    "Title" : {
+      "comment" : "Label for the item editor form indicating the title of the item",
+      "extractionState" : "stale",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Título"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Titre"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Titre"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "タイトル"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "タイトル"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "标题"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "标题"
           }
         }
       }
     },
-    "Version %@ (%@)": {
-      "comment": "Settings label showing the current version of the app",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "new",
-            "value": "Version %1$@ (%2$@)"
+    "Version %@ (%@)" : {
+      "comment" : "Settings label showing the current version of the app",
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Version %1$@ (%2$@)"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Versión %1$@ (%2$@)"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Versión %1$@ (%2$@)"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Version %1$@ (%2$@)"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Version %1$@ (%2$@)"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "バージョン %1$@ (%2$@)"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "バージョン %1$@ (%2$@)"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "版本 %1$@ (%2$@)"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "版本 %1$@ (%2$@)"
           }
         }
       }
     },
-    "Welcome": {
-      "comment": "Tab bar item title for the Welcome tab",
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Bienvenido"
+    "Welcome" : {
+      "comment" : "Tab bar item title for the Welcome tab",
+      "extractionState" : "stale",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bienvenido"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Bienvenue"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bienvenue"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ようこそ"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ようこそ"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "欢迎"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "欢迎"
           }
         }
       }
     },
-    "いつか": {},
-    "いま整理しますか?": {},
-    "この課題を削除しますか?": {},
-    "しばらく触れていない課題": {},
-    "できた": {},
-    "できている状態": {},
-    "できている状態(任意)": {},
-    "どれと入れ替えますか?": {},
-    "まだありません": {},
-    "まだいい": {},
-    "まだ書かれていません": {},
-    "めざす姿": {},
-    "もう不要": {},
-    "やめる": {},
-    "ゲーム練習": {},
-    "コーチ名(任意)": {},
-    "ショット種別など": {},
-    "シングルス": {},
-    "タグ(任意)": {},
-    "ダブルス": {},
-    "ノック": {},
-    "パターン練習": {},
-    "ホーム": {},
-    "リセット": {},
-    "上げる": {},
-    "下げる": {},
-    "両方": {},
-    "今はしない": {},
-    "今はスキップ": {},
-    "今週の重点": {},
-    "今週の重点にする": {},
-    "今週の重点はまだありません": {},
-    "保存": {},
-    "個人練習": {},
-    "入れるのはこの 1 行だけで十分です": {},
-    "全体練習": {},
-    "分": {},
-    "削除": {},
-    "削除する": {},
-    "外す": {},
-    "大会を登録する": {},
-    "完了形で言い換える": {},
-    "影響度(任意)": {},
-    "後から整理するときに書けば十分です": {},
-    "思いつかなければ空のままでも進めます": {},
-    "整理": {},
-    "整理が終わりました": {},
-    "整理して次へ": {},
-    "整理する": {},
-    "整理する課題はありません": {},
-    "日付": {},
-    "次にやる": {},
-    "目標の大会を決めると、残り日数と練習回数が出ます": {},
-    "直るまでの時間": {},
-    "直接入力": {},
-    "種目": {},
-    "種類": {},
-    "筋トレ": {},
-    "素振り": {},
-    "練習を記録": {},
-    "練習を記録する": {},
-    "練習時間": {},
-    "習得コスト(任意)": {},
-    "習熟度": {},
-    "試合": {},
-    "試合の失点に直結するか": {},
-    "課題": {},
-    "課題を整理": {},
-    "課題を編集": {},
-    "課題を追加": {},
-    "調整期です。新しい課題は増やさず、今の 3 つに集中します": {},
-    "近づいた": {},
-    "追加": {},
-    "重点はまだ決まっていません": {},
-    "閉じる": {},
-    "＋ もう 1 件追加": {}
+    "アーカイブする" : {
+
+    },
+    "あとで" : {
+
+    },
+    "いつか" : {
+
+    },
+    "いま整理しますか?" : {
+
+    },
+    "いま設定されている通知" : {
+
+    },
+    "うまくいったことは何か" : {
+
+    },
+    "うまく言葉にできなければ、途中まででも構いません" : {
+
+    },
+    "ゲーム練習" : {
+
+    },
+    "コーチ名(任意)" : {
+
+    },
+    "この大会では厳しいかもしれません" : {
+
+    },
+    "この大会までに" : {
+
+    },
+    "この大会を削除" : {
+
+    },
+    "この大会を削除しますか?" : {
+
+    },
+    "この課題を削除しますか?" : {
+
+    },
+    "これからの大会" : {
+
+    },
+    "しばらく触れていない課題" : {
+
+    },
+    "ショット種別など" : {
+
+    },
+    "シングルス" : {
+
+    },
+    "シングルスの目標大会にする" : {
+
+    },
+    "すべてのタグ" : {
+
+    },
+    "すべての種目" : {
+
+    },
+    "すべての習熟度" : {
+
+    },
+    "そのために必要なもの(人・道具・情報)は何か" : {
+
+    },
+    "タグ" : {
+
+    },
+    "タグ(任意)" : {
+
+    },
+    "ダブルス" : {
+
+    },
+    "ダブルスの目標大会にする" : {
+
+    },
+    "チェックしたとき、この分数が練習時間の積み上げに入ります" : {
+
+    },
+    "できた" : {
+
+    },
+    "できている状態" : {
+
+    },
+    "できている状態(任意)" : {
+
+    },
+    "どれと入れ替えますか?" : {
+
+    },
+    "なりたい選手像を書きます" : {
+
+    },
+    "ホーム" : {
+      "comment" : "home tab label"
+    },
+    "まだありません" : {
+
+    },
+    "まだありません。課題を試合で出せるようになったら、ここに並びます" : {
+
+    },
+    "まだいい" : {
+
+    },
+    "まだ書かれていません" : {
+
+    },
+    "まだ記録がありません" : {
+
+    },
+    "まだ選んでいません" : {
+
+    },
+    "めざす姿" : {
+
+    },
+    "めざす姿を書いてみませんか" : {
+
+    },
+    "メニュー" : {
+
+    },
+    "メニューはまだありません。素振り 50 回、体幹 10 分のように、毎日やる形で決めておきます" : {
+
+    },
+    "メニューを作る" : {
+
+    },
+    "メニューを編集" : {
+
+    },
+    "メニューを追加" : {
+
+    },
+    "もう不要" : {
+
+    },
+    "もとの言葉" : {
+
+    },
+    "やめる" : {
+
+    },
+    "よく戻ってくる課題" : {
+
+    },
+    "リセット" : {
+
+    },
+    "レベルは 1 つ下から再開します" : {
+
+    },
+    "レベルを 1 つ下げる" : {
+
+    },
+    "一覧から消えます。過去の記録は残ります" : {
+
+    },
+    "上げる" : {
+
+    },
+    "下げる" : {
+
+    },
+    "両方" : {
+
+    },
+    "今はしない" : {
+
+    },
+    "今はスキップ" : {
+
+    },
+    "今日に戻る" : {
+
+    },
+    "今週の重点" : {
+
+    },
+    "今週の重点にする" : {
+
+    },
+    "今週の重点はまだありません" : {
+
+    },
+    "今週の重点を組み替える" : {
+
+    },
+    "会場(任意)" : {
+
+    },
+    "何をめざしているかが決まると、大会と今週の重点に意味が出ます" : {
+
+    },
+    "保存" : {
+
+    },
+    "個人練習" : {
+
+    },
+    "候補" : {
+
+    },
+    "候補がありません" : {
+
+    },
+    "優先度" : {
+
+    },
+    "克服した(定着確認へ)" : {
+
+    },
+    "入れるのはこの 1 行だけで十分です" : {
+
+    },
+    "全体練習" : {
+
+    },
+    "再浮上" : {
+
+    },
+    "再浮上させる" : {
+
+    },
+    "出場する種目" : {
+
+    },
+    "出場する種目が登録されていません" : {
+
+    },
+    "分" : {
+
+    },
+    "分数(任意)" : {
+
+    },
+    "削除" : {
+
+    },
+    "削除する" : {
+
+    },
+    "右上の「追加」からメニューを作ります" : {
+
+    },
+    "同じ日に重なったときは、大会 → 触れていない課題 → 練習前 の順で 1 通だけ出します" : {
+
+    },
+    "外す" : {
+
+    },
+    "夜の通知" : {
+
+    },
+    "大会" : {
+      "comment" : "competitions tab label"
+    },
+    "大会はまだ登録されていません" : {
+
+    },
+    "大会を登録する" : {
+
+    },
+    "大会を編集" : {
+
+    },
+    "大会を追加" : {
+
+    },
+    "大会名" : {
+
+    },
+    "大会当日の振り返りと、しばらく触れていない課題の知らせに使います" : {
+
+    },
+    "完了形で言い換える" : {
+
+    },
+    "定着した課題" : {
+
+    },
+    "家トレ" : {
+      "comment" : "training tab label"
+    },
+    "属性を見る" : {
+
+    },
+    "属性を閉じる" : {
+
+    },
+    "市民体育館 など" : {
+
+    },
+    "影響度" : {
+
+    },
+    "影響度(任意)" : {
+
+    },
+    "後から整理するときに書けば十分です" : {
+
+    },
+    "思いつかなければ空のままでも進めます" : {
+
+    },
+    "振り返り" : {
+
+    },
+    "整理" : {
+
+    },
+    "整理が終わりました" : {
+
+    },
+    "整理して次へ" : {
+
+    },
+    "整理する" : {
+
+    },
+    "整理する課題はありません" : {
+
+    },
+    "日付" : {
+
+    },
+    "時刻" : {
+
+    },
+    "書く" : {
+
+    },
+    "月ごとの時間" : {
+
+    },
+    "次にやる" : {
+
+    },
+    "次にやることを課題にする" : {
+
+    },
+    "気づいたことを 1 行で" : {
+
+    },
+    "理想の姿に近づくために次にやることは何か" : {
+
+    },
+    "目安の時間" : {
+
+    },
+    "目標の大会を決めると、残り日数と練習回数が出ます" : {
+
+    },
+    "目標大会にすると、ホームにカウントダウンが出ます" : {
+
+    },
+    "直るまでの時間" : {
+
+    },
+    "県大会 など" : {
+
+    },
+    "種目" : {
+
+    },
+    "種類" : {
+
+    },
+    "種類の内訳" : {
+
+    },
+    "積み上げ" : {
+
+    },
+    "筋トレ" : {
+
+    },
+    "紐付いた課題はありません" : {
+
+    },
+    "素振り 50 回、体幹 10 分 など" : {
+
+    },
+    "累計時間" : {
+
+    },
+    "終了した大会" : {
+
+    },
+    "終了しました" : {
+
+    },
+    "結果" : {
+
+    },
+    "編集する" : {
+
+    },
+    "練習に行く曜日を選びます。選ばなければ出しません" : {
+
+    },
+    "練習の前に重点を知らせる" : {
+
+    },
+    "練習を記録" : {
+
+    },
+    "練習を記録する" : {
+
+    },
+    "練習時間" : {
+
+    },
+    "習得コスト" : {
+
+    },
+    "習得コスト(任意)" : {
+
+    },
+    "習熟度" : {
+
+    },
+    "解除" : {
+
+    },
+    "記録" : {
+
+    },
+    "設定" : {
+      "comment" : "accessibility label for the settings button"
+    },
+    "試合の失点に直結するか" : {
+
+    },
+    "課題" : {
+      "comment" : "issues tab label"
+    },
+    "課題を 1 行で" : {
+
+    },
+    "課題を整理" : {
+
+    },
+    "課題を編集" : {
+
+    },
+    "課題を追加" : {
+
+    },
+    "調整期です。新しい課題は増やさず、今の 3 つに集中します" : {
+
+    },
+    "近づいた" : {
+
+    },
+    "追加" : {
+
+    },
+    "追加する課題(任意)" : {
+
+    },
+    "通知" : {
+
+    },
+    "通知を受け取る" : {
+
+    },
+    "通算" : {
+
+    },
+    "通算・月ごと・種類の内訳" : {
+
+    },
+    "進み方" : {
+
+    },
+    "選ぶ" : {
+
+    },
+    "重点にした" : {
+
+    },
+    "重点はまだ決まっていません" : {
+
+    },
+    "閉じる" : {
+
+    },
+    "開催日" : {
+
+    }
   },
-  "version": "1.0"
+  "version" : "1.0"
 }

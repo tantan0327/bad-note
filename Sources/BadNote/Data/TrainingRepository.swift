@@ -161,6 +161,15 @@ public final class TrainingRepository {
         return Int(total)
     }
 
+    /// 全期間の家トレ分数の合計。`StatsRepository` だけから呼ぶ(§10.3)。
+    public func totalMinutes() throws -> Int {
+        let rows = try db.selectAll(sql: "SELECT SUM(COALESCE(minutes, 0)) FROM training_log WHERE done_at IS NOT NULL")
+        guard let total = rows.first?.first?.longValue else {
+            return 0
+        }
+        return Int(total)
+    }
+
     // MARK: - 変換
 
     private func fetchLog(menuId: Int64, day: String) throws -> TrainingLog? {

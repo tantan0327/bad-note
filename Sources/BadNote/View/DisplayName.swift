@@ -53,6 +53,20 @@ extension PracticeKind {
     }
 }
 
+extension StatsCategory {
+    /// 積み上げの内訳(1.2)。練習の種類と揃える。
+    public var displayName: String {
+        switch self {
+        case .whole: return "全体練習"
+        case .individual: return "個人練習"
+        case .game: return "ゲーム練習"
+        case .strength: return "筋トレ"
+        case .homeTraining: return "家トレ"
+        case .other: return "その他"
+        }
+    }
+}
+
 extension StaleReason {
     /// §4.3 の理由文。アプリは解釈や警告を出さず、事実だけを添える。
     public var displayName: String {

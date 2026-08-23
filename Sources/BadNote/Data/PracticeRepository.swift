@@ -161,6 +161,29 @@ public final class PracticeRepository {
         return Int(total)
     }
 
+    /// 全期間の練習時間の合計(分)。`StatsRepository.lifetimeMinutes` からのみ呼ぶ。
+    public func totalMinutes() throws -> Int {
+        let rows = try db.selectAll(sql: "SELECT SUM(minutes) FROM practice")
+        guard let total = rows.first?.first?.longValue else {
+            return 0
+        }
+        return Int(total)
+    }
+
+    /// 種類ごとの累計時間(全期間)。積み上げの内訳(1.2)に使う。
+    ///
+    /// 種類未選択(NULL)の行も 1 区分(`kind = nil`)として返す。
+    /// 分数 0 の練習しか無い種類は合計 0 で含まれ得るので、出す / 出さないは呼び出し側で決める。
+    public func minutesByKind() throws -> [KindMinutes] {
+        let rows = try db.selectAll(sql: "SELECT kind, SUM(minutes) FROM practice GROUP BY kind")
+        var result: [KindMinutes] = []
+        for row in rows {
+            let minutes = Int(row[1].longValue ?? Int64(0))
+            result.append(KindMinutes(kind: try decodeKind(row[0]), minutes: minutes))
+        }
+        return result
+    }
+
     // MARK: - Update
 
     /// 練習ログを更新し、手応えを `focus` の内容で置き換える。

@@ -25,6 +25,7 @@ public struct HomeView: View {
                 countdownSection
                 focusSection
                 staleSection
+                statsLink
                 recordButton
             }
             .padding()
@@ -283,7 +284,29 @@ public struct HomeView: View {
         }
     }
 
-    // MARK: - 5. 練習を記録するボタン(末尾に大きく)
+    // MARK: - 5. 積み上げ画面への導線(通算・月ごと・種類の内訳)
+
+    @ViewBuilder private var statsLink: some View {
+        Card {
+            NavigationLink {
+                StatsView()
+            } label: {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("積み上げ", bundle: .module)
+                        .font(.headline)
+                    // 減らない数字だけを添える(§5.3)
+                    Text("通算・月ごと・種類の内訳", bundle: .module)
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .foregroundStyle(.primary)
+            }
+            .accessibilityIdentifier("home-stats-link")
+        }
+    }
+
+    // MARK: - 6. 練習を記録するボタン(末尾に大きく)
 
     @ViewBuilder private var recordButton: some View {
         Button {
