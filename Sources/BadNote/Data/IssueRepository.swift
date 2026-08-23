@@ -286,6 +286,26 @@ public final class IssueRepository {
         return Int(count)
     }
 
+    /// 全期間のレベルアップ回数(§5.1)。積み上げ画面(1.2)の主スタットに使う。
+    /// 下げた記録は数えない。
+    public func countLevelUps() throws -> Int {
+        let rows = try db.selectAll(sql: "SELECT COUNT(*) FROM level_change WHERE to_level > from_level")
+        guard let count = rows.first?.first?.longValue else {
+            return 0
+        }
+        return Int(count)
+    }
+
+    /// 定着した(アーカイブ済みの)課題数。積み上げ画面(1.2)の主スタットに使う。
+    public func countArchived() throws -> Int {
+        let rows = try db.selectAll(sql: "SELECT COUNT(*) FROM issue WHERE status = ?",
+                                    parameters: [.text(IssueStatus.archived.rawValue)])
+        guard let count = rows.first?.first?.longValue else {
+            return 0
+        }
+        return Int(count)
+    }
+
     private func decodeLevelChange(_ row: [SQLValue]) throws -> LevelChange {
         guard let id = row[0].longValue else {
             throw IssueRepositoryError.unreadableColumn(name: "id")

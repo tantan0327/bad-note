@@ -10,10 +10,12 @@ import SkipSQL
 public final class StatsRepository {
     private let practices: PracticeRepository
     private let training: TrainingRepository
+    private let issues: IssueRepository
 
     public init(db: SQLContext) {
         self.practices = PracticeRepository(db: db)
         self.training = TrainingRepository(db: db)
+        self.issues = IssueRepository(db: db)
     }
 
     /// 期間内の合計(分)。`from` 以上 `to` 未満(半開区間)。
@@ -30,6 +32,16 @@ public final class StatsRepository {
     /// この数字は減らない。開くたびに必ず増えているので、そこに自信を置く。
     public func lifetimeMinutes() throws -> Int {
         return try practices.totalMinutes() + training.totalMinutes()
+    }
+
+    /// 通算のレベルアップ回数(§5.1)。上達の証。減らない数字(1.2)。
+    public func lifetimeLevelUps() throws -> Int {
+        return try issues.countLevelUps()
+    }
+
+    /// 定着した課題数(§7.4)。克服の証。減らない数字(1.2)。
+    public func settledIssueCount() throws -> Int {
+        return try issues.countArchived()
     }
 
     /// 月ごとの合計(分)。直近 `monthsBack` か月分を **古い順**(棒グラフは左が古い)で返す。

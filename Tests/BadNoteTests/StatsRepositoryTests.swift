@@ -197,6 +197,44 @@ final class StatsRepositoryTests: XCTestCase {
         XCTAssertEqual(try StatsRepository(db: db).minutesByCategory().count, 0)
     }
 
+    /// 通算のレベルアップ回数。上げた分だけ数え、下げは数えない(§5.1)。
+    func testLifetimeLevelUpsCountsOnlyRaises() throws {
+        let db = try makeDatabase()
+        defer { try? db.close() }
+        let issues = IssueRepository(db: db)
+        let stats = StatsRepository(db: db)
+
+        XCTAssertEqual(try stats.lifetimeLevelUps(), 0)
+
+        var issue = try issues.create(coachWords: "スマッシュのあと戻りが遅い")
+        issue.masteryLevel = .drill
+        issue = try issues.update(issue)   // solo → drill(+1)
+        issue.masteryLevel = .pattern
+        issue = try issues.update(issue)   // drill → pattern(+1)
+        issue.masteryLevel = .drill
+        _ = try issues.update(issue)       // pattern → drill(下げ。数えない)
+
+        XCTAssertEqual(try stats.lifetimeLevelUps(), 2)
+    }
+
+    /// 定着した課題数はアーカイブ済みの件数。
+    func testSettledIssueCountCountsArchived() throws {
+        let db = try makeDatabase()
+        defer { try? db.close() }
+        let issues = IssueRepository(db: db)
+        let stats = StatsRepository(db: db)
+
+        XCTAssertEqual(try stats.settledIssueCount(), 0)
+
+        _ = try issues.create(coachWords: "まだ現役の課題")
+        var done = try issues.create(coachWords: "克服した課題")
+        done.status = .archived
+        done.archivedAt = t0
+        _ = try issues.update(done)
+
+        XCTAssertEqual(try stats.settledIssueCount(), 1)
+    }
+
     private func minutes(_ categories: [CategoryMinutes], _ category: StatsCategory) -> Int {
         for entry in categories {
             if entry.category == category {

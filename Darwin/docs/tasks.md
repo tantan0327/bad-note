@@ -368,7 +368,12 @@ skip icon --background "#5C6BC0" symbol.svg
   (`Rectangle`、直近 6 か月)/ 種類の内訳の横棒。`StatsRepository` に `lifetimeMinutes()` /
   `monthlyMinutes()` / `minutesByCategory()` を追加(合計は必ずここ経由 §10.3)。
   §5.3 遵守(合計だけ。ストリーク / 目標 / 平均は出さない)。テスト +5(計 455)。
-  **やり残し**: `spec.md` §10 の追記 / iOS 実機・Android エミュの見た目確認。
+  **モチベ強化**(2026-08-23)—— 主役を作り直した。通算は**分まで**出して毎回桁が動くように
+  (`heroTimeText`)、開くと 0 からカウントアップ(`.task` + `Task.sleep`。`.contentTransition`
+  は SkipUI 非対応なので state を刻んで再描画)、トロフィー + 温かい一言 +
+  **上達(通算レベルアップ)/ 克服(定着課題数)** を併記(`StatsRepository.lifetimeLevelUps()` /
+  `settledIssueCount()`。CLAUDE.md「積み上げ側の数字」)。テスト +2(計 457)。
+  **やり残し**: `spec.md` §10 の追記 / iOS 実機・Android エミュの見た目確認(カウントアップ含む)。
 - **1.1 家トレ**(2026-08-22)—— `training_menu` / `training_log`(マイグレ v10)と
   `TrainingRepository` / `StatsRepository` を新設。家トレ画面とメニュー管理。チェック時に
   分数を写して固定(§10.3)。タブを 4 つに。仕様は `spec.md` §10。テスト +22(計 450)。

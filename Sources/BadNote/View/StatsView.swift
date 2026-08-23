@@ -9,6 +9,10 @@ import SkipSQL
 @Observable public final class StatsModel {
     /// 通算(全期間)の練習時間(分)。減らない数字。
     public private(set) var lifetimeMinutes = 0
+    /// 通算のレベルアップ回数(上達の証)。減らない数字。
+    public private(set) var lifetimeLevelUps = 0
+    /// 定着した課題数(克服の証)。減らない数字。
+    public private(set) var settledCount = 0
     /// 月ごとの合計(分)。古い順。
     public private(set) var monthly: [MonthlyMinutes] = []
     /// 種類の内訳(分)。合計 0 の区分は入らない。
@@ -27,6 +31,8 @@ import SkipSQL
         do {
             let stats = StatsRepository(db: try context())
             lifetimeMinutes = try stats.lifetimeMinutes()
+            lifetimeLevelUps = try stats.lifetimeLevelUps()
+            settledCount = try stats.settledIssueCount()
             monthly = try stats.monthlyMinutes(monthsBack: StatsModel.monthsBack, asOf: now)
             categories = try stats.minutesByCategory()
             errorText = nil
@@ -52,6 +58,10 @@ import SkipSQL
 /// SkipUI に Swift Charts は無いので、棒は `Rectangle` / `Capsule` を自前で積む。
 public struct StatsView: View {
     @State private var model = StatsModel()
+    /// カウントアップで表示中の通算(分)。0 から実値へ伸ばす。
+    @State private var shownMinutes = 0
+    /// 主役パネルの登場アニメーション。
+    @State private var appeared = false
 
     public init() {
     }
@@ -71,22 +81,85 @@ public struct StatsView: View {
             .padding()
         }
         .navigationTitle(Text("積み上げ", bundle: .module))
-        .onAppear {
+        // .task は表示時にメインアクターで走る(SkipUI 対応)。読み込み → カウントアップ
+        .task {
             model.load()
+            appeared = true
+            await animateLifetime()
         }
     }
 
     // MARK: - 1. 通算(この画面の主役。減らない数字)
 
+    /// 開くたびに増えている数字を、主役として大きく・温かく出す。
+    /// 通算の時間に加え、上達(レベルアップ)と克服(定着)も並べる(CLAUDE.md 積み上げ側の数字)。
     @ViewBuilder private var lifetimeSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("通算", bundle: .module)
+        Card(background: Palette.surfaceRaised) {
+            VStack(spacing: 12) {
+                Image("emoji_events", bundle: .module)
+                    .font(.largeTitle)
+                    .foregroundStyle(Palette.accent)
+                Text("ここまで積み上げた時間", bundle: .module)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                // 分まで出す。1 回の練習で必ず桁が動く(開くたびに増えて見える)
+                Text(StatsView.heroTimeText(shownMinutes))
+                    .font(.system(size: 40, weight: .bold))
+                    .foregroundStyle(.primary)
+                    .accessibilityIdentifier("stats-lifetime")
+                secondaryStats
+            }
+            .frame(maxWidth: .infinity)
+        }
+        .opacity(appeared ? 1.0 : 0.0)
+        .scaleEffect(appeared ? 1.0 : 0.97)
+        .animation(.easeOut(duration: 0.35), value: appeared)
+    }
+
+    /// 上達と克服。時間だけでなく「上手くなった / 乗り越えた」を出して自信につなげる。
+    @ViewBuilder private var secondaryStats: some View {
+        HStack(spacing: 12) {
+            statItem(value: model.lifetimeLevelUps,
+                     unit: Text("回", bundle: .module),
+                     label: Text("レベルアップ", bundle: .module))
+            statItem(value: model.settledCount,
+                     unit: Text("件", bundle: .module),
+                     label: Text("定着した課題", bundle: .module))
+        }
+        .padding(.top, 4)
+    }
+
+    @ViewBuilder private func statItem(value: Int, unit: Text, label: Text) -> some View {
+        VStack(spacing: 2) {
+            HStack(alignment: .firstTextBaseline, spacing: 2) {
+                Text(verbatim: "\(value)")
+                    .font(.system(size: 22, weight: .semibold))
+                unit
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            label
                 .font(.caption)
                 .foregroundStyle(.secondary)
-            Text(StatsView.timeText(model.lifetimeMinutes))
-                .font(.system(size: 34, weight: .semibold))
-                .accessibilityIdentifier("stats-lifetime")
         }
+        .frame(maxWidth: .infinity)
+    }
+
+    /// 通算を 0 から実値へ伸ばす。約 0.5 秒。数字が動いて量感が伝わる。
+    private func animateLifetime() async {
+        let target = model.lifetimeMinutes
+        if target <= 0 {
+            shownMinutes = 0
+            return
+        }
+        let steps = 24
+        var step = 1
+        while step <= steps {
+            shownMinutes = target * step / steps
+            try? await Task.sleep(nanoseconds: 20_000_000) // 20ms × 24 ≒ 0.5 秒
+            step += 1
+        }
+        shownMinutes = target
     }
 
     // MARK: - 2. 月ごと(1 本ずつ伸びるのが見える)
@@ -182,7 +255,21 @@ public struct StatsView: View {
 
     // MARK: - 表示の計算(純粋関数)
 
-    /// 分を「X 時間」/「Y 分」にする。60 分未満だけ分で出す。
+    /// 主役の通算。**分まで**出して、1 回の練習で必ず桁が動くようにする。
+    /// 「12時間30分」/「3時間」/「45分」。
+    static func heroTimeText(_ minutes: Int) -> String {
+        let hours = minutes / 60
+        let mins = minutes % 60
+        if hours > 0 && mins > 0 {
+            return "\(hours)時間\(mins)分"
+        }
+        if hours > 0 {
+            return "\(hours)時間"
+        }
+        return "\(mins)分"
+    }
+
+    /// 分を「X 時間」/「Y 分」にする。60 分未満だけ分で出す(内訳・月ごと用)。
     static func timeText(_ minutes: Int) -> String {
         if minutes >= 60 {
             return "\(minutes / 60) 時間"
