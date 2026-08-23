@@ -19,7 +19,9 @@ public struct AppMetaKey {
     public static let notificationsEnabled = "notifications_enabled"
     public static let practiceReminderWeekdays = "practice_reminder_weekdays"
     public static let practiceReminderHour = "practice_reminder_hour"
+    public static let practiceReminderMinute = "practice_reminder_minute"
     public static let notificationEveningHour = "notification_evening_hour"
+    public static let notificationEveningMinute = "notification_evening_minute"
 }
 
 public final class AppMetaRepository {
@@ -94,7 +96,9 @@ public final class AppMetaRepository {
         return NotificationSettings(isEnabled: try string(forKey: AppMetaKey.notificationsEnabled) == "1",
                                     practiceWeekdays: practiceWeekdays,
                                     practiceHour: try int(forKey: AppMetaKey.practiceReminderHour) ?? NotificationSettings.standard.practiceHour,
+                                    practiceMinute: try int(forKey: AppMetaKey.practiceReminderMinute) ?? NotificationSettings.standard.practiceMinute,
                                     eveningHour: try int(forKey: AppMetaKey.notificationEveningHour) ?? NotificationSettings.standard.eveningHour,
+                                    eveningMinute: try int(forKey: AppMetaKey.notificationEveningMinute) ?? NotificationSettings.standard.eveningMinute,
                                     reshuffleWeekday: try reshuffleWeekday())
     }
 
@@ -106,7 +110,9 @@ public final class AppMetaRepository {
         }
         try set(parts.joined(separator: ","), forKey: AppMetaKey.practiceReminderWeekdays)
         try setInt(settings.practiceHour, forKey: AppMetaKey.practiceReminderHour)
+        try setInt(settings.practiceMinute, forKey: AppMetaKey.practiceReminderMinute)
         try setInt(settings.eveningHour, forKey: AppMetaKey.notificationEveningHour)
+        try setInt(settings.eveningMinute, forKey: AppMetaKey.notificationEveningMinute)
     }
 
     // MARK: - めざす姿の促し(§7.1)

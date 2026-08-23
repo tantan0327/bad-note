@@ -16,22 +16,30 @@ public struct NotificationSettings: Hashable, Sendable {
     public var isEnabled: Bool
     /// 練習リマインドを出す曜日
     public var practiceWeekdays: [Int]
-    /// 練習開始前の時刻
+    /// 練習開始前の時刻(時)
     public var practiceHour: Int
-    /// 夜の通知(大会の振り返り / stale)の時刻
+    /// 練習開始前の時刻(分)。2.5 で「時:分」指定にした
+    public var practiceMinute: Int
+    /// 夜の通知(大会の振り返り / stale)の時刻(時)
     public var eveningHour: Int
+    /// 夜の通知の時刻(分)
+    public var eveningMinute: Int
     /// 組み替えの曜日(§4.3 の `reshuffle_weekday` と揃える)
     public var reshuffleWeekday: Int
 
     public init(isEnabled: Bool = false,
                 practiceWeekdays: [Int] = [],
                 practiceHour: Int = 18,
+                practiceMinute: Int = 0,
                 eveningHour: Int = 20,
+                eveningMinute: Int = 0,
                 reshuffleWeekday: Int = 0) {
         self.isEnabled = isEnabled
         self.practiceWeekdays = practiceWeekdays
         self.practiceHour = practiceHour
+        self.practiceMinute = practiceMinute
         self.eveningHour = eveningHour
+        self.eveningMinute = eveningMinute
         self.reshuffleWeekday = reshuffleWeekday
     }
 
@@ -74,17 +82,17 @@ public struct NotificationPlan {
         }
 
         if isCompetitionDay {
-            return NotificationPlan.at(hour: settings.eveningHour, on: day, kind: .competitionReview, calendar: calendar)
+            return NotificationPlan.at(hour: settings.eveningHour, minute: settings.eveningMinute, on: day, kind: .competitionReview, calendar: calendar)
         }
 
         // Calendar の weekday は 1 = 日曜。設定は 0 = 日曜
         let weekday = calendar.component(Calendar.Component.weekday, from: day) - 1
         if weekday == settings.reshuffleWeekday {
-            return NotificationPlan.at(hour: settings.eveningHour, on: day, kind: .staleReview, calendar: calendar)
+            return NotificationPlan.at(hour: settings.eveningHour, minute: settings.eveningMinute, on: day, kind: .staleReview, calendar: calendar)
         }
         for practiceWeekday in settings.practiceWeekdays {
             if practiceWeekday == weekday {
-                return NotificationPlan.at(hour: settings.practiceHour, on: day, kind: .practiceReminder, calendar: calendar)
+                return NotificationPlan.at(hour: settings.practiceHour, minute: settings.practiceMinute, on: day, kind: .practiceReminder, calendar: calendar)
             }
         }
         return nil
@@ -116,10 +124,10 @@ public struct NotificationPlan {
         return planned
     }
 
-    private static func at(hour: Int, on day: Date, kind: NotificationKind, calendar: Calendar) -> PlannedNotification? {
+    private static func at(hour: Int, minute: Int, on day: Date, kind: NotificationKind, calendar: Calendar) -> PlannedNotification? {
         var components = calendar.dateComponents([Calendar.Component.year, Calendar.Component.month, Calendar.Component.day], from: day)
         components.hour = hour
-        components.minute = 0
+        components.minute = minute
         guard let date = calendar.date(from: components) else {
             return nil
         }

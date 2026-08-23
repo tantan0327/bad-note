@@ -151,6 +151,40 @@ final class NotificationPlanTests: XCTestCase {
         XCTAssertEqual(20, utcCalendar().component(Calendar.Component.hour, from: planned.date))
     }
 
+    /// 時刻は分まで指定できる(2.5。DatePicker で「時:分」を選ぶ)。
+    func testPracticeReminderUsesConfiguredMinute() throws {
+        var custom = settings()
+        custom.practiceMinute = 30
+        let planned = try XCTUnwrap(NotificationPlan.notification(on: monday,
+                                                                  settings: custom,
+                                                                  isCompetitionDay: false,
+                                                                  calendar: utcCalendar()))
+
+        XCTAssertEqual(18, utcCalendar().component(Calendar.Component.hour, from: planned.date))
+        XCTAssertEqual(30, utcCalendar().component(Calendar.Component.minute, from: planned.date))
+    }
+
+    func testEveningNotificationsUseEveningMinute() throws {
+        var custom = settings()
+        custom.eveningMinute = 45
+        let planned = try XCTUnwrap(NotificationPlan.notification(on: tuesday,
+                                                                  settings: custom,
+                                                                  isCompetitionDay: true,
+                                                                  calendar: utcCalendar()))
+
+        XCTAssertEqual(45, utcCalendar().component(Calendar.Component.minute, from: planned.date))
+    }
+
+    /// 分を指定しなければ 0 分(従来の設定と互換)。
+    func testMinutesDefaultToZero() throws {
+        let planned = try XCTUnwrap(NotificationPlan.notification(on: monday,
+                                                                  settings: settings(),
+                                                                  isCompetitionDay: false,
+                                                                  calendar: utcCalendar()))
+
+        XCTAssertEqual(0, utcCalendar().component(Calendar.Component.minute, from: planned.date))
+    }
+
     // MARK: - 先の予定をまとめて作る
 
     /// 1 週間分を計画すると、月曜と日曜の 2 通だけになる。

@@ -128,6 +128,28 @@ final class AppMetaRepositoryTests: XCTestCase {
         XCTAssertFalse(try AppMetaRepository(db: db).notificationSettings().isEnabled)
     }
 
+    /// 通知時刻は分まで保存する(2.5)。既存の DB(キー無し)では 0 分。
+    func testNotificationTimeMinutesRoundTrip() throws {
+        let db = try makeDatabase()
+        defer { try? db.close() }
+        let repo = AppMetaRepository(db: db)
+
+        XCTAssertEqual(0, try repo.notificationSettings().practiceMinute)
+        XCTAssertEqual(0, try repo.notificationSettings().eveningMinute)
+
+        try repo.setNotificationSettings(NotificationSettings(isEnabled: true,
+                                                              practiceWeekdays: [1],
+                                                              practiceHour: 18,
+                                                              practiceMinute: 30,
+                                                              eveningHour: 20,
+                                                              eveningMinute: 45,
+                                                              reshuffleWeekday: 0))
+
+        let loaded = try repo.notificationSettings()
+        XCTAssertEqual(30, loaded.practiceMinute)
+        XCTAssertEqual(45, loaded.eveningMinute)
+    }
+
     func testNotificationSettingsRoundTrip() throws {
         let db = try makeDatabase()
         defer { try? db.close() }

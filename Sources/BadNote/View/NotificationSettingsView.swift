@@ -9,7 +9,9 @@ import SkipSQL
     public var isEnabled = false
     public var practiceWeekdays: [Int] = []
     public var practiceHour = 18
+    public var practiceMinute = 0
     public var eveningHour = 20
+    public var eveningMinute = 0
     public var reshuffleWeekday = 0
     public var errorText: String? = nil
 
@@ -24,7 +26,9 @@ import SkipSQL
             isEnabled = settings.isEnabled
             practiceWeekdays = settings.practiceWeekdays
             practiceHour = settings.practiceHour
+            practiceMinute = settings.practiceMinute
             eveningHour = settings.eveningHour
+            eveningMinute = settings.eveningMinute
             reshuffleWeekday = settings.reshuffleWeekday
             errorText = nil
         } catch {
@@ -63,14 +67,34 @@ import SkipSQL
         save()
     }
 
-    public func updatePracticeHour(_ hour: Int) {
-        practiceHour = hour
+    /// DatePicker(時:分)から受ける(2.5)。日付部分は捨てて時・分だけ使う。
+    public func updatePracticeTime(_ date: Date) {
+        let calendar = Calendar.current
+        practiceHour = calendar.component(Calendar.Component.hour, from: date)
+        practiceMinute = calendar.component(Calendar.Component.minute, from: date)
         save()
     }
 
-    public func updateEveningHour(_ hour: Int) {
-        eveningHour = hour
+    public func updateEveningTime(_ date: Date) {
+        let calendar = Calendar.current
+        eveningHour = calendar.component(Calendar.Component.hour, from: date)
+        eveningMinute = calendar.component(Calendar.Component.minute, from: date)
         save()
+    }
+
+    /// DatePicker に渡す Date。今日の日付に時・分を載せるだけ(使うのは時・分のみ)。
+    public static func time(hour: Int, minute: Int) -> Date {
+        let calendar = Calendar.current
+        var components = calendar.dateComponents([Calendar.Component.year, Calendar.Component.month, Calendar.Component.day], from: Date())
+        components.hour = hour
+        components.minute = minute
+        return calendar.date(from: components) ?? Date()
+    }
+
+    /// 「18:05」の形。まとめ表示用。
+    public static func timeText(hour: Int, minute: Int) -> String {
+        let padded = minute < 10 ? "0\(minute)" : "\(minute)"
+        return "\(hour):\(padded)"
     }
 
     /// 変更のたびに保存して予定を入れ直す。**設定と実際の通知をずらさない。**
@@ -80,7 +104,9 @@ import SkipSQL
             try AppMetaRepository(db: db).setNotificationSettings(NotificationSettings(isEnabled: isEnabled,
                                                                                        practiceWeekdays: practiceWeekdays,
                                                                                        practiceHour: practiceHour,
+                                                                                       practiceMinute: practiceMinute,
                                                                                        eveningHour: eveningHour,
+                                                                                       eveningMinute: eveningMinute,
                                                                                        reshuffleWeekday: reshuffleWeekday))
             // 予定の組み立ては同じ接続で。登録だけを非同期に投げる
             let planned = try NotificationService(db: db).plannedNotifications()
@@ -164,8 +190,8 @@ public struct NotificationSettingsView: View {
                     weekdayButton(weekday)
                 }
             }
-            stepperRow(Text("時刻", bundle: .module), hour: model.practiceHour) { hour in
-                model.updatePracticeHour(hour)
+            timeRow(hour: model.practiceHour, minute: model.practiceMinute) { date in
+                model.updatePracticeTime(date)
             }
             Text("練習に行く曜日を選びます。選ばなければ出しません", bundle: .module)
                 .font(.caption)
@@ -196,8 +222,8 @@ public struct NotificationSettingsView: View {
         VStack(alignment: .leading, spacing: 8) {
             Text("夜の通知", bundle: .module)
                 .font(.headline)
-            stepperRow(Text("時刻", bundle: .module), hour: model.eveningHour) { hour in
-                model.updateEveningHour(hour)
+            timeRow(hour: model.eveningHour, minute: model.eveningMinute) { date in
+                model.updateEveningTime(date)
             }
             Text("大会当日の振り返りと、しばらく触れていない課題の知らせに使います", bundle: .module)
                 .font(.caption)
@@ -205,25 +231,13 @@ public struct NotificationSettingsView: View {
         }
     }
 
-    @ViewBuilder private func stepperRow(_ label: Text, hour: Int, action: @escaping (Int) -> Void) -> some View {
-        HStack {
-            label
+    /// 時刻は DatePicker で一発指定(2.5)。−/+ で 11 回押させない。
+    @ViewBuilder private func timeRow(hour: Int, minute: Int, action: @escaping (Date) -> Void) -> some View {
+        DatePicker(selection: Binding(get: { NotificationSettingsModel.time(hour: hour, minute: minute) },
+                                      set: { action($0) }),
+                   displayedComponents: .hourAndMinute) {
+            Text("時刻", bundle: .module)
                 .font(.footnote)
-            Spacer()
-            Button {
-                action(hour > 0 ? hour - 1 : 23)
-            } label: {
-                Text(verbatim: "−")
-            }
-            .buttonStyle(.bordered)
-            Text(verbatim: "\(hour) 時")
-                .frame(minWidth: 56)
-            Button {
-                action(hour < 23 ? hour + 1 : 0)
-            } label: {
-                Text(verbatim: "+")
-            }
-            .buttonStyle(.bordered)
         }
     }
 
@@ -231,9 +245,9 @@ public struct NotificationSettingsView: View {
         VStack(alignment: .leading, spacing: 4) {
             Text("いま設定されている通知", bundle: .module)
                 .font(.headline)
-            Text(verbatim: "・練習前(\(model.practiceHour) 時): 今週の重点 3 つ")
-            Text(verbatim: "・大会当日(\(model.eveningHour) 時): 振り返りを促す")
-            Text(verbatim: "・毎週\(weekdayNames[model.reshuffleWeekday])曜(\(model.eveningHour) 時): しばらく触れていない課題")
+            Text(verbatim: "・練習前(\(NotificationSettingsModel.timeText(hour: model.practiceHour, minute: model.practiceMinute))): 今週の重点 3 つ")
+            Text(verbatim: "・大会当日(\(NotificationSettingsModel.timeText(hour: model.eveningHour, minute: model.eveningMinute))): 振り返りを促す")
+            Text(verbatim: "・毎週\(weekdayNames[model.reshuffleWeekday])曜(\(NotificationSettingsModel.timeText(hour: model.eveningHour, minute: model.eveningMinute))): しばらく触れていない課題")
             Text("同じ日に重なったときは、大会 → 触れていない課題 → 練習前 の順で 1 通だけ出します", bundle: .module)
                 .font(.caption)
                 .foregroundStyle(.secondary)
