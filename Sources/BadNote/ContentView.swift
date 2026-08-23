@@ -72,19 +72,41 @@ struct ContentView: View {
 struct SettingsView: View {
     var body: some View {
         Form {
-            NavigationLink {
-                ArchiveListView()
-            } label: {
-                Text("定着した課題", bundle: .module)
-            }
+            // 上から「設定するもの」→「眺めるもの」の順(2.6)
             NavigationLink {
                 NotificationSettingsView()
             } label: {
-                Text("通知", bundle: .module)
+                Label {
+                    Text("通知", bundle: .module)
+                } icon: {
+                    Image("notifications", bundle: .module)
+                }
+            }
+            NavigationLink {
+                StaleSettingsView()
+            } label: {
+                Label {
+                    Text("しばらく触れていない課題", bundle: .module)
+                } icon: {
+                    Image("history", bundle: .module)
+                }
+            }
+            NavigationLink {
+                ArchiveListView()
+            } label: {
+                Label {
+                    Text("定着した課題", bundle: .module)
+                } icon: {
+                    Image("archive", bundle: .module)
+                }
             }
             if let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String,
                let buildNumber = Bundle.main.infoDictionary?["CFBundleVersion"] as? String {
-                Text(verbatim: "バージョン \(version) (\(buildNumber))")
+                Label {
+                    Text(verbatim: "バージョン \(version) (\(buildNumber))")
+                } icon: {
+                    Image("info", bundle: .module)
+                }
             }
         }
         .navigationTitle(Text("設定", bundle: .module))
