@@ -19,10 +19,18 @@ public struct CompetitionListView: View {
                         .foregroundStyle(.red)
                 }
                 if model.upcoming.isEmpty && model.finished.isEmpty {
-                    // 大会なしでもアプリは成立させる(§7.1)
-                    Text("大会はまだ登録されていません", bundle: .module)
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
+                    // 大会なしでもアプリは成立させる(§7.1)。次の 1 手は登録(2.4)
+                    EmptyStateView(icon: "emoji_events",
+                                   message: Text("大会はまだ登録されていません", bundle: .module)) {
+                        NavigationLink {
+                            CompetitionEditView()
+                        } label: {
+                            Text("大会を登録する", bundle: .module)
+                                .font(.footnote)
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .accessibilityIdentifier("competition-empty-action")
+                    }
                 }
                 section(title: Text("これからの大会", bundle: .module), rows: model.upcoming)
                 section(title: Text("終了した大会", bundle: .module), rows: model.finished)

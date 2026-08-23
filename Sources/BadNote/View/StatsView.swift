@@ -174,9 +174,10 @@ public struct StatsView: View {
     }
 
     @ViewBuilder private var emptyLine: some View {
-        Text("まだ記録がありません", bundle: .module)
-            .font(.footnote)
-            .foregroundStyle(.secondary)
+        // 記録が増えるのを待つだけの場所。次の 1 手は置かない(2.4)
+        EmptyStateView(message: Text("まだ記録がありません", bundle: .module)) {
+            EmptyView()
+        }
     }
 
     // MARK: - 表示の計算(純粋関数)

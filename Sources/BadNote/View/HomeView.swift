@@ -81,11 +81,11 @@ public struct HomeView: View {
                 VisionEditView()
             } label: {
                 if model.vision.isEmpty {
-                    // 初回は促さない(§7.1)。空でも場所だけ確保しておく
-                    Text("まだ書かれていません", bundle: .module)
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                        .frame(maxWidth: .infinity, alignment: .leading)
+                    // 初回は促さない(§7.1)。空でも場所だけ確保する。
+                    // タップで編集に入れるので、ここにボタンは足さない(2.4)
+                    EmptyStateView(message: Text("まだ書かれていません", bundle: .module)) {
+                        EmptyView()
+                    }
                 } else {
                     Text(model.vision.body)
                         .font(.title2)
@@ -205,9 +205,18 @@ public struct HomeView: View {
             Text("今週の重点", bundle: .module)
                 .font(.headline)
             if model.focusCards.isEmpty {
-                Text("重点はまだ決まっていません", bundle: .module)
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
+                // 次の 1 手 —— 組み替えモードで重点を選ぶ(2.4)
+                EmptyStateView(icon: "checklist",
+                               message: Text("重点はまだ決まっていません", bundle: .module)) {
+                    NavigationLink {
+                        FocusReshuffleView()
+                    } label: {
+                        Text("重点を選ぶ", bundle: .module)
+                            .font(.footnote)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .accessibilityIdentifier("home-focus-empty-action")
+                }
             }
             ForEach(model.focusCards) { card in
                 Card {

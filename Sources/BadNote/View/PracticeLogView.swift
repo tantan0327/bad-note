@@ -226,9 +226,11 @@ public struct PracticeLogView: View {
         VStack(alignment: .leading, spacing: 12) {
             sectionTitle(Text("今週の重点", bundle: .module))
             if model.focusInputs.isEmpty {
-                Text("今週の重点はまだありません", bundle: .module)
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
+                // 練習ログ入力では課題を整理させない(§7.2)ので、ここに導線は置かない
+                EmptyStateView(icon: "checklist",
+                               message: Text("今週の重点はまだありません", bundle: .module)) {
+                    EmptyView()
+                }
             }
             ForEach(model.focusInputs) { input in
                 Card {

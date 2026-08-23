@@ -236,11 +236,33 @@ Android エミュレータ(API 34 / SQLite 3.39.2)で DB 作成・マイグレ�
   一覧なのにカードで作ってある)
 - 組み替えモードの「外す」「選ぶ」が**灰色の文字で、押せると分からない**
 
-### 2.4 空の状態がただのグレー文字
+### 2.4 空の状態がただのグレー文字 —— **済(2026-08-23)**
 
-「まだ書かれていません」「重点はまだ決まっていません」「まだ記録がありません」
-「今週の重点はまだありません」—— **全部ただの灰色 1 行。**
-アイコン + 一言 + 次の 1 手のボタン、の形に揃える。3.1 と同じ話。
+**`EmptyStateView`(`View/EmptyStateView.swift`)を新設。** アイコン(任意)+ 一言 +
+次の 1 手のボタン(任意)を中央に積む。ボタンは呼び出し側が渡す
+(`NavigationLink` でも `Button` でも。押す先で種類が変わるため style も呼び出し側)。
+
+適用したのは ScrollView 系の空の状態:
+
+- **ホーム** — めざす姿(アイコン・ボタンなし。§7.1 促さない。タップで編集に入れる)/
+  今週の重点(`checklist` + 「重点を選ぶ」→ 組み替えモード)
+- **練習ログ入力** — 今週の重点(`checklist`。§7.2 ここで整理させないのでボタンなし)
+- **課題詳細** — 進み方(記録待ちなのでボタンなし)
+- **積み上げ** — 月ごと / 内訳(記録待ちなのでボタンなし)
+- **大会一覧** — `emoji_events` +「大会を登録する」→ 登録画面
+
+**線引き** —— 次の 1 手が無い場所(記録が増えるのを待つだけ / めざす姿)ではボタンを省いた。
+ボタンを足した所には `accessibilityIdentifier` 付き(5.1 の先取り)。
+
+**触っていない空の状態**:
+
+- 課題一覧の空の層(`emptyRow`)—— **長押しドラッグの落とし先**なので構造を変えない(§7.4)
+- 家トレ(`emptySection`)—— すでに文言 + 「メニューを作る」導線があり、`List` 内なので現状のまま
+- インボックス整理 / アーカイブ / 組み替えモードの候補なし —— 「片づいた」側の表示。追って要検討
+
+**Skip の落とし穴**(踏んだ)—— **ジェネリック制約付き extension には init を足せない**し、
+**コンストラクタに型独自のジェネリックを増やせない**。`EmptyStateView<Action>` を
+ジェネリック型にして、ボタン無しは `{ EmptyView() }` を渡す形にした(開発メモに追記)。
 
 ### 2.5 通知時刻の指定が −/+ ボタン
 
@@ -528,3 +550,8 @@ Android の `Bundle.main` は「メインモジュールの `Resources/`」を�
   `SelectableChip`(`View/ChipStyle.swift`)にまとめてある(2026-08-22)
 - **`PhotosPicker` は使えない** — `UIViewRepresentable` / `TimelineView` / `matchedGeometryEffect` も同様。
   `building-skip-ui` スキルの `references/components.md` の "Not Available in SkipUI" を先に見る
+- **ジェネリック制約付き extension に init を足せない / コンストラクタに型独自のジェネリックを
+  増やせない**(2026-08-23) — `struct Foo<A: View>` に対して `extension Foo where A == EmptyView { init(...) }`
+  も、非ジェネリック型の `init<A: View>(...)` も、どちらも Android のコンパイルで落ちる
+  (`This extension cannot be merged…` / `Kotlin constructors cannot introduce additional generics`)。
+  ジェネリックは型宣言に置き、省略時は呼び出し側で `{ EmptyView() }` を渡す(`EmptyStateView` で採用)

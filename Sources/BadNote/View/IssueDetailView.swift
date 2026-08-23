@@ -142,9 +142,10 @@ public struct IssueDetailView: View {
             Text("進み方", bundle: .module)
                 .font(.headline)
             if model.progress.isEmpty {
-                Text("まだ記録がありません", bundle: .module)
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
+                // 記録が増えるのを待つだけの場所。次の 1 手は置かない(2.4)
+                EmptyStateView(message: Text("まだ記録がありません", bundle: .module)) {
+                    EmptyView()
+                }
             } else {
                 ScrollView(.horizontal) {
                     HStack(spacing: 8) {
