@@ -234,12 +234,8 @@ public struct HomeView: View {
                             Text(card.issue.displayTitle)
                                 .font(.body)
                             HStack(spacing: 8) {
-                                Text(card.issue.masteryLevel.displayName)
-                                    .font(.caption)
-                                    .padding(.horizontal, 8)
-                                    .padding(.vertical, 4)
-                                    .background(Palette.surfaceRaised)
-                                    .cornerRadius(4)
+                                // 一覧の行と同じ形(2.3)。文字チップより進み具合が見える
+                                MasteryIndicator(level: card.issue.masteryLevel)
                                 if let result = card.latestResult {
                                     Text(result.displayName)
                                         .font(.caption)

@@ -51,12 +51,7 @@ public struct IssueDetailView: View {
                 .font(.title2)
             if issue.isFrequentlyResurfacing {
                 // §7.3 よく戻ってくる課題。弱点の本質を示す情報として出す
-                Text("よく戻ってくる課題", bundle: .module)
-                    .font(.caption)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(Palette.surfaceRaised)
-                    .cornerRadius(4)
+                Badge(label: Text("よく戻ってくる課題", bundle: .module))
             }
         }
     }

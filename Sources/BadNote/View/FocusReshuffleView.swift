@@ -145,14 +145,13 @@ public struct FocusReshuffleView: View {
                             VStack(alignment: .leading, spacing: 4) {
                                 Text(issue.displayTitle)
                                     .font(.body)
-                                Text(issue.masteryLevel.displayName)
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
+                                MasteryIndicator(level: issue.masteryLevel)
                             }
                             Spacer()
+                            // 押せる導線はリンク色(2.3。灰色だと押せると分からない)
                             Text("外す", bundle: .module)
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
+                                .font(.footnote)
+                                .foregroundStyle(Palette.accent)
                         }
                         .foregroundStyle(.primary)
                     }
@@ -179,14 +178,13 @@ public struct FocusReshuffleView: View {
                             VStack(alignment: .leading, spacing: 4) {
                                 Text(issue.displayTitle)
                                     .font(.body)
-                                Text(issue.masteryLevel.displayName)
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
+                                MasteryIndicator(level: issue.masteryLevel)
                             }
                             Spacer()
+                            // 押せる導線はリンク色(2.3)
                             Text("選ぶ", bundle: .module)
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
+                                .font(.footnote)
+                                .foregroundStyle(Palette.accent)
                         }
                         .foregroundStyle(.primary)
                     }

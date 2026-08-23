@@ -43,39 +43,33 @@ public struct ArchiveListView: View {
     }
 
     public var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 12) {
-                if let errorText = model.errorText {
-                    Text(errorText)
-                        .font(.footnote)
-                        .foregroundStyle(.red)
-                }
-                if model.issues.isEmpty {
-                    Text("まだありません。課題を試合で出せるようになったら、ここに並びます", bundle: .module)
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                }
-                ForEach(model.issues) { issue in
-                    Card {
-                        NavigationLink {
-                            IssueDetailView(issueID: issue.id)
-                        } label: {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(issue.displayTitle)
-                                    .font(.body)
-                                if let archivedAt = issue.archivedAt {
-                                    Text(archivedAt.formatted(date: .abbreviated, time: .omitted))
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                }
-                            }
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .foregroundStyle(.primary)
+        // 同じ形の行を選ぶだけの画面なので List(区切り線の決めごと。2.3 でカードから寄せた)
+        List {
+            if let errorText = model.errorText {
+                Text(errorText)
+                    .font(.footnote)
+                    .foregroundStyle(.red)
+            }
+            if model.issues.isEmpty {
+                Text("まだありません。課題を試合で出せるようになったら、ここに並びます", bundle: .module)
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
+            ForEach(model.issues) { issue in
+                NavigationLink {
+                    IssueDetailView(issueID: issue.id)
+                } label: {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(issue.displayTitle)
+                            .font(.body)
+                        if let archivedAt = issue.archivedAt {
+                            Text(archivedAt.formatted(date: .abbreviated, time: .omitted))
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
                         }
                     }
                 }
             }
-            .padding()
         }
         .navigationTitle(Text("定着した課題", bundle: .module))
         .onAppear {

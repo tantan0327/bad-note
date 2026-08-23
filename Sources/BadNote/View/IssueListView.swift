@@ -211,9 +211,8 @@ public struct IssueListView: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text(issue.displayTitle)
                     .font(.body)
-                Text(issue.masteryLevel.displayName)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                // 文字だけにしない。ミニバーで進み具合が見える(2.3)
+                MasteryIndicator(level: issue.masteryLevel)
             }
         }
         .swipeActions(edge: .leading) {

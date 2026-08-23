@@ -11,31 +11,29 @@ public struct CompetitionListView: View {
     }
 
     public var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 24) {
-                if let errorText = model.errorText {
-                    Text(errorText)
-                        .font(.footnote)
-                        .foregroundStyle(.red)
-                }
-                if model.upcoming.isEmpty && model.finished.isEmpty {
-                    // 大会なしでもアプリは成立させる(§7.1)。次の 1 手は登録(2.4)
-                    EmptyStateView(icon: "emoji_events",
-                                   message: Text("大会はまだ登録されていません", bundle: .module)) {
-                        NavigationLink {
-                            CompetitionEditView()
-                        } label: {
-                            Text("大会を登録する", bundle: .module)
-                                .font(.footnote)
-                        }
-                        .buttonStyle(.borderedProminent)
-                        .accessibilityIdentifier("competition-empty-action")
-                    }
-                }
-                section(title: Text("これからの大会", bundle: .module), rows: model.upcoming)
-                section(title: Text("終了した大会", bundle: .module), rows: model.finished)
+        // 同じ形の行を選ぶだけの画面なので List(区切り線の決めごと。2.3 でカードから寄せた)
+        List {
+            if let errorText = model.errorText {
+                Text(errorText)
+                    .font(.footnote)
+                    .foregroundStyle(.red)
             }
-            .padding()
+            if model.upcoming.isEmpty && model.finished.isEmpty {
+                // 大会なしでもアプリは成立させる(§7.1)。次の 1 手は登録(2.4)
+                EmptyStateView(icon: "emoji_events",
+                               message: Text("大会はまだ登録されていません", bundle: .module)) {
+                    NavigationLink {
+                        CompetitionEditView()
+                    } label: {
+                        Text("大会を登録する", bundle: .module)
+                            .font(.footnote)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .accessibilityIdentifier("competition-empty-action")
+                }
+            }
+            section(title: Text("これからの大会", bundle: .module), rows: model.upcoming)
+            section(title: Text("終了した大会", bundle: .module), rows: model.finished)
         }
         .navigationTitle(Text("大会", bundle: .module))
         .toolbar {
@@ -54,30 +52,28 @@ public struct CompetitionListView: View {
 
     @ViewBuilder private func section(title: Text, rows: [CompetitionListModel.Row]) -> some View {
         if !rows.isEmpty {
-            VStack(alignment: .leading, spacing: 8) {
-                title.font(.headline)
+            Section {
                 ForEach(rows) { row in
-                    Card {
-                        NavigationLink {
-                            CompetitionDetailView(competitionID: row.competition.id)
-                        } label: {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(row.competition.name)
-                                    .font(.body)
+                    NavigationLink {
+                        CompetitionDetailView(competitionID: row.competition.id)
+                    } label: {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(row.competition.name)
+                                .font(.body)
+                            HStack(spacing: 8) {
                                 Text(dateText(row.competition.eventDate))
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
                                 if !row.targetDisciplines.isEmpty {
-                                    // 目標大会の印(§7.5)
-                                    Text(targetText(row.targetDisciplines))
-                                        .font(.caption)
+                                    // 目標大会の印(§7.5)。文字の星ではなくバッジ(2.3)
+                                    Badge(label: Text(verbatim: targetText(row.targetDisciplines)))
                                 }
                             }
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .foregroundStyle(.primary)
                         }
                     }
                 }
+            } header: {
+                title
             }
         }
     }
@@ -91,7 +87,7 @@ public struct CompetitionListView: View {
         for discipline in disciplines {
             names.append(discipline.displayName)
         }
-        return "★ 目標大会(" + names.joined(separator: " / ") + ")"
+        return "目標大会(" + names.joined(separator: " / ") + ")"
     }
 }
 
