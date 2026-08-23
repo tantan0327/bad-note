@@ -75,6 +75,7 @@ public struct StatsView: View {
                         .foregroundStyle(.red)
                 }
                 lifetimeSection
+                milestoneSection
                 monthlySection
                 categorySection
             }
@@ -162,7 +163,63 @@ public struct StatsView: View {
         shownMinutes = target
     }
 
-    // MARK: - 2. 月ごと(1 本ずつ伸びるのが見える)
+    // MARK: - 2. とどいた節目(到達済みだけを祝う。§5.3 目標は置かない)
+
+    /// 到達した節目のチップを並べる。無い(通算 1 時間未満)ときは丸ごと隠す。
+    /// **前向きの目標ではなく達成の記録**なので、次の節目までの残りは出さない。
+    @ViewBuilder private var milestoneSection: some View {
+        let reached = Milestone.reachedHours(minutes: model.lifetimeMinutes)
+        if !reached.isEmpty {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("とどいた節目", bundle: .module)
+                    .font(.headline)
+                ScrollView(.horizontal) {
+                    HStack(spacing: 8) {
+                        ForEach(reached, id: \.self) { hours in
+                            milestoneBadge(hours, isLatest: hours == reached[reached.count - 1])
+                        }
+                        // 究極の目標(1 万時間の法則)を終端に北極星として置く
+                        ultimateBadge(reached: Milestone.hasReachedUltimate(minutes: model.lifetimeMinutes))
+                    }
+                }
+            }
+            .accessibilityIdentifier("stats-milestones")
+        }
+    }
+
+    /// 節目のチップ。直近に届いたものだけ accent で強調する。
+    @ViewBuilder private func milestoneBadge(_ hours: Int, isLatest: Bool) -> some View {
+        Text(verbatim: "\(hours)時間")
+            .font(.caption)
+            .foregroundStyle(isLatest ? Color.white : Color.primary)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .background(isLatest ? Palette.accent : Palette.surfaceRaised)
+            .cornerRadius(4)
+    }
+
+    /// 究極の目標のチップ。まだ先なので **枠線だけ**(埋めない)—— 目指す先を静かに示す。
+    /// 到達したら塗りつぶして祝う。残り時間は出さない(§5.3)。
+    @ViewBuilder private func ultimateBadge(reached: Bool) -> some View {
+        HStack(spacing: 4) {
+            Image("emoji_events", bundle: .module)
+            Text(verbatim: "1万時間")
+        }
+        .font(.caption)
+        .foregroundStyle(reached ? Color.white : Palette.accent)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 4)
+        .background(
+            RoundedRectangle(cornerRadius: 4)
+                .fill(reached ? Palette.accent : Palette.surface)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 4)
+                .stroke(Palette.accent, lineWidth: 1)
+        )
+    }
+
+    // MARK: - 3. 月ごと(1 本ずつ伸びるのが見える)
 
     @ViewBuilder private var monthlySection: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -180,27 +237,46 @@ public struct StatsView: View {
 
     @ViewBuilder private var monthlyChart: some View {
         let maxMinutes = StatsView.maxMinutes(model.monthly)
+        let lastIndex = model.monthly.count - 1
         HStack(alignment: .bottom, spacing: 8) {
-            ForEach(model.monthly) { entry in
-                VStack(spacing: 4) {
-                    // 棒。最大値に対する割合で高さを決める。0 分の月は伸びない
-                    Rectangle()
-                        .fill(Palette.accent)
-                        .frame(height: StatsView.barHeight(entry.minutes, max: maxMinutes))
-                        .cornerRadius(4)
-                        .frame(maxHeight: .infinity, alignment: .bottom)
-                    Text(StatsView.monthLabel(entry.month))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                .frame(maxWidth: .infinity)
+            ForEach(0..<model.monthly.count, id: \.self) { index in
+                monthColumn(model.monthly[index], isCurrent: index == lastIndex, max: maxMinutes)
             }
         }
-        .frame(height: 140)
+        .frame(height: 160)
         .accessibilityIdentifier("stats-monthly")
     }
 
-    // MARK: - 3. 種類の内訳
+    @ViewBuilder private func monthColumn(_ entry: MonthlyMinutes, isCurrent: Bool, max maxMinutes: Int) -> some View {
+        VStack(spacing: 4) {
+            // 今月だけ値を上に出す。短い棒でも「途中」だと伝わり、下降に見えない(④)
+            Text(verbatim: isCurrent && entry.minutes > 0 ? StatsView.timeText(entry.minutes) : " ")
+                .font(.caption)
+                .foregroundStyle(Palette.accent)
+                .frame(height: 16)
+            // 0 分の月も薄いスリバーで残す —— 空白の列は「途切れ」に見えるため(§5.3)
+            Rectangle()
+                .fill(StatsView.barColor(minutes: entry.minutes, isCurrent: isCurrent))
+                .frame(height: StatsView.monthBarHeight(entry.minutes, max: maxMinutes))
+                .cornerRadius(4)
+                .frame(maxHeight: .infinity, alignment: .bottom)
+            // 今月は数字ではなく「今月」と出して、進行中だと分かるように
+            monthLabel(entry, isCurrent: isCurrent)
+                .font(.caption)
+                .foregroundStyle(isCurrent ? Palette.accent : Color.secondary)
+        }
+        .frame(maxWidth: .infinity)
+        .accessibilityLabel(Text(verbatim: "\(StatsView.monthLabel(entry.month))月 \(StatsView.timeText(entry.minutes))"))
+    }
+
+    private func monthLabel(_ entry: MonthlyMinutes, isCurrent: Bool) -> Text {
+        if isCurrent {
+            return Text("今月", bundle: .module)
+        }
+        return Text(verbatim: StatsView.monthLabel(entry.month))
+    }
+
+    // MARK: - 4. 種類の内訳
 
     @ViewBuilder private var categorySection: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -232,18 +308,20 @@ public struct StatsView: View {
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             }
-            // 横棒。track の幅いっぱいに対する割合で fill を伸ばす
+            // 横棒。track の幅に対する割合で fill を伸ばす。カテゴリごとに accent の濃さを変える
             GeometryReader { proxy in
                 ZStack(alignment: .leading) {
                     Capsule()
                         .fill(Palette.surfaceRaised)
                     Capsule()
-                        .fill(Palette.accent)
-                        .frame(width: proxy.size.width * StatsView.fraction(entry.minutes, max: maxMinutes))
+                        .fill(Palette.accent.opacity(StatsView.categoryOpacity(entry.category)))
+                        // 記録のあるカテゴリは最小幅を保証して、小さくても必ず見えるようにする(⑥)
+                        .frame(width: StatsView.barWidth(entry.minutes, max: maxMinutes, track: proxy.size.width))
                 }
             }
             .frame(height: 8)
         }
+        .accessibilityLabel(Text(verbatim: "\(entry.category.displayName) \(StatsView.timeText(entry.minutes))"))
     }
 
     @ViewBuilder private var emptyLine: some View {
@@ -292,12 +370,56 @@ public struct StatsView: View {
         return chartHeight * (Double(minutes) / Double(maxMinutes))
     }
 
-    /// 横棒の埋まり具合(0〜1)。
-    static func fraction(_ minutes: Int, max maxMinutes: Int) -> Double {
-        if maxMinutes <= 0 {
+    /// 月グラフの棒の高さ。0 分は薄いスリバー(3pt)、それ以外は最低 6pt を保証して
+    /// 記録のある月が必ず見えるようにする(④)。
+    static func monthBarHeight(_ minutes: Int, max maxMinutes: Int) -> Double {
+        if minutes <= 0 {
+            return 3.0
+        }
+        let height = barHeight(minutes, max: maxMinutes)
+        return height < 6.0 ? 6.0 : height
+    }
+
+    /// 月グラフの棒の色。0 分は面の色(空だと分かる)、今月は accent、過去は薄い accent(④)。
+    static func barColor(minutes: Int, isCurrent: Bool) -> Color {
+        if minutes <= 0 {
+            return Palette.surfaceRaised
+        }
+        if isCurrent {
+            return Palette.accent
+        }
+        return Palette.accent.opacity(0.45)
+    }
+
+    /// 内訳の横棒の幅。最大カテゴリを track 幅いっぱいにする。
+    /// 記録があれば **最低 6pt** を保証し、小さいカテゴリが 0px で消えないようにする(⑥)。
+    static func barWidth(_ minutes: Int, max maxMinutes: Int, track: Double) -> Double {
+        if maxMinutes <= 0 || minutes <= 0 {
             return 0
         }
-        return Double(minutes) / Double(maxMinutes)
+        let width = track * (Double(minutes) / Double(maxMinutes))
+        let minVisible = 6.0
+        if width < minVisible {
+            return minVisible
+        }
+        if width > track {
+            return track
+        }
+        return width
+    }
+
+    /// カテゴリごとの accent の濃さ(⑥)。宣言順に少しずつ薄くして見分けをつける。
+    /// 手応え色(done/closer/next)とは意味が違うので流用せず、ブランドの accent の濃淡で表す。
+    /// いちばん薄くても 0.45 までにして「無効」に見せない。並びは値ではなく種類で固定(順位の暗示を避ける)。
+    static func categoryOpacity(_ category: StatsCategory) -> Double {
+        switch category {
+        case .whole: return 1.0
+        case .individual: return 0.85
+        case .game: return 0.72
+        case .strength: return 0.6
+        case .homeTraining: return 0.5
+        case .other: return 0.45
+        }
     }
 
     static func maxMinutes(_ entries: [MonthlyMinutes]) -> Int {
