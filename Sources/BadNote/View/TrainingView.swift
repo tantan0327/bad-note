@@ -48,23 +48,48 @@ public struct TrainingView: View {
         }
     }
 
-    // MARK: - 日付(さかのぼって付けられる)
+    // MARK: - 日付(「今日」が画面の顔。さかのぼりは控えめに。3.2)
 
     @ViewBuilder private var dateSection: some View {
         Section {
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(verbatim: model.dayTitle)
+                        .font(.title2)
+                    Text(verbatim: model.daySubtitle)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
+                if model.isToday {
+                    // 付け忘れの大半は昨日の分。1 タップでさかのぼる
+                    Button {
+                        model.selectYesterday()
+                    } label: {
+                        Text("昨日", bundle: .module)
+                            .font(.footnote)
+                    }
+                    .buttonStyle(.bordered)
+                    .accessibilityIdentifier("training_select_yesterday")
+                } else {
+                    // 過去日を開いていることが見た目でも分かるように、戻る導線を目立たせる
+                    Button {
+                        model.backToToday()
+                    } label: {
+                        Text("今日に戻る", bundle: .module)
+                            .font(.footnote)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .accessibilityIdentifier("training_back_to_today")
+                }
+            }
+            // 昨日より前は控えめな行から
             DatePicker(selection: $model.date, displayedComponents: .date) {
-                Text("日付", bundle: .module)
+                Text("別の日", bundle: .module)
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
             }
             .accessibilityIdentifier("training_date_picker")
-            if !model.isToday {
-                Button {
-                    model.backToToday()
-                } label: {
-                    Text("今日に戻る", bundle: .module)
-                        .font(.footnote)
-                }
-                .accessibilityIdentifier("training_back_to_today")
-            }
         }
     }
 

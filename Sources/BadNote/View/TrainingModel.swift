@@ -88,6 +88,46 @@ import SkipSQL
         return days.text(from: date) == days.text(from: Date())
     }
 
+    public var isYesterday: Bool {
+        guard let yesterday = Calendar.current.date(byAdding: Calendar.Component.day, value: -1, to: Date()) else {
+            return false
+        }
+        return days.text(from: date) == days.text(from: yesterday)
+    }
+
+    /// 画面の見出し(3.2)。今日と昨日は言葉で、それ以前は日付で。
+    public var dayTitle: String {
+        if isToday {
+            return "今日"
+        }
+        if isYesterday {
+            return "昨日"
+        }
+        return TrainingModel.dayText(date)
+    }
+
+    /// 見出しの添え字。見出しが「今日 / 昨日」のときは日付、日付のときはさかのぼりの注記。
+    public var daySubtitle: String {
+        if isToday || isYesterday {
+            return TrainingModel.dayText(date)
+        }
+        return "さかのぼって付けています"
+    }
+
+    /// 「8月24日(月)」。UI は日本語のみなので ja_JP 固定(英語対応は 6.2 と一緒に)。
+    static func dayText(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "ja_JP")
+        formatter.dateFormat = "M月d日(E)"
+        return formatter.string(from: date)
+    }
+
+    /// 付け忘れの大半は昨日の分(3.2)。1 タップでさかのぼる。
+    public func selectYesterday() {
+        date = Calendar.current.date(byAdding: Calendar.Component.day, value: -1, to: Date()) ?? Date()
+        load()
+    }
+
     public func backToToday() {
         date = Date()
         load()
