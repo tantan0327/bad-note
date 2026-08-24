@@ -61,6 +61,70 @@ import SkipSQL
         }
     }
 
+    // MARK: - その日の分数の編集(日によって時間が変わる)
+
+    /// 分数を編集中のメニュー。シートの表示フラグは View 側の @State が持つ。
+    public private(set) var editingMenu: TrainingMenu? = nil
+    /// 編集中の分数。空や 0 は「分数なし」(メニューの目安と同じ扱い)。
+    /// 0 を空文字で持つ理由は練習ログと同じ(まず消す手間を作らない)。
+    public var editingMinutesText = ""
+
+    public func beginEditingMinutes(_ menu: TrainingMenu) {
+        editingMenu = menu
+        if let minutes = logs[menu.id]?.minutes {
+            editingMinutesText = String(minutes)
+        } else {
+            editingMinutesText = ""
+        }
+    }
+
+    public var editingMinutes: Int {
+        let trimmed = editingMinutesText.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines)
+        return Int(trimmed) ?? 0
+    }
+
+    public func addEditingMinutes(_ amount: Int) {
+        editingMinutesText = String(editingMinutes + amount)
+    }
+
+    public func resetEditingMinutes() {
+        editingMinutesText = ""
+    }
+
+    /// 「目安に戻す」用。目安の無いメニューでは出さない。
+    public var editingDefaultMinutes: Int? {
+        return editingMenu?.minutes
+    }
+
+    public func resetEditingMinutesToDefault() {
+        if let minutes = editingDefaultMinutes {
+            editingMinutesText = String(minutes)
+        }
+    }
+
+    /// 編集した分数を保存する。対象はチェック済みの行だけ(リポジトリが守る)。
+    public func saveEditedMinutes() {
+        guard let menu = editingMenu else {
+            return
+        }
+        do {
+            let repo = TrainingRepository(db: try context())
+            var value: Int? = nil
+            if editingMinutes > 0 {
+                value = editingMinutes
+            }
+            logs[menu.id] = try repo.setMinutes(menuId: menu.id, on: date, minutes: value)
+            errorText = nil
+        } catch {
+            errorText = "分数の変更に失敗しました: \(error)"
+        }
+        editingMenu = nil
+    }
+
+    public func cancelEditingMinutes() {
+        editingMenu = nil
+    }
+
     /// チェックが付いた分の合計(§10.2)。分数の無いメニューは 0 分。
     public var doneMinutes: Int {
         var total = 0

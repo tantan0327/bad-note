@@ -289,4 +289,85 @@ final class TrainingRepositoryTests: XCTestCase {
 
         XCTAssertEqual(try repo.totalMinutes(from: day(0), to: day(1)), 10)
     }
+
+    // MARK: - その日の分数の編集(日によって時間が変わる)
+
+    /// チェック済みの日の分数を後から直せる。done_at は変えない。
+    func testSetMinutesUpdatesCheckedLog() throws {
+        let db = try makeDatabase()
+        defer { try? db.close() }
+        let repo = makeRepository(db)
+
+        let menu = try repo.createMenu(name: "体幹", minutes: 10)
+        let checked = try repo.check(menuId: menu.id, on: day(0))
+        let updated = try repo.setMinutes(menuId: menu.id, on: day(0), minutes: 25)
+
+        XCTAssertEqual(updated.minutes, 25)
+        XCTAssertEqual(updated.doneAt, checked.doneAt)
+        let log: TrainingLog = try XCTUnwrap(repo.fetchLogs(on: day(0)).first)
+        XCTAssertEqual(log.minutes, 25)
+    }
+
+    /// 空にもできる(分数の無い実施記録に戻す)。集計には 0 分で入る。
+    func testSetMinutesAllowsNil() throws {
+        let db = try makeDatabase()
+        defer { try? db.close() }
+        let repo = makeRepository(db)
+
+        let menu = try repo.createMenu(name: "体幹", minutes: 10)
+        _ = try repo.check(menuId: menu.id, on: day(0))
+        let updated = try repo.setMinutes(menuId: menu.id, on: day(0), minutes: nil)
+
+        XCTAssertNil(updated.minutes)
+        XCTAssertEqual(try repo.totalMinutes(from: day(0), to: day(1)), 0)
+    }
+
+    /// チェックしていない日は直せない(行が無い。黙って成功にしない)。
+    func testSetMinutesRequiresCheckedRow() throws {
+        let db = try makeDatabase()
+        defer { try? db.close() }
+        let repo = makeRepository(db)
+
+        let menu = try repo.createMenu(name: "体幹", minutes: 10)
+
+        // XCTAssertThrowsError は Skip 非対応(開発メモ)なので do/catch で確かめる
+        var didThrow = false
+        do {
+            _ = try repo.setMinutes(menuId: menu.id, on: day(0), minutes: 25)
+        } catch {
+            didThrow = true
+        }
+        XCTAssertTrue(didThrow)
+    }
+
+    /// 直るのは指定した日だけ。他の日の記録は変わらない。
+    func testSetMinutesAffectsOnlyThatDay() throws {
+        let db = try makeDatabase()
+        defer { try? db.close() }
+        let repo = makeRepository(db)
+
+        let menu = try repo.createMenu(name: "体幹", minutes: 10)
+        _ = try repo.check(menuId: menu.id, on: day(0))
+        _ = try repo.check(menuId: menu.id, on: day(1))
+        _ = try repo.setMinutes(menuId: menu.id, on: day(0), minutes: 25)
+
+        let other: TrainingLog = try XCTUnwrap(repo.fetchLogs(on: day(1)).first)
+        XCTAssertEqual(other.minutes, 10)
+        XCTAssertEqual(try repo.totalMinutes(from: day(0), to: day(2)), 35)
+    }
+
+    /// 外して付け直すと目安の分数に戻る(付け直しは「やり直し」)。
+    func testRecheckResetsMinutesToMenuDefault() throws {
+        let db = try makeDatabase()
+        defer { try? db.close() }
+        let repo = makeRepository(db)
+
+        let menu = try repo.createMenu(name: "体幹", minutes: 10)
+        _ = try repo.check(menuId: menu.id, on: day(0))
+        _ = try repo.setMinutes(menuId: menu.id, on: day(0), minutes: 25)
+        try repo.uncheck(menuId: menu.id, on: day(0))
+        let rechecked = try repo.check(menuId: menu.id, on: day(0))
+
+        XCTAssertEqual(rechecked.minutes, 10)
+    }
 }

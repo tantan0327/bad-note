@@ -129,6 +129,28 @@ public final class TrainingRepository {
                     parameters: [.long(menuId), .text(days.text(from: date))])
     }
 
+    /// その日の分数を後から直す(日によって時間が変わる。§10.3)。
+    ///
+    /// 直せるのはチェック済みの日だけ(行が無ければ投げる。黙って成功にしない)。
+    /// `done_at` は変えない。メニューの目安には触らない。
+    @discardableResult
+    public func setMinutes(menuId: Int64, on date: Date, minutes: Int?) throws -> TrainingLog {
+        let day = days.text(from: date)
+        guard try fetchLog(menuId: menuId, day: day) != nil else {
+            throw TrainingRepositoryError.notFound(id: menuId)
+        }
+        try db.exec(sql: "UPDATE training_log SET minutes = ? WHERE menu_id = ? AND training_date = ?",
+                    parameters: [
+                        longValue(minutes),
+                        SQLValue.long(menuId),
+                        SQLValue.text(day),
+                    ])
+        guard let log = try fetchLog(menuId: menuId, day: day) else {
+            throw TrainingRepositoryError.notFound(id: menuId)
+        }
+        return log
+    }
+
     /// その日の実施記録。
     public func fetchLogs(on date: Date) throws -> [TrainingLog] {
         let rows = try db.selectAll(sql: "SELECT \(TrainingRepository.logColumns) FROM training_log WHERE training_date = ?",
