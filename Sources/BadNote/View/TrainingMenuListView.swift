@@ -27,24 +27,31 @@ struct TrainingMenuListView: View {
                     .accessibilityIdentifier("training_menu_empty_action")
                 }
             }
-            ForEach(model.menus) { menu in
-                NavigationLink {
-                    TrainingMenuFormView(menuID: menu.id)
-                } label: {
-                    HStack {
-                        Text(menu.name)
-                        Spacer()
-                        if let minutes = menu.minutes {
-                            Text(verbatim: "\(minutes) 分")
-                                .font(.footnote)
-                                .foregroundStyle(.secondary)
+            Section {
+                ForEach(model.menus) { menu in
+                    NavigationLink {
+                        TrainingMenuFormView(menuID: menu.id)
+                    } label: {
+                        HStack {
+                            Text(menu.name)
+                            Spacer()
+                            if let minutes = menu.minutes {
+                                Text(verbatim: "\(minutes) 分")
+                                    .font(.footnote)
+                                    .foregroundStyle(.secondary)
+                            }
                         }
                     }
+                    .accessibilityIdentifier("training_menu_row_\(menu.id)")
                 }
-                .accessibilityIdentifier("training_menu_row_\(menu.id)")
-            }
-            .onMove { offsets, toOffset in
-                model.move(from: Array(offsets), to: toOffset)
+                .onMove { offsets, toOffset in
+                    model.move(from: Array(offsets), to: toOffset)
+                }
+            } footer: {
+                // 4.3 並び替えの手がかり。2 行以上あるときだけ添える
+                if model.menus.count > 1 {
+                    Text("行は長押しで並び替えられます", bundle: .module)
+                }
             }
             archivedSection
         }

@@ -19,6 +19,10 @@ public struct IssueListView: View {
             }
             Section {
                 filterRow
+            } footer: {
+                // 4.3 スワイプとドラッグは画面から見えない操作なので、言葉で常設しておく
+                // (初回だけのヒントは忘れた頃に効かず、グリップはドラッグの開始点と誤解させる)
+                Text("行は長押しで並び替え、左右スワイプで層の上げ下げができます", bundle: .module)
             }
             // §7.4 層をまたぐドラッグのため、3 層を 1 つの ForEach に畳んでいる
             ForEach(model.rows) { row in
