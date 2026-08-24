@@ -16,7 +16,7 @@ struct SelectableChip: View {
 
     var body: some View {
         if isSelected {
-            Button(action: action) {
+            Button(action: animatedAction) {
                 label
                     .frame(maxWidth: .infinity)
             }
@@ -24,13 +24,20 @@ struct SelectableChip: View {
             .chipLabelFit()
             .frame(maxWidth: .infinity)
         } else {
-            Button(action: action) {
+            Button(action: animatedAction) {
                 label
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(.bordered)
             .chipLabelFit()
             .frame(maxWidth: .infinity)
+        }
+    }
+
+    /// 選択の切り替えは速く動かす(5.1)。全チップで一律に効かせる。
+    private func animatedAction() {
+        withAnimation(Motion.select) {
+            action()
         }
     }
 }

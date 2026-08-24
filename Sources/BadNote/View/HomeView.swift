@@ -311,20 +311,27 @@ public struct HomeView: View {
                                 .foregroundStyle(.secondary)
                             // 3 択をその場で完結させる。別画面に飛ばさない
                             HStack(spacing: 8) {
+                                // カードの出入りはゆっくり(5.1)
                                 Button {
-                                    model.focusOnStaleIssue(item)
+                                    withAnimation(Motion.move) {
+                                        model.focusOnStaleIssue(item)
+                                    }
                                 } label: {
                                     Text("今週の重点にする", bundle: .module)
                                 }
                                 .buttonStyle(.borderedProminent)
                                 Button {
-                                    model.postponeStaleIssue(item)
+                                    withAnimation(Motion.move) {
+                                        model.postponeStaleIssue(item)
+                                    }
                                 } label: {
                                     Text("まだいい", bundle: .module)
                                 }
                                 .buttonStyle(.bordered)
                                 Button {
-                                    model.archiveStaleIssue(item)
+                                    withAnimation(Motion.move) {
+                                        model.archiveStaleIssue(item)
+                                    }
                                 } label: {
                                     Text("もう不要", bundle: .module)
                                 }

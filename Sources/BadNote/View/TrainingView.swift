@@ -124,7 +124,7 @@ public struct TrainingView: View {
     @ViewBuilder private func menuRow(_ menu: TrainingMenu) -> some View {
         Button {
             // 3.1 速く小さく動かす(フッターの合計の出入りも一緒に animate される)
-            withAnimation(.easeOut(duration: 0.15)) {
+            withAnimation(Motion.select) {
                 model.toggle(menu)
             }
         } label: {

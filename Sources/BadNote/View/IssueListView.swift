@@ -35,7 +35,10 @@ public struct IssueListView: View {
                 }
             }
             .onMove { offsets, toOffset in
-                model.moveRows(from: Array(offsets), to: toOffset)
+                // 層の移動はゆっくり(5.1)。どこへ動いたか目で追えるように
+                withAnimation(Motion.move) {
+                    model.moveRows(from: Array(offsets), to: toOffset)
+                }
             }
             // 4.2 練習ログで書いた 1 行(inbox)の置き場。「書いたのに見つからない」を無くす。
             // 件数は層見出しと同じ出し方(タブのバッジにはしない §5.3)。
@@ -255,7 +258,9 @@ public struct IssueListView: View {
         .swipeActions(edge: .leading) {
             if issue.tier.higher != nil {
                 Button {
-                    model.promote(issue)
+                    withAnimation(Motion.move) {
+                        model.promote(issue)
+                    }
                 } label: {
                     Text("上げる", bundle: .module)
                 }
@@ -264,7 +269,9 @@ public struct IssueListView: View {
         .swipeActions(edge: .trailing) {
             if issue.tier.lower != nil {
                 Button {
-                    model.demote(issue)
+                    withAnimation(Motion.move) {
+                        model.demote(issue)
+                    }
                 } label: {
                     Text("下げる", bundle: .module)
                 }

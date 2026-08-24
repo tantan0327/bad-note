@@ -41,7 +41,10 @@ public struct PracticeLogView: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button {
-                        model.save()
+                        // 保存後の表示への切り替わりを動かす(5.1)
+                        withAnimation(Motion.move) {
+                            model.save()
+                        }
                     } label: {
                         Text("保存", bundle: .module)
                     }
@@ -73,13 +76,17 @@ public struct PracticeLogView: View {
                             .foregroundStyle(.secondary)
                         HStack(spacing: 8) {
                             Button {
-                                model.acceptLevelUp(proposal)
+                                withAnimation(Motion.move) {
+                                    model.acceptLevelUp(proposal)
+                                }
                             } label: {
                                 Text("上げる", bundle: .module)
                             }
                             .buttonStyle(.borderedProminent)
                             Button {
-                                model.declineLevelUp(proposal)
+                                withAnimation(Motion.move) {
+                                    model.declineLevelUp(proposal)
+                                }
                             } label: {
                                 Text("今はしない", bundle: .module)
                             }

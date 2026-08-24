@@ -139,7 +139,10 @@ public struct FocusReshuffleView: View {
                 }
                 ForEach(model.focus) { issue in
                     Button {
-                        model.remove(issue)
+                        // 層の移動はゆっくり(5.1)
+                        withAnimation(Motion.move) {
+                            model.remove(issue)
+                        }
                     } label: {
                         HStack {
                             VStack(alignment: .leading, spacing: 4) {
@@ -172,7 +175,9 @@ public struct FocusReshuffleView: View {
                 }
                 ForEach(model.candidates) { issue in
                     Button {
-                        model.add(issue)
+                        withAnimation(Motion.move) {
+                            model.add(issue)
+                        }
                     } label: {
                         HStack {
                             VStack(alignment: .leading, spacing: 4) {

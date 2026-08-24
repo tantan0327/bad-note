@@ -76,7 +76,10 @@ public struct IssueDetailView: View {
                 .font(.body)
             if let next = model.nextLevel {
                 Button {
-                    model.raiseLevel()
+                    // バーの伸びは速く動かす(5.1)
+                    withAnimation(Motion.select) {
+                        model.raiseLevel()
+                    }
                 } label: {
                     Text(verbatim: "「\(next.displayName)」に上げる")
                 }
@@ -259,7 +262,9 @@ public struct IssueDetailView: View {
             if model.isArchived {
                 // アーカイブ済みのときだけ出す(§7.3)
                 Button {
-                    model.resurface()
+                    withAnimation(Motion.move) {
+                        model.resurface()
+                    }
                 } label: {
                     Text("再浮上させる", bundle: .module)
                         .frame(maxWidth: .infinity)
@@ -271,7 +276,9 @@ public struct IssueDetailView: View {
                     .foregroundStyle(.secondary)
             } else {
                 Button {
-                    model.overcome()
+                    withAnimation(Motion.move) {
+                        model.overcome()
+                    }
                 } label: {
                     Text("克服した(定着確認へ)", bundle: .module)
                         .frame(maxWidth: .infinity)
@@ -287,7 +294,9 @@ public struct IssueDetailView: View {
                 if issue.masteryLevel != MasteryLevel.solo {
                     // 日常操作ではないので控えめに置く(§3.2)
                     Button {
-                        model.lowerLevel()
+                        withAnimation(Motion.select) {
+                            model.lowerLevel()
+                        }
                     } label: {
                         Text("レベルを 1 つ下げる", bundle: .module)
                             .font(.footnote)

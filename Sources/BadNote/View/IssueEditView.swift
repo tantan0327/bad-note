@@ -112,9 +112,9 @@ public struct IssueEditView: View {
 
     @ViewBuilder private func disciplineButton(_ label: Text, value: Discipline) -> some View {
         if model.discipline == value {
-            Button { model.discipline = value } label: { label }.buttonStyle(.borderedProminent)
+            Button { withAnimation(Motion.select) { model.discipline = value } } label: { label }.buttonStyle(.borderedProminent)
         } else {
-            Button { model.discipline = value } label: { label }.buttonStyle(.bordered)
+            Button { withAnimation(Motion.select) { model.discipline = value } } label: { label }.buttonStyle(.bordered)
         }
     }
 
@@ -136,9 +136,9 @@ public struct IssueEditView: View {
 
     @ViewBuilder private func masteryButton(_ label: Text, value: MasteryLevel) -> some View {
         if model.masteryLevel == value {
-            Button { model.masteryLevel = value } label: { label }.buttonStyle(.borderedProminent)
+            Button { withAnimation(Motion.select) { model.masteryLevel = value } } label: { label }.buttonStyle(.borderedProminent)
         } else {
-            Button { model.masteryLevel = value } label: { label }.buttonStyle(.bordered)
+            Button { withAnimation(Motion.select) { model.masteryLevel = value } } label: { label }.buttonStyle(.bordered)
         }
     }
 
@@ -176,9 +176,9 @@ public struct IssueEditView: View {
 
     @ViewBuilder private func scaleButton(_ label: String, isSelected: Bool, action: @escaping () -> Void) -> some View {
         if isSelected {
-            Button(action: action) { Text(verbatim: label) }.buttonStyle(.borderedProminent)
+            Button(action: { withAnimation(Motion.select) { action() } }) { Text(verbatim: label) }.buttonStyle(.borderedProminent)
         } else {
-            Button(action: action) { Text(verbatim: label) }.buttonStyle(.bordered)
+            Button(action: { withAnimation(Motion.select) { action() } }) { Text(verbatim: label) }.buttonStyle(.bordered)
         }
     }
 
