@@ -284,6 +284,11 @@ import SkipSQL
             var target = issue
             if target.id == promoted.id {
                 target.resurfaceCount += 1
+                // 未整理のまま重点に上げると、ホームも課題一覧も active しか
+                // 出さないので行き場を失う。重点にする判断自体が整理なので active に
+                if target.status == .inbox {
+                    target.status = .active
+                }
             }
             _ = try issues.update(target)
         }

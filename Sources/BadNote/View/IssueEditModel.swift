@@ -119,10 +119,14 @@ import SkipSQL
 
     // MARK: - 保存
 
-    /// 新規は `status = inbox` / `tier = someday` で作る(整理は後の工程)。
+    /// 新規は `status = active` / `tier = someday` で作る。
+    ///
+    /// 追加画面で書いた課題は**整理済み**(この画面が整理と同じ項目を持つ。
+    /// 未整理に積み直すと二度手間になる。2026-08-24)。整理(インボックス)を
+    /// 通るのは練習ログや大会振り返りの 1 行キャプチャだけ。
     public func save() {
         if !canSave {
-            errorText = "気づいたことを 1 行入れてください"
+            errorText = "課題を 1 行入れてください"
             return
         }
         do {
@@ -154,7 +158,7 @@ import SkipSQL
                                                 tier: .someday,
                                                 impact: impact,
                                                 cost: cost,
-                                                status: .inbox)
+                                                status: .active)
                 savedID = created.id
             }
 

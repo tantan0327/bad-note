@@ -20,8 +20,14 @@ public struct IssueEditView: View {
                         .font(.footnote)
                         .foregroundStyle(.red)
                 }
-                coachWordsSection
-                doneFormSection
+                if model.isNew {
+                    // 新規は 1 欄だけ。完了形で書けばそのまま主表示になる
+                    // (displayTitle のフォールバック)ので、言い換え欄は要らない
+                    newWordsSection
+                } else {
+                    coachWordsSection
+                    doneFormSection
+                }
                 disciplineSection
                 masterySection
                 impactSection
@@ -49,37 +55,45 @@ public struct IssueEditView: View {
         }
     }
 
+    // MARK: - 課題(新規は 1 欄だけ)
+
+    /// 最初から完了形で書くよう促す(二度手間の解消。2026-08-24)。
+    /// ここで書いた課題は整理済み(active)で保存され、未整理には入らない。
+    @ViewBuilder private var newWordsSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("課題を 1 行で", bundle: .module)
+                .font(.headline)
+            TextField(text: $model.coachWords) {
+                Text("例: レシーブでラケット面を立てて構えられている", bundle: .module)
+            }
+            .textFieldStyle(.roundedBorder)
+            .accessibilityIdentifier("issue-edit-words")
+            Text("「〜できている」の形で書くのがおすすめです。コーチに言われた言葉のままでも構いません", bundle: .module)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+    }
+
     // MARK: - もとの言葉(原文)
 
     @ViewBuilder private var coachWordsSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("もとの言葉", bundle: .module)
                 .font(.headline)
-            if model.isNew {
-                TextField(text: $model.coachWords) {
-                    Text("気づいたことを 1 行で", bundle: .module)
-                }
-                .textFieldStyle(.roundedBorder)
-                .accessibilityIdentifier("issue-edit-words")
-                Text("入れるのはこの 1 行だけで十分です", bundle: .module)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            } else {
-                // 原文は基本そのまま。ただし誤入力は直せるようにする(2026-08-24 決定)
-                TextField(text: $model.coachWords) {
-                    Text("気づいたことを 1 行で", bundle: .module)
-                }
-                .textFieldStyle(.roundedBorder)
-                .accessibilityIdentifier("issue-edit-words")
-                Text("原文はなるべくそのまま。直すのは誤字くらいに留めます", bundle: .module)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                TextField(text: $model.coachName) {
-                    Text("コーチ名(任意)", bundle: .module)
-                }
-                .textFieldStyle(.roundedBorder)
-                .accessibilityIdentifier("issue-edit-coach")
+            // 原文は基本そのまま。ただし誤入力は直せるようにする(2026-08-24 決定)
+            TextField(text: $model.coachWords) {
+                Text("気づいたことを 1 行で", bundle: .module)
             }
+            .textFieldStyle(.roundedBorder)
+            .accessibilityIdentifier("issue-edit-words")
+            Text("原文はなるべくそのまま。直すのは誤字くらいに留めます", bundle: .module)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            TextField(text: $model.coachName) {
+                Text("コーチ名(任意)", bundle: .module)
+            }
+            .textFieldStyle(.roundedBorder)
+            .accessibilityIdentifier("issue-edit-coach")
         }
     }
 
