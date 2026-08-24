@@ -33,6 +33,39 @@ public struct IssueListView: View {
             .onMove { offsets, toOffset in
                 model.moveRows(from: Array(offsets), to: toOffset)
             }
+            // 4.2 練習ログで書いた 1 行(inbox)の置き場。「書いたのに見つからない」を無くす。
+            // 件数は層見出しと同じ出し方(タブのバッジにはしない §5.3)。
+            // ドラッグの 1 本の ForEach には混ぜない(構造を崩すとドラッグが壊れる)
+            if !model.unorganized.isEmpty {
+                Section {
+                    ForEach(model.unorganized) { issue in
+                        NavigationLink {
+                            IssueDetailView(issueID: issue.id)
+                        } label: {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(issue.displayTitle)
+                                    .font(.body)
+                                Text(issue.createdAt.formatted(date: .abbreviated, time: .omitted))
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                    }
+                    NavigationLink {
+                        InboxTriageView()
+                    } label: {
+                        Text("整理する", bundle: .module)
+                            .font(.footnote)
+                    }
+                    .accessibilityIdentifier("issue-list-triage-link")
+                } header: {
+                    HStack {
+                        Text("未整理", bundle: .module)
+                        Spacer()
+                        Text(verbatim: "\(model.unorganized.count)件")
+                    }
+                }
+            }
             Section {
                 NavigationLink {
                     FocusReshuffleView()

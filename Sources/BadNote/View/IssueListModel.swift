@@ -25,6 +25,10 @@ import SkipSQL
     /// 3 層を見出し込みで畳んだ並び(§7.4 長押しドラッグ用)。
     public private(set) var rows: [TierRow] = []
 
+    /// 未整理(inbox)の課題(4.2)。練習ログで書いた 1 行はここに入る。
+    /// 整理前で属性が付いていないので、絞り込みの対象にはしない。
+    public private(set) var unorganized: [Issue] = []
+
     public private(set) var focus: [Issue] = []
     public private(set) var next: [Issue] = []
     public private(set) var someday: [Issue] = []
@@ -57,6 +61,7 @@ import SkipSQL
                                        discipline: discipline, masteryLevel: masteryLevel)
             availableTags = try TagRepository(db: db).fetchAll()
             rows = TierLayout.rows(focus: focus, next: next, someday: someday)
+            unorganized = try issues.fetch(statuses: [IssueStatus.inbox])
             errorText = nil
         } catch {
             errorText = "課題の読み込みに失敗しました: \(error)"
