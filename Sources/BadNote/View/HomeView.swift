@@ -212,17 +212,33 @@ public struct HomeView: View {
                     .foregroundStyle(.secondary)
             }
             if model.focusCards.isEmpty {
-                // 次の 1 手 —— 組み替えモードで重点を選ぶ(2.4)
-                EmptyStateView(icon: "checklist",
-                               message: Text("重点はまだ決まっていません", bundle: .module)) {
-                    NavigationLink {
-                        FocusReshuffleView()
-                    } label: {
-                        Text("重点を選ぶ", bundle: .module)
-                            .font(.footnote)
+                if model.isJustStarting {
+                    // 4.1 ほんとうの初回。課題ゼロで「重点を選ぶ」を出すと
+                    // 候補の無い組み替え画面に行き着くので、最初の 1 歩に差し替える
+                    EmptyStateView(icon: "checklist",
+                                   message: Text("まずは気になっていることを、課題として 1 行書くところから。練習のあとなら下の「練習を記録する」からでも始められます", bundle: .module)) {
+                        NavigationLink {
+                            IssueEditView()
+                        } label: {
+                            Text("課題を書く", bundle: .module)
+                                .font(.footnote)
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .accessibilityIdentifier("home-first-step-action")
                     }
-                    .buttonStyle(.borderedProminent)
-                    .accessibilityIdentifier("home-focus-empty-action")
+                } else {
+                    // 次の 1 手 —— 組み替えモードで重点を選ぶ(2.4)
+                    EmptyStateView(icon: "checklist",
+                                   message: Text("重点はまだ決まっていません", bundle: .module)) {
+                        NavigationLink {
+                            FocusReshuffleView()
+                        } label: {
+                            Text("重点を選ぶ", bundle: .module)
+                                .font(.footnote)
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .accessibilityIdentifier("home-focus-empty-action")
+                    }
                 }
             }
             ForEach(model.focusCards) { card in

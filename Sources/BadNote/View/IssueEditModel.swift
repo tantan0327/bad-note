@@ -136,7 +136,8 @@ import SkipSQL
                     errorText = "課題が見つかりません"
                     return
                 }
-                // coachWords は原文なので書き換えない
+                // 原文は基本そのまま残すが、誤入力は直せる(2026-08-24 決定)
+                issue.coachWords = coachWords.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines)
                 issue.doneForm = optionalText(doneForm)
                 issue.coachName = optionalText(coachName)
                 issue.discipline = discipline

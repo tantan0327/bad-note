@@ -65,6 +65,11 @@ import SkipSQL
     /// めざす姿を書くよう促すか(§7.1)。初回は促さず、数回使った後に 1 度だけ。
     public private(set) var isPromptingVision = false
 
+    /// ほんとうの初回(課題も練習も無い)か(4.1)。
+    /// このときだけ重点の空きが「課題を書く」への誘導になる。
+    /// めざす姿は促さない(§7.1 の決めごとのまま)。
+    public private(set) var isJustStarting = false
+
     /// しばらく触れていない課題(§4.3)。`stale_flag` の単純な読み出し。
     public private(set) var staleItems: [StaleItem] = []
     /// 重点が埋まっているときの入れ替え候補(§7.4 のフローへ回す)。
@@ -87,6 +92,7 @@ import SkipSQL
 
             vision = try VisionRepository(db: db).fetch()
             try loadVisionPrompt(db: db)
+            try loadFirstSteps(db: db)
             try loadCountdowns(db: db, today: today)
             try loadFocusCards(db: db)
             try loadBuildUp(db: db, now: now)
@@ -282,6 +288,16 @@ import SkipSQL
             }
             _ = try issues.update(target)
         }
+    }
+
+    // MARK: - 最初の 1 歩(4.1)
+
+    /// 課題(inbox / active)も練習ログも無ければ、まだ何も始まっていない。
+    /// どちらかが 1 つでもできたら二度と出ない(状態から導くので、フラグは持たない)。
+    private func loadFirstSteps(db: SQLContext) throws {
+        let issues = try IssueRepository(db: db).fetch(statuses: [IssueStatus.inbox, IssueStatus.active])
+        let practiceCount = try PracticeRepository(db: db).count()
+        isJustStarting = issues.isEmpty && practiceCount == 0
     }
 
     // MARK: - 積み上げ

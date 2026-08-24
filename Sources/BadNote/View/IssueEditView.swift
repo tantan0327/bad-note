@@ -63,10 +63,14 @@ public struct IssueEditView: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
             } else {
-                // 原文は編集しない(用語集)
-                Card {
-                    Text(model.coachWords)
+                // 原文は基本そのまま。ただし誤入力は直せるようにする(2026-08-24 決定)
+                TextField(text: $model.coachWords) {
+                    Text("気づいたことを 1 行で", bundle: .module)
                 }
+                .textFieldStyle(.roundedBorder)
+                Text("原文はなるべくそのまま。直すのは誤字くらいに留めます", bundle: .module)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
                 TextField(text: $model.coachName) {
                     Text("コーチ名(任意)", bundle: .module)
                 }

@@ -205,6 +205,21 @@ final class IssueRepositoryTests: XCTestCase {
         XCTAssertEqual(MasteryLevel.drill, fetched.masteryLevel)
     }
 
+    /// 原文も更新できる(2026-08-24 決定 —— 誤入力を直せるようにする)。
+    func testUpdatePersistsCoachWords() throws {
+        let db = try makeDatabase()
+        defer { try? db.close() }
+        let repo = makeRepository(db)
+
+        let created = try repo.create(coachWords: "もっとラケット面、下むいてるよ")
+        var edited = created
+        edited.coachWords = "もっとラケット面、下向いてるよ"
+        _ = try repo.update(edited)
+
+        let fetched = try XCTUnwrap(try repo.fetch(id: created.id))
+        XCTAssertEqual("もっとラケット面、下向いてるよ", fetched.coachWords)
+    }
+
     /// 再浮上・アーカイブで使うライフサイクル列も UPDATE の対象に含める。
     func testUpdatePersistsLifecycleFields() throws {
         let db = try makeDatabase()

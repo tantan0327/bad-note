@@ -257,6 +257,26 @@ final class TrainingRepositoryTests: XCTestCase {
         XCTAssertEqual(try repo.totalMinutes(from: day(0), to: day(2)), 20)
     }
 
+    /// アーカイブは戻せる(3.5)。戻しても実施記録と分数はそのまま。
+    func testUnarchiveRestoresMenuWithHistory() throws {
+        let db = try makeDatabase()
+        defer { try? db.close() }
+        let repo = makeRepository(db)
+
+        let menu = try repo.createMenu(name: "体幹", minutes: 10)
+        _ = try repo.check(menuId: menu.id, on: day(0))
+        try repo.archiveMenu(id: menu.id)
+        XCTAssertEqual(0, try repo.fetchMenus().count)
+
+        var restored: TrainingMenu = try XCTUnwrap(repo.fetchMenus(includeArchived: true).first)
+        restored.isArchived = false
+        _ = try repo.updateMenu(restored)
+
+        let names = try repo.fetchMenus().map { $0.name }
+        XCTAssertEqual(names, ["体幹"])
+        XCTAssertEqual(try repo.totalMinutes(from: day(0), to: day(1)), 10)
+    }
+
     /// アーカイブしても過去の実施記録は集計に残る。
     func testArchivedMenuKeepsPastLogsInTotal() throws {
         let db = try makeDatabase()

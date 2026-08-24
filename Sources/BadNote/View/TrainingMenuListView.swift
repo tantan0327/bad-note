@@ -1,8 +1,10 @@
 import SwiftUI
 
 /// メニューの管理(§10.2)。追加・編集・並び替え(長押しドラッグ)。
+/// アーカイブ済みは末尾の折りたたみから戻せる(3.5)。
 struct TrainingMenuListView: View {
     @State private var model = TrainingMenuModel()
+    @State private var isShowingArchived = false
 
     var body: some View {
         List {
@@ -44,6 +46,7 @@ struct TrainingMenuListView: View {
             .onMove { offsets, toOffset in
                 model.move(from: Array(offsets), to: toOffset)
             }
+            archivedSection
         }
         .navigationTitle(Text("メニュー", bundle: .module))
         .toolbar {
@@ -58,6 +61,52 @@ struct TrainingMenuListView: View {
         }
         .onAppear {
             model.load()
+        }
+    }
+
+    // MARK: - アーカイブ済み(3.5。折りたたみ。行から戻せる)
+
+    @ViewBuilder private var archivedSection: some View {
+        if !model.archivedMenus.isEmpty {
+            Section {
+                Button {
+                    isShowingArchived = !isShowingArchived
+                } label: {
+                    Text(isShowingArchived ? "アーカイブ済みを閉じる" : "アーカイブ済みを見る", bundle: .module)
+                        .font(.footnote)
+                }
+                .accessibilityIdentifier("training_archived_toggle")
+                if isShowingArchived {
+                    ForEach(model.archivedMenus) { menu in
+                        Button {
+                            model.restore(menu)
+                        } label: {
+                            HStack {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text(menu.name)
+                                        .foregroundStyle(.secondary)
+                                    if let minutes = menu.minutes {
+                                        Text(verbatim: "\(minutes) 分")
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                }
+                                Spacer()
+                                // 押せる導線はリンク色(2.3 と同じ形)
+                                Text("戻す", bundle: .module)
+                                    .font(.footnote)
+                                    .foregroundStyle(Palette.accent)
+                            }
+                            .foregroundStyle(.primary)
+                        }
+                        .accessibilityIdentifier("training_archived_row_\(menu.id)")
+                    }
+                }
+            } footer: {
+                if isShowingArchived {
+                    Text("戻すと一覧に並び直します。過去の記録はそのまま残っています", bundle: .module)
+                }
+            }
         }
     }
 }
