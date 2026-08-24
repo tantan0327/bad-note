@@ -133,8 +133,11 @@ public struct TrainingView: View {
                 Image(model.isDone(menu) ? "check_circle" : "circle", bundle: .module)
                     .foregroundStyle(model.isDone(menu) ? Palette.done : Color.secondary)
                 VStack(alignment: .leading, spacing: 4) {
+                    // 済んだ行は名前を沈めて「あとどれか」を読めるように(3.3)。
+                    // 消し込み線は「作業を消す」感が強いので使わない
                     Text(menu.name)
                         .font(.body)
+                        .foregroundStyle(model.isDone(menu) ? Color.secondary : Color.primary)
                     if let minutes = menu.minutes {
                         Text(verbatim: "\(minutes) 分")
                             .font(.caption)
@@ -147,6 +150,8 @@ public struct TrainingView: View {
             .foregroundStyle(.primary)
         }
         .accessibilityIdentifier("training_row_\(menu.id)")
+        // VoiceOver にも済 / まだが伝わるように(3.3)
+        .accessibilityValue(model.isDone(menu) ? Text("済", bundle: .module) : Text("まだ", bundle: .module))
     }
 
     // MARK: - 空の状態
