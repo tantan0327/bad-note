@@ -82,6 +82,7 @@ SkipSQL (SQLContext)
 - `TagRepository`
 - `TrainingRepository`(§10 家トレ)
 - `StatsRepository`(§10.3 積み上げ集計の唯一の入り口。累計はここ以外で足さない)
+- `ExportRepository`(§11 データの書き出し。全テーブルを生の値のまま JSON に写す)
 
 ### スキーマ管理
 

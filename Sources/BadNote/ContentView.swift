@@ -103,6 +103,16 @@ struct SettingsView: View {
                 }
             }
             .accessibilityIdentifier("settings-archive")
+            NavigationLink {
+                ExportView()
+            } label: {
+                Label {
+                    Text("データの書き出し", bundle: .module)
+                } icon: {
+                    Image("ios_share", bundle: .module)
+                }
+            }
+            .accessibilityIdentifier("settings-export")
             if let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String,
                let buildNumber = Bundle.main.infoDictionary?["CFBundleVersion"] as? String {
                 Label {
