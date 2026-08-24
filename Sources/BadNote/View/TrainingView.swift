@@ -42,10 +42,12 @@ public struct TrainingView: View {
         .onChange(of: model.date) { _, _ in
             model.load()
         }
-        // 3.1 チェックの手触り。ふだんは選択の軽い振動、その日の分が全部
-        // 済んだ瞬間だけ成功の振動。日付の切り替えでは鳴らない(トリガーは操作回数)
+        // 3.1 チェックの手触り。ふだんは選択の軽い振動、その日の分が全部済んだ瞬間と
+        // 節目を越えた瞬間(§10.5)だけ成功の振動。日付の切り替えでは鳴らない(トリガーは操作回数)
         .sensoryFeedback(trigger: model.toggleCount) { _, _ in
-            model.isAllDone ? SensoryFeedback.success : SensoryFeedback.selection
+            (model.isAllDone || !model.reachedMilestones.isEmpty)
+                ? SensoryFeedback.success
+                : SensoryFeedback.selection
         }
         .sheet(isPresented: $isEditingMinutes) {
             minutesEditor
@@ -105,13 +107,20 @@ public struct TrainingView: View {
                 menuRow(menu)
             }
         } footer: {
-            // §5.3 チェックが付いた分だけが見える。残り件数は出さない
-            if model.isAllDone {
-                // 3.1 全部できた日の静かな強調。件数もストリークも出さない
-                Text(verbatim: footerText() + " ✓")
-                    .foregroundStyle(Palette.done)
-            } else if model.doneMinutes > 0 {
-                Text(verbatim: footerText())
+            VStack(alignment: .leading, spacing: 4) {
+                // 節目を越えた瞬間の静かな祝い(§10.5)。外すか画面を離れると消える
+                ForEach(model.reachedMilestones, id: \.self) { hours in
+                    Text(verbatim: "\(hours) 時間にとどきました")
+                        .foregroundStyle(Palette.accent)
+                }
+                // §5.3 チェックが付いた分だけが見える。残り件数は出さない
+                if model.isAllDone {
+                    // 3.1 全部できた日の静かな強調。件数もストリークも出さない
+                    Text(verbatim: footerText() + " ✓")
+                        .foregroundStyle(Palette.done)
+                } else if model.doneMinutes > 0 {
+                    Text(verbatim: footerText())
+                }
             }
         }
     }

@@ -72,6 +72,19 @@ public struct PracticeLogView: View {
             Text(model.summaryText)
                 .font(.headline)
 
+            // この保存で節目を越えた(§10.5)。静かに 1 行で祝う。
+            // 振動は isSaved の .success がすでに鳴っているので重ねない
+            ForEach(model.reachedMilestones, id: \.self) { hours in
+                HStack(spacing: 8) {
+                    Image("emoji_events", bundle: .module)
+                        .foregroundStyle(Palette.accent)
+                    Text(verbatim: "\(hours) 時間にとどきました")
+                        .font(.headline)
+                        .foregroundStyle(Palette.accent)
+                }
+                .accessibilityIdentifier("practice-milestone-\(hours)")
+            }
+
             // §3.2 done が 3 回連続した課題のレベルアップ提案
             ForEach(model.levelUpProposals) { proposal in
                 Card {

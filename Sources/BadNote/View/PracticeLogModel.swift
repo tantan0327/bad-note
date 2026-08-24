@@ -60,6 +60,8 @@ import SkipSQL
     public private(set) var levelUpProposals: [LevelUpProposal] = []
     /// 未整理の件数(§5.3)。**保存直後にだけ見せる。**常設のバッジにはしない。
     public private(set) var unorganizedCount = 0
+    /// この保存で越えた節目(時間)。保存直後にだけ祝う(§10.5。ふつうは空)。
+    public private(set) var reachedMilestones: [Int] = []
 
 
     public init() {
@@ -180,8 +182,13 @@ import SkipSQL
 
             let month = MonthRange.containing(practice.practiceDate)
             // 家トレも合算した累計(§10.3)
-            let monthTotal = try StatsRepository(db: db).totalMinutes(from: month.start, to: month.end)
+            let stats = StatsRepository(db: db)
+            let monthTotal = try stats.totalMinutes(from: month.start, to: month.end)
             summaryText = PracticeLogModel.summary(recordedMinutes: practice.minutes, monthTotalMinutes: monthTotal)
+            // この保存で節目を越えたら祝う(§10.5)。越えた瞬間はここでしか分からない
+            let lifetime = try stats.lifetimeMinutes()
+            reachedMilestones = Milestone.crossedHours(fromMinutes: lifetime - practice.minutes,
+                                                       toMinutes: lifetime)
             levelUpProposals = try collectLevelUpProposals(practices: practices, issues: issues)
             unorganizedCount = try issues.fetch(statuses: [.inbox]).count
             errorText = nil

@@ -16,6 +16,9 @@ import SkipSQL
     /// チェック操作の通し回数。触覚フィードバックのトリガー(3.1)。
     /// 日付の切り替えや再読み込みでは増えない(眺めただけで振動させない)。
     public private(set) var toggleCount = 0
+    /// 直近の操作で越えた節目(時間)。フッターで静かに祝う(§10.5。ふつうは空)。
+    /// 外したら消す。日付の切り替え・再読み込みでも消える(祝うのは操作の瞬間だけ)。
+    public private(set) var reachedMilestones: [Int] = []
     public var errorText: String? = nil
 
     private let days = DayStamp()
@@ -33,6 +36,7 @@ import SkipSQL
                 byMenu[log.menuId] = log
             }
             logs = byMenu
+            reachedMilestones = []
             errorText = nil
         } catch {
             errorText = "家トレの読み込みに失敗しました: \(error)"
@@ -51,8 +55,14 @@ import SkipSQL
             if isDone(menu) {
                 try repo.uncheck(menuId: menu.id, on: date)
                 logs[menu.id] = nil
+                // 外したら祝いも取り下げる(付け直しでまた越えれば出る)
+                reachedMilestones = []
             } else {
+                // 家トレの分も積み上げ(§10.3)に入るので、ここでも節目を越え得る
+                let before = try StatsRepository(db: db).lifetimeMinutes()
                 logs[menu.id] = try repo.check(menuId: menu.id, on: date)
+                let after = try StatsRepository(db: db).lifetimeMinutes()
+                reachedMilestones = Milestone.crossedHours(fromMinutes: before, toMinutes: after)
             }
             toggleCount += 1
             errorText = nil
@@ -108,12 +118,17 @@ import SkipSQL
             return
         }
         do {
-            let repo = TrainingRepository(db: try context())
+            let db = try context()
+            let repo = TrainingRepository(db: db)
             var value: Int? = nil
             if editingMinutes > 0 {
                 value = editingMinutes
             }
+            // 分数を増やして節目を越えることもある(§10.5)
+            let before = try StatsRepository(db: db).lifetimeMinutes()
             logs[menu.id] = try repo.setMinutes(menuId: menu.id, on: date, minutes: value)
+            let after = try StatsRepository(db: db).lifetimeMinutes()
+            reachedMilestones = Milestone.crossedHours(fromMinutes: before, toMinutes: after)
             errorText = nil
         } catch {
             errorText = "分数の変更に失敗しました: \(error)"

@@ -143,24 +143,40 @@ public struct StatsView: View {
         shownMinutes = target
     }
 
-    // MARK: - 2. とどいた節目(到達済みだけを祝う。§5.3 目標は置かない)
+    // MARK: - 2. 節目(達成の記録 + 次の 1 段。§5.3 残り時間・締め切りは出さない)
 
-    /// 到達した節目のチップを並べる。無い(通算 1 時間未満)ときは丸ごと隠す。
-    /// **前向きの目標ではなく達成の記録**なので、次の節目までの残りは出さない。
+    /// 達成済みチップの先に**次の節目**を輪郭チップで置き、そこまでの進み具合を
+    /// バーの満ち具合だけで見せる(2026-08-24。1 万時間だけが遠くに見える対策)。
+    /// 「あと N 時間」の文言は出さない(§5.3)。1 万時間は階段の最終段で、
+    /// 画面には脚注 1 行として触れるだけ。通算 0 のときは丸ごと隠す
+    /// (最初の記録がこのセクションの初登場 = 最初のご褒美)。
     @ViewBuilder private var milestoneSection: some View {
         let reached = Milestone.reachedHours(minutes: model.lifetimeMinutes)
-        if !reached.isEmpty {
+        let next = Milestone.nextHours(minutes: model.lifetimeMinutes)
+        if model.lifetimeMinutes > 0 {
             VStack(alignment: .leading, spacing: 8) {
-                Text("とどいた節目", bundle: .module)
+                Text("節目", bundle: .module)
                     .font(.headline)
                 ScrollView(.horizontal) {
                     HStack(spacing: 8) {
                         ForEach(reached, id: \.self) { hours in
                             milestoneBadge(hours, isLatest: hours == reached[reached.count - 1])
                         }
-                        // 究極の目標(1 万時間の法則)を終端に北極星として置く
-                        ultimateBadge(reached: Milestone.hasReachedUltimate(minutes: model.lifetimeMinutes))
+                        if let nextHours = next {
+                            nextBadge(nextHours)
+                        }
                     }
+                }
+                if next != nil {
+                    progressRow(progress: Milestone.progressToNext(minutes: model.lifetimeMinutes))
+                    Text("この階段は 1 万時間(1 万時間の法則)まで続きます", bundle: .module)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                } else {
+                    // 最終段まで登り切った
+                    Text("1 万時間にとどきました", bundle: .module)
+                        .font(.caption)
+                        .foregroundStyle(Palette.accent)
                 }
             }
             .accessibilityIdentifier("stats-milestones")
@@ -179,28 +195,48 @@ public struct StatsView: View {
             .accessibilityLabel(Text(verbatim: "\(hours)時間 達成"))
     }
 
-    /// 究極の目標のチップ。まだ先なので **枠線だけ**(埋めない)—— 目指す先を静かに示す。
-    /// 到達したら塗りつぶして祝う。残り時間は出さない(§5.3)。
-    @ViewBuilder private func ultimateBadge(reached: Bool) -> some View {
-        HStack(spacing: 4) {
-            Image("emoji_events", bundle: .module)
-            Text(verbatim: "1万時間")
+    /// 次の節目のチップ。まだ先なので**枠線だけ**(埋めない)。
+    @ViewBuilder private func nextBadge(_ hours: Int) -> some View {
+        Text(verbatim: "\(hours)時間")
+            .font(.caption)
+            .foregroundStyle(Palette.accent)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .background(
+                RoundedRectangle(cornerRadius: 4)
+                    .fill(Palette.surface)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 4)
+                    .stroke(Palette.accent, lineWidth: 1)
+            )
+            .accessibilityLabel(Text(verbatim: "次の節目 \(hours)時間"))
+    }
+
+    /// 次の節目までの進み具合。**満ちていく側だけ**を見せ、数字は出さない(§5.3)。
+    /// 見た目の「数字なし」は演出なので、VoiceOver にだけ割合を伝える。
+    @ViewBuilder private func progressRow(progress: Double) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text("次の節目まで", bundle: .module)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            GeometryReader { proxy in
+                ZStack(alignment: .leading) {
+                    Capsule()
+                        .fill(Palette.surfaceRaised)
+                    Capsule()
+                        .fill(Palette.accent)
+                        .frame(width: StatsView.progressWidth(total: proxy.size.width,
+                                                             progress: appeared ? progress : 0.0))
+                }
+            }
+            .frame(height: 8)
+            // 主役パネルの登場と同じ流儀で 0 → 実値へ満ちる
+            .animation(.easeOut(duration: 0.35), value: appeared)
         }
-        .font(.caption)
-        .foregroundStyle(reached ? Color.white : Palette.accent)
-        .padding(.horizontal, 8)
-        .padding(.vertical, 4)
-        .background(
-            RoundedRectangle(cornerRadius: 4)
-                .fill(reached ? Palette.accent : Palette.surface)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 4)
-                .stroke(Palette.accent, lineWidth: 1)
-        )
-        .accessibilityLabel(reached
-                            ? Text(verbatim: "1万時間 達成")
-                            : Text("究極の目標 1 万時間", bundle: .module))
+        .accessibilityLabel(Text("次の節目まで", bundle: .module))
+        .accessibilityValue(Text(verbatim: "\(Int(progress * 100))%"))
+        .accessibilityIdentifier("stats-milestone-progress")
     }
 
     // MARK: - 3. 月ごと(1 本ずつ伸びるのが見える)
@@ -376,6 +412,16 @@ public struct StatsView: View {
             return 0
         }
         return chartHeight * (Double(minutes) / Double(maxMinutes))
+    }
+
+    /// 節目の進捗バーの塗り幅。0 は 0 のまま、少しでも進んでいれば最低 4pt を
+    /// 保証して「登り始めた」ことが見えるようにする(月グラフの最低 6pt と同じ考え方)。
+    static func progressWidth(total: CGFloat, progress: Double) -> CGFloat {
+        if progress <= 0.0 {
+            return 0.0
+        }
+        let width = total * CGFloat(progress)
+        return width < 4.0 ? 4.0 : width
     }
 
     /// 月グラフの棒の高さ。0 分は薄いスリバー(3pt)、それ以外は最低 6pt を保証して
