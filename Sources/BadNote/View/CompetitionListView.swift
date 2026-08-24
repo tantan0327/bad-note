@@ -43,6 +43,7 @@ public struct CompetitionListView: View {
                 } label: {
                     Text("追加", bundle: .module)
                 }
+                .accessibilityIdentifier("competitions-add")
             }
         }
         .onAppear {
@@ -71,6 +72,7 @@ public struct CompetitionListView: View {
                             }
                         }
                     }
+                    .accessibilityIdentifier("competition-row-\(row.competition.id)")
                 }
             } header: {
                 title
@@ -146,6 +148,7 @@ public struct CompetitionEditView: View {
                 } label: {
                     Text("保存", bundle: .module)
                 }
+                .accessibilityIdentifier("competition-edit-save")
             }
         }
         .onAppear {

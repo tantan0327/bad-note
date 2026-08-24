@@ -57,6 +57,7 @@ public struct IssueListView: View {
                                     .foregroundStyle(.secondary)
                             }
                         }
+                        .accessibilityIdentifier("issue-inbox-row-\(issue.id)")
                     }
                     NavigationLink {
                         InboxTriageView()
@@ -80,6 +81,7 @@ public struct IssueListView: View {
                     Text("今週の重点を組み替える", bundle: .module)
                         .font(.footnote)
                 }
+                .accessibilityIdentifier("issues-reshuffle")
             }
         }
         .navigationTitle(Text("課題", bundle: .module))
@@ -92,6 +94,7 @@ public struct IssueListView: View {
                 } label: {
                     Text("追加", bundle: .module)
                 }
+                .accessibilityIdentifier("issues-add")
             }
             // §5.3 未整理の件数はバッジで出さない。導線だけ置く
             ToolbarItem(placement: .primaryAction) {
@@ -100,6 +103,7 @@ public struct IssueListView: View {
                 } label: {
                     Text("整理", bundle: .module)
                 }
+                .accessibilityIdentifier("issues-triage")
             }
         }
         .confirmationDialog(Text("どれと入れ替えますか?", bundle: .module),
@@ -143,6 +147,7 @@ public struct IssueListView: View {
                 } label: {
                     filterLabel(model.discipline?.displayName, placeholder: Text("種目", bundle: .module))
                 }
+                .accessibilityIdentifier("issues-filter-discipline")
 
                 Menu {
                     Button {
@@ -160,6 +165,7 @@ public struct IssueListView: View {
                 } label: {
                     filterLabel(model.masteryLevel?.displayName, placeholder: Text("習熟度", bundle: .module))
                 }
+                .accessibilityIdentifier("issues-filter-mastery")
 
                 if !model.availableTags.isEmpty {
                     Menu {
@@ -257,6 +263,7 @@ public struct IssueListView: View {
                 MasteryIndicator(level: issue.masteryLevel)
             }
         }
+        .accessibilityIdentifier("issue-row-\(issue.id)")
         .swipeActions(edge: .leading) {
             if issue.tier.higher != nil {
                 Button {

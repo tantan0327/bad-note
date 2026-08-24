@@ -161,6 +161,7 @@ public struct NotificationSettingsView: View {
                                      set: { model.updateEnabled($0) })) {
                     Text("通知を受け取る", bundle: .module)
                 }
+                .accessibilityIdentifier("notification-enabled")
                 Text("1 日 1 通までにしています", bundle: .module)
                     .font(.caption)
                     .foregroundStyle(.secondary)
@@ -193,6 +194,7 @@ public struct NotificationSettingsView: View {
             timeRow(hour: model.practiceHour, minute: model.practiceMinute) { date in
                 model.updatePracticeTime(date)
             }
+            .accessibilityIdentifier("notification-practice-time")
             Text("練習に行く曜日を選びます。選ばなければ出しません", bundle: .module)
                 .font(.caption)
                 .foregroundStyle(.secondary)
@@ -207,6 +209,7 @@ public struct NotificationSettingsView: View {
                 Text(verbatim: weekdayNames[weekday]).frame(minWidth: 28)
             }
             .buttonStyle(.borderedProminent)
+            .accessibilityIdentifier("notification-weekday-\(weekday)")
         } else {
             Button {
                 model.togglePracticeDay(weekday)
@@ -214,6 +217,7 @@ public struct NotificationSettingsView: View {
                 Text(verbatim: weekdayNames[weekday]).frame(minWidth: 28)
             }
             .buttonStyle(.bordered)
+            .accessibilityIdentifier("notification-weekday-\(weekday)")
         }
     }
 
@@ -225,6 +229,7 @@ public struct NotificationSettingsView: View {
             timeRow(hour: model.eveningHour, minute: model.eveningMinute) { date in
                 model.updateEveningTime(date)
             }
+            .accessibilityIdentifier("notification-evening-time")
             Text("大会当日の振り返りと、しばらく触れていない課題の知らせに使います", bundle: .module)
                 .font(.caption)
                 .foregroundStyle(.secondary)

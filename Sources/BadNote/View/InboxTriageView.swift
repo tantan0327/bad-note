@@ -80,6 +80,7 @@ public struct InboxTriageView: View {
                 Text("完了形で言い換える", bundle: .module)
             }
             .textFieldStyle(.roundedBorder)
+            .accessibilityIdentifier("triage-doneform")
             Text("思いつかなければ空のままでも進めます", bundle: .module)
                 .font(.caption)
                 .foregroundStyle(.secondary)
@@ -179,6 +180,7 @@ public struct InboxTriageView: View {
                     .padding(.vertical, 4)
             }
             .buttonStyle(.borderedProminent)
+            .accessibilityIdentifier("triage-organize")
 
             HStack(spacing: 12) {
                 Button {
@@ -188,6 +190,7 @@ public struct InboxTriageView: View {
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.bordered)
+                .accessibilityIdentifier("triage-skip")
 
                 Button(role: .destructive) {
                     model.isShowingDeleteConfirmation = true
@@ -196,6 +199,7 @@ public struct InboxTriageView: View {
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.bordered)
+                .accessibilityIdentifier("triage-delete")
             }
         }
         .padding(.top, 8)

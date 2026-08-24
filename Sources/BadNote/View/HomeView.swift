@@ -43,6 +43,7 @@ public struct HomeView: View {
                     Image("settings", bundle: .module)
                 }
                 .accessibilityLabel(Text("設定", bundle: .module, comment: "accessibility label for the settings button"))
+                .accessibilityIdentifier("home-settings")
             }
         }
         .sheet(isPresented: $isShowingPracticeLog) {
@@ -94,6 +95,7 @@ public struct HomeView: View {
                         .foregroundStyle(.primary)
                 }
             }
+            .accessibilityIdentifier("home-vision")
             if model.isPromptingVision {
                 visionPrompt
             }
@@ -116,12 +118,14 @@ public struct HomeView: View {
                         Text("書く", bundle: .module)
                     }
                     .buttonStyle(.borderedProminent)
+                    .accessibilityIdentifier("home-vision-write")
                     Button {
                         model.dismissVisionPrompt()
                     } label: {
                         Text("あとで", bundle: .module)
                     }
                     .buttonStyle(.bordered)
+                    .accessibilityIdentifier("home-vision-later")
                 }
                 .font(.footnote)
             }
@@ -262,6 +266,7 @@ public struct HomeView: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .foregroundStyle(.primary)
                     }
+                    .accessibilityIdentifier("home-focus-card-\(card.id)")
                 }
             }
             // §7.1 カード 3 枚。空き枠が見えること自体が「あと N 個選べる」の合図(2.1)。
@@ -320,6 +325,7 @@ public struct HomeView: View {
                                     Text("今週の重点にする", bundle: .module)
                                 }
                                 .buttonStyle(.borderedProminent)
+                                .accessibilityIdentifier("home-stale-focus-\(item.id)")
                                 Button {
                                     withAnimation(Motion.move) {
                                         model.postponeStaleIssue(item)
@@ -328,6 +334,7 @@ public struct HomeView: View {
                                     Text("まだいい", bundle: .module)
                                 }
                                 .buttonStyle(.bordered)
+                                .accessibilityIdentifier("home-stale-postpone-\(item.id)")
                                 Button {
                                     withAnimation(Motion.move) {
                                         model.archiveStaleIssue(item)
@@ -336,6 +343,7 @@ public struct HomeView: View {
                                     Text("もう不要", bundle: .module)
                                 }
                                 .buttonStyle(.bordered)
+                                .accessibilityIdentifier("home-stale-archive-\(item.id)")
                             }
                             .font(.caption)
                         }
@@ -390,6 +398,7 @@ public struct HomeView: View {
         }
         .buttonStyle(.borderedProminent)
         .padding(.top, 8)
+        .accessibilityIdentifier("home-record")
     }
 
 }

@@ -82,6 +82,7 @@ struct SettingsView: View {
                     Image("notifications", bundle: .module)
                 }
             }
+            .accessibilityIdentifier("settings-notifications")
             NavigationLink {
                 StaleSettingsView()
             } label: {
@@ -91,6 +92,7 @@ struct SettingsView: View {
                     Image("history", bundle: .module)
                 }
             }
+            .accessibilityIdentifier("settings-stale")
             NavigationLink {
                 ArchiveListView()
             } label: {
@@ -100,6 +102,7 @@ struct SettingsView: View {
                     Image("archive", bundle: .module)
                 }
             }
+            .accessibilityIdentifier("settings-archive")
             if let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String,
                let buildNumber = Bundle.main.infoDictionary?["CFBundleVersion"] as? String {
                 Label {

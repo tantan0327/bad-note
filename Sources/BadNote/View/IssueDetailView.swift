@@ -85,6 +85,7 @@ public struct IssueDetailView: View {
                 }
                 .buttonStyle(.borderedProminent)
                 .font(.footnote)
+                .accessibilityIdentifier("issue-detail-raise")
             }
         }
     }
@@ -160,8 +161,33 @@ public struct IssueDetailView: View {
                         }
                     }
                 }
+                // 点の列は VoiceOver に伝わらないので、まとめて読み上げる(6.1)
+                .accessibilityLabel(Text("進み方", bundle: .module))
+                .accessibilityValue(Text(verbatim: progressSummary()))
             }
         }
+    }
+
+    /// 「できた2回、近づいた1回 …」。VoiceOver 用の要約。0 回の区分は読まない。
+    private func progressSummary() -> String {
+        var done = 0
+        var closer = 0
+        var next = 0
+        var blank = 0
+        for result in model.progress {
+            switch result {
+            case .done: done += 1
+            case .closer: closer += 1
+            case .next: next += 1
+            case nil: blank += 1
+            }
+        }
+        var parts: [String] = []
+        if done > 0 { parts.append("できた\(done)回") }
+        if closer > 0 { parts.append("近づいた\(closer)回") }
+        if next > 0 { parts.append("次にやる\(next)回") }
+        if blank > 0 { parts.append("記録なし\(blank)回") }
+        return parts.joined(separator: "、")
     }
 
     /// 手応えは色と形の両方で区別する(色だけに頼らない。tasks.md 1.1 / 6.1)。
@@ -204,6 +230,7 @@ public struct IssueDetailView: View {
                     .font(.footnote)
             }
             .buttonStyle(.bordered)
+            .accessibilityIdentifier("issue-detail-attributes")
             if isShowingAttributes {
                 Card {
                     VStack(alignment: .leading, spacing: 8) {
@@ -224,6 +251,7 @@ public struct IssueDetailView: View {
                             Text("編集する", bundle: .module)
                                 .font(.footnote)
                         }
+                        .accessibilityIdentifier("issue-detail-edit")
                     }
                     .font(.footnote)
                 }
@@ -271,6 +299,7 @@ public struct IssueDetailView: View {
                         .padding(.vertical, 4)
                 }
                 .buttonStyle(.borderedProminent)
+                .accessibilityIdentifier("issue-detail-resurface")
                 Text("レベルは 1 つ下から再開します", bundle: .module)
                     .font(.caption)
                     .foregroundStyle(.secondary)
@@ -285,6 +314,7 @@ public struct IssueDetailView: View {
                         .padding(.vertical, 4)
                 }
                 .buttonStyle(.bordered)
+                .accessibilityIdentifier("issue-detail-overcome")
                 if let rejection = model.overcomeRejection {
                     // §7.3 Lv.3 以下で押したら理由を出す
                     Text(rejection)
@@ -301,6 +331,7 @@ public struct IssueDetailView: View {
                         Text("レベルを 1 つ下げる", bundle: .module)
                             .font(.footnote)
                     }
+                    .accessibilityIdentifier("issue-detail-lower")
                 }
             }
         }

@@ -22,7 +22,7 @@ struct TrainingMenuFormView: View {
                 TextField(text: $model.name) {
                     Text("素振り 50 回、体幹 10 分 など", bundle: .module)
                 }
-                .accessibilityIdentifier("training_menu_name")
+                .accessibilityIdentifier("training-menu-name")
             } header: {
                 Text("メニュー", bundle: .module)
             }
@@ -33,7 +33,7 @@ struct TrainingMenuFormView: View {
                 #if os(iOS) || os(Android)
                 .keyboardType(.numberPad)
                 #endif
-                .accessibilityIdentifier("training_menu_minutes")
+                .accessibilityIdentifier("training-menu-minutes")
             } header: {
                 Text("目安の時間", bundle: .module)
             } footer: {
@@ -47,7 +47,7 @@ struct TrainingMenuFormView: View {
                 Text("保存", bundle: .module)
             }
             .disabled(!model.canSave)
-            .accessibilityIdentifier("training_menu_save")
+            .accessibilityIdentifier("training-menu-save")
             if !model.isNew {
                 Section {
                     Button {
@@ -57,7 +57,7 @@ struct TrainingMenuFormView: View {
                     } label: {
                         Text("アーカイブする", bundle: .module)
                     }
-                    .accessibilityIdentifier("training_menu_archive")
+                    .accessibilityIdentifier("training-menu-archive")
                 } footer: {
                     Text("一覧から消えます。過去の記録は残ります", bundle: .module)
                 }

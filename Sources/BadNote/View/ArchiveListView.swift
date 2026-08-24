@@ -69,6 +69,7 @@ public struct ArchiveListView: View {
                         }
                     }
                 }
+                .accessibilityIdentifier("archive-row-\(issue.id)")
             }
         }
         .navigationTitle(Text("定着した課題", bundle: .module))

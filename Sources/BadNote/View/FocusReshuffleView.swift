@@ -161,6 +161,7 @@ public struct FocusReshuffleView: View {
                         }
                         .foregroundStyle(.primary)
                     }
+                    .accessibilityIdentifier("reshuffle-remove-\(issue.id)")
                 }
             } header: {
                 HStack {
@@ -196,6 +197,7 @@ public struct FocusReshuffleView: View {
                         }
                         .foregroundStyle(.primary)
                     }
+                    .accessibilityIdentifier("reshuffle-add-\(issue.id)")
                 }
             } header: {
                 Text("候補", bundle: .module)

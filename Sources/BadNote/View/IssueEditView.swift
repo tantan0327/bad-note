@@ -41,6 +41,7 @@ public struct IssueEditView: View {
                 } label: {
                     Text("保存", bundle: .module)
                 }
+                .accessibilityIdentifier("issue-edit-save")
             }
         }
         .task {
@@ -59,6 +60,7 @@ public struct IssueEditView: View {
                     Text("気づいたことを 1 行で", bundle: .module)
                 }
                 .textFieldStyle(.roundedBorder)
+                .accessibilityIdentifier("issue-edit-words")
                 Text("入れるのはこの 1 行だけで十分です", bundle: .module)
                     .font(.caption)
                     .foregroundStyle(.secondary)
@@ -68,6 +70,7 @@ public struct IssueEditView: View {
                     Text("気づいたことを 1 行で", bundle: .module)
                 }
                 .textFieldStyle(.roundedBorder)
+                .accessibilityIdentifier("issue-edit-words")
                 Text("原文はなるべくそのまま。直すのは誤字くらいに留めます", bundle: .module)
                     .font(.caption)
                     .foregroundStyle(.secondary)
@@ -75,6 +78,7 @@ public struct IssueEditView: View {
                     Text("コーチ名(任意)", bundle: .module)
                 }
                 .textFieldStyle(.roundedBorder)
+                .accessibilityIdentifier("issue-edit-coach")
             }
         }
     }
@@ -89,6 +93,7 @@ public struct IssueEditView: View {
                 Text("完了形で言い換える", bundle: .module)
             }
             .textFieldStyle(.roundedBorder)
+            .accessibilityIdentifier("issue-edit-doneform")
             Text("後から整理するときに書けば十分です", bundle: .module)
                 .font(.caption)
                 .foregroundStyle(.secondary)
@@ -113,8 +118,10 @@ public struct IssueEditView: View {
     @ViewBuilder private func disciplineButton(_ label: Text, value: Discipline) -> some View {
         if model.discipline == value {
             Button { withAnimation(Motion.select) { model.discipline = value } } label: { label }.buttonStyle(.borderedProminent)
+                .accessibilityIdentifier("issue-edit-discipline-\(value.rawValue)")
         } else {
             Button { withAnimation(Motion.select) { model.discipline = value } } label: { label }.buttonStyle(.bordered)
+                .accessibilityIdentifier("issue-edit-discipline-\(value.rawValue)")
         }
     }
 
@@ -137,8 +144,10 @@ public struct IssueEditView: View {
     @ViewBuilder private func masteryButton(_ label: Text, value: MasteryLevel) -> some View {
         if model.masteryLevel == value {
             Button { withAnimation(Motion.select) { model.masteryLevel = value } } label: { label }.buttonStyle(.borderedProminent)
+                .accessibilityIdentifier("issue-edit-mastery-\(value.rawValue)")
         } else {
             Button { withAnimation(Motion.select) { model.masteryLevel = value } } label: { label }.buttonStyle(.bordered)
+                .accessibilityIdentifier("issue-edit-mastery-\(value.rawValue)")
         }
     }
 
@@ -150,8 +159,11 @@ public struct IssueEditView: View {
                 .font(.headline)
             HStack(spacing: 8) {
                 scaleButton(ScaleLabel.impact(1), isSelected: model.impact == 1) { model.toggleImpact(1) }
+                    .accessibilityIdentifier("issue-edit-impact-1")
                 scaleButton(ScaleLabel.impact(2), isSelected: model.impact == 2) { model.toggleImpact(2) }
+                    .accessibilityIdentifier("issue-edit-impact-2")
                 scaleButton(ScaleLabel.impact(3), isSelected: model.impact == 3) { model.toggleImpact(3) }
+                    .accessibilityIdentifier("issue-edit-impact-3")
             }
             Text("試合の失点に直結するか", bundle: .module)
                 .font(.caption)
@@ -165,8 +177,11 @@ public struct IssueEditView: View {
                 .font(.headline)
             HStack(spacing: 8) {
                 scaleButton(ScaleLabel.cost(1), isSelected: model.cost == 1) { model.toggleCost(1) }
+                    .accessibilityIdentifier("issue-edit-cost-1")
                 scaleButton(ScaleLabel.cost(2), isSelected: model.cost == 2) { model.toggleCost(2) }
+                    .accessibilityIdentifier("issue-edit-cost-2")
                 scaleButton(ScaleLabel.cost(3), isSelected: model.cost == 3) { model.toggleCost(3) }
+                    .accessibilityIdentifier("issue-edit-cost-3")
             }
             Text("直るまでの時間", bundle: .module)
                 .font(.caption)
@@ -199,6 +214,7 @@ public struct IssueEditView: View {
                         Text("外す", bundle: .module)
                             .font(.footnote)
                     }
+                    .accessibilityIdentifier("issue-edit-tag-remove-\(tag.id)")
                 }
             }
             HStack(spacing: 8) {
@@ -206,12 +222,14 @@ public struct IssueEditView: View {
                     Text("ショット種別など", bundle: .module)
                 }
                 .textFieldStyle(.roundedBorder)
+                .accessibilityIdentifier("issue-edit-tag-field")
                 Button {
                     model.addTag()
                 } label: {
                     Text("追加", bundle: .module)
                 }
                 .buttonStyle(.bordered)
+                .accessibilityIdentifier("issue-edit-tag-add")
             }
         }
     }

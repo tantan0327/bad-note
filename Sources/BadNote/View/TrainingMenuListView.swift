@@ -24,7 +24,7 @@ struct TrainingMenuListView: View {
                             .font(.footnote)
                     }
                     .buttonStyle(.borderedProminent)
-                    .accessibilityIdentifier("training_menu_empty_action")
+                    .accessibilityIdentifier("training-menu-empty-action")
                 }
             }
             Section {
@@ -42,7 +42,7 @@ struct TrainingMenuListView: View {
                             }
                         }
                     }
-                    .accessibilityIdentifier("training_menu_row_\(menu.id)")
+                    .accessibilityIdentifier("training-menu-row-\(menu.id)")
                 }
                 .onMove { offsets, toOffset in
                     model.move(from: Array(offsets), to: toOffset)
@@ -63,7 +63,7 @@ struct TrainingMenuListView: View {
                 } label: {
                     Text("追加", bundle: .module)
                 }
-                .accessibilityIdentifier("training_menu_add")
+                .accessibilityIdentifier("training-menu-add")
             }
         }
         .onAppear {
@@ -82,7 +82,7 @@ struct TrainingMenuListView: View {
                     Text(isShowingArchived ? "アーカイブ済みを閉じる" : "アーカイブ済みを見る", bundle: .module)
                         .font(.footnote)
                 }
-                .accessibilityIdentifier("training_archived_toggle")
+                .accessibilityIdentifier("training-archived-toggle")
                 if isShowingArchived {
                     ForEach(model.archivedMenus) { menu in
                         Button {
@@ -106,7 +106,7 @@ struct TrainingMenuListView: View {
                             }
                             .foregroundStyle(.primary)
                         }
-                        .accessibilityIdentifier("training_archived_row_\(menu.id)")
+                        .accessibilityIdentifier("training-archived-row-\(menu.id)")
                     }
                 }
             } footer: {

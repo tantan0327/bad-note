@@ -32,7 +32,7 @@ public struct TrainingView: View {
                 } label: {
                     Text("メニュー", bundle: .module)
                 }
-                .accessibilityIdentifier("training_menu_button")
+                .accessibilityIdentifier("training-menu-button")
             }
         }
         .onAppear {
@@ -70,7 +70,7 @@ public struct TrainingView: View {
                             .font(.footnote)
                     }
                     .buttonStyle(.bordered)
-                    .accessibilityIdentifier("training_select_yesterday")
+                    .accessibilityIdentifier("training-select-yesterday")
                 } else {
                     // 過去日を開いていることが見た目でも分かるように、戻る導線を目立たせる
                     Button {
@@ -80,7 +80,7 @@ public struct TrainingView: View {
                             .font(.footnote)
                     }
                     .buttonStyle(.borderedProminent)
-                    .accessibilityIdentifier("training_back_to_today")
+                    .accessibilityIdentifier("training-back-to-today")
                 }
             }
             // 昨日より前は控えめな行から
@@ -89,7 +89,7 @@ public struct TrainingView: View {
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             }
-            .accessibilityIdentifier("training_date_picker")
+            .accessibilityIdentifier("training-date-picker")
         }
     }
 
@@ -149,7 +149,7 @@ public struct TrainingView: View {
             // 本文なのでリンク色にしない(現状: リンク色の扱い)
             .foregroundStyle(.primary)
         }
-        .accessibilityIdentifier("training_row_\(menu.id)")
+        .accessibilityIdentifier("training-row-\(menu.id)")
         // VoiceOver にも済 / まだが伝わるように(3.3)
         .accessibilityValue(model.isDone(menu) ? Text("済", bundle: .module) : Text("まだ", bundle: .module))
     }
@@ -168,7 +168,7 @@ public struct TrainingView: View {
                         .font(.footnote)
                 }
                 .buttonStyle(.borderedProminent)
-                .accessibilityIdentifier("training_create_menu")
+                .accessibilityIdentifier("training-create-menu")
             }
         }
     }

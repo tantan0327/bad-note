@@ -43,6 +43,7 @@ public struct PracticeLogView: View {
                     } label: {
                         Text("閉じる", bundle: .module)
                     }
+                    .accessibilityIdentifier("practice-close")
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button {
@@ -54,6 +55,7 @@ public struct PracticeLogView: View {
                         Text("保存", bundle: .module)
                     }
                     .disabled(model.isSaved)
+                    .accessibilityIdentifier("practice-save")
                 }
             }
         }
@@ -130,6 +132,7 @@ public struct PracticeLogView: View {
                     .padding(.vertical, 4)
             }
             .buttonStyle(.borderedProminent)
+            .accessibilityIdentifier("practice-done")
         }
     }
 
@@ -173,6 +176,7 @@ public struct PracticeLogView: View {
                 #if os(iOS) || os(Android)
                 .keyboardType(.numberPad)
                 #endif
+                .accessibilityIdentifier("practice-minutes")
                 Text("分", bundle: .module)
                     .font(.title3)
                 Spacer()
@@ -230,6 +234,7 @@ public struct PracticeLogView: View {
         SelectableChip(label: label, isSelected: model.kind == kind) {
             model.toggleKind(kind)
         }
+        .accessibilityIdentifier("practice-kind-\(kind.rawValue)")
     }
 
     // MARK: - 4. 今週の重点
@@ -265,6 +270,7 @@ public struct PracticeLogView: View {
         SelectableChip(label: label, isSelected: input.result == result) {
             model.toggleResult(result, for: input.id)
         }
+        .accessibilityIdentifier("practice-result-\(input.id)-\(result.rawValue)")
     }
 
     // MARK: - 5. 追加する課題

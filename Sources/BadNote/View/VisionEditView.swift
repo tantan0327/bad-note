@@ -26,6 +26,7 @@ public struct VisionEditView: View {
                 TextEditor(text: $model.body)
                     .frame(minHeight: 200)
                     .border(Color.secondary.opacity(0.4), width: 1)
+                    .accessibilityIdentifier("vision-editor")
 
                 Text("うまく言葉にできなければ、途中まででも構いません", bundle: .module)
                     .font(.caption)
@@ -43,6 +44,7 @@ public struct VisionEditView: View {
                     }
                 } label: {
                     Text("保存", bundle: .module)
+                        .accessibilityIdentifier("vision-save")
                 }
             }
         }

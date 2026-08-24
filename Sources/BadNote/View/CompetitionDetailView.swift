@@ -54,14 +54,19 @@ public struct CompetitionDetailView: View {
                     } label: {
                         Text("編集する", bundle: .module)
                     }
+                    .accessibilityIdentifier("competition-detail-edit")
                     Button(role: .destructive) {
                         isShowingDeleteConfirmation = true
                     } label: {
                         Text("この大会を削除", bundle: .module)
                     }
+                    .accessibilityIdentifier("competition-detail-delete")
                 } label: {
                     Text(verbatim: "⋯")
                 }
+                // 記号だけのボタンなので読み上げ用の名前を付ける(6.1)
+                .accessibilityLabel(Text("その他の操作", bundle: .module))
+                .accessibilityIdentifier("competition-detail-menu")
             }
         }
         .confirmationDialog(Text("この大会を削除しますか?", bundle: .module),
@@ -172,6 +177,7 @@ public struct CompetitionDetailView: View {
                                 .frame(maxWidth: .infinity, alignment: .leading)
                                 .foregroundStyle(.primary)
                             }
+                            .accessibilityIdentifier("competition-issue-\(issue.id)")
                         }
                     }
                 }
@@ -211,6 +217,7 @@ public struct CompetitionDetailView: View {
                         Text("保存", bundle: .module)
                     }
                     .buttonStyle(.borderedProminent)
+                    .accessibilityIdentifier("competition-review-save-\(model.reviews[index].discipline.rawValue)")
                     // §7.5 3 つ目の回答からそのまま課題を登録できる導線
                     Button {
                         model.createIssueFromNextAction(model.reviews[index])
@@ -218,6 +225,7 @@ public struct CompetitionDetailView: View {
                         Text("次にやることを課題にする", bundle: .module)
                     }
                     .buttonStyle(.bordered)
+                    .accessibilityIdentifier("competition-review-to-issue-\(model.reviews[index].discipline.rawValue)")
                 }
                 .font(.footnote)
             }
