@@ -12,9 +12,18 @@ struct TrainingMenuListView: View {
                     .foregroundStyle(.red)
             }
             if model.menus.isEmpty {
-                Text("右上の「追加」からメニューを作ります", bundle: .module)
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
+                // 空の状態も 2.4 の形に。次の 1 手はその場からフォームへ(3.4)
+                EmptyStateView(icon: "fitness_center",
+                               message: Text("メニューはまだありません", bundle: .module)) {
+                    NavigationLink {
+                        TrainingMenuFormView(menuID: nil)
+                    } label: {
+                        Text("メニューを追加する", bundle: .module)
+                            .font(.footnote)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .accessibilityIdentifier("training_menu_empty_action")
+                }
             }
             ForEach(model.menus) { menu in
                 NavigationLink {

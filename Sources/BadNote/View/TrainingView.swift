@@ -158,15 +158,18 @@ public struct TrainingView: View {
 
     @ViewBuilder private var emptySection: some View {
         Section {
-            Text("メニューはまだありません。素振り 50 回、体幹 10 分のように、毎日やる形で決めておきます", bundle: .module)
-                .font(.footnote)
-                .foregroundStyle(.secondary)
-            NavigationLink {
-                TrainingMenuListView()
-            } label: {
-                Text("メニューを作る", bundle: .module)
+            // 最初の 1 個への道は 1 タップ(3.4)。空の一覧を経由せず直接フォームへ
+            EmptyStateView(icon: "fitness_center",
+                           message: Text("メニューはまだありません。素振り 50 回、体幹 10 分のように、毎日やる形で決めておきます", bundle: .module)) {
+                NavigationLink {
+                    TrainingMenuFormView(menuID: nil)
+                } label: {
+                    Text("メニューを作る", bundle: .module)
+                        .font(.footnote)
+                }
+                .buttonStyle(.borderedProminent)
+                .accessibilityIdentifier("training_create_menu")
             }
-            .accessibilityIdentifier("training_create_menu")
         }
     }
 }
