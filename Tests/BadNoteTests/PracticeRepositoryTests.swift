@@ -8,7 +8,53 @@ import SkipSQL
 /// - スキーマは `docs/spec.md` §6
 /// - DB はテストごとに新規のインメモリ(`SQLContext(configuration: .platform)`)
 /// - 時刻は注入したクロックから取る。実時刻に依存させない
+/// 呼び出し側トランザクションのロールバック確認用(6.3)。
+private struct AbortForTest: Error {
+}
+
 final class PracticeRepositoryTests: XCTestCase {
+
+    /// 練習ログと課題の書き込みを 1 つのトランザクションに畳める(6.3)。
+    /// 途中で失敗したら両方とも巻き戻る —— 片方だけ残さない。
+    func testCreateInCurrentTransactionRollsBackWithCaller() throws {
+        let db = try makeDatabase()
+        defer { try? db.close() }
+        let practices = makePracticeRepository(db)
+        let issues = makeIssueRepository(db)
+
+        // XCTAssertThrowsError は Skip 非対応(開発メモ)なので do/catch で確かめる
+        var didThrow = false
+        do {
+            try db.transaction {
+                _ = try practices.createInCurrentTransaction(practiceDate: t0, minutes: 60)
+                _ = try issues.create(coachWords: "ラケット面が下向き")
+                throw AbortForTest()
+            }
+        } catch {
+            didThrow = true
+        }
+        XCTAssertTrue(didThrow)
+
+        XCTAssertEqual(0, try practices.count())
+        XCTAssertEqual(0, try issues.fetch(statuses: [.inbox]).count)
+    }
+
+    /// 成功すれば両方とも残る(6.3 の畳み込みが普段の保存を壊さないこと)。
+    func testCreateInCurrentTransactionCommitsWithCaller() throws {
+        let db = try makeDatabase()
+        defer { try? db.close() }
+        let practices = makePracticeRepository(db)
+        let issues = makeIssueRepository(db)
+
+        _ = try db.transaction {
+            let created = try practices.createInCurrentTransaction(practiceDate: t0, minutes: 60)
+            _ = try issues.create(coachWords: "ラケット面が下向き")
+            return created
+        }
+
+        XCTAssertEqual(1, try practices.count())
+        XCTAssertEqual(1, try issues.fetch(statuses: [.inbox]).count)
+    }
 
     /// 2023-11-14T22:13:20Z
     private let t0 = Date(timeIntervalSince1970: 1_700_000_000)

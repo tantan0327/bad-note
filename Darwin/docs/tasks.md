@@ -13,8 +13,8 @@
 **見出しに「—— 済」が付くものは完了。** 完了したものの内訳は末尾の
 **「完了したこと」** に簡潔にまとめた。付いていない項目が残りのタスク。
 **§2 画面の作り直し・§3 家トレの磨き込みは完了。** いま **§4 迷わせない工夫** ——
-**§4・§5 も完了。** いま **§6 品質の土台** —— 6.1・6.2 は済、次は 6.3 DB 接続。
-実機確認待ちは 4.1〜4.3・5.1・5.2(特に触覚)・6.1(VoiceOver)。
+**§4・§5・§6 も完了。** 残る作業は **§7 配信の準備**(アイコン / ストア / データ書き出し)のみ。
+実機確認待ちは 4.1〜4.3・5.1・5.2(特に触覚)・6.1(VoiceOver)・6.3(保存まわり)。
 
 ---
 
@@ -288,15 +288,10 @@ Android エミュレータ(API 34 / SQLite 3.39.2)で DB 作成・マイグレ�
 `Scripts/sync-localizable.py` を新設し、カタログを実コードの 192 キーに同期。
 内訳は末尾「完了したこと」。文字列を足したらスクリプトを再実行(開発メモ)。
 
-### 6.3 DB 接続がモデルごと
+### 6.3 DB 接続がモデルごと —— **済(2026-08-24)**
 
-**実際に `database is locked` を踏んだ**(2026-08-22、通知設定の保存時)。
-設定を書いている最中に別の接続を開いたのが原因。通知まわりは
-「DB を使う部分(同期)」と「OS に登録する部分(非同期・DB を触らない)」に分けて回避したが、
-**接続を共有していないという根本は残っている**。
-インメモリ DB のテストでは接続が 1 本なので再現しない。実機でしか出ない。
-
-**練習ログとコーチの言葉が別トランザクション**(Repository が別)も同じ章の宿題。
+`AppDatabase.shared()` に全モデルを寄せて接続を 1 本に。
+練習ログと原文の保存も 1 トランザクションに。内訳は末尾「完了したこと」。**実機確認はまだ。**
 
 ---
 
@@ -369,6 +364,14 @@ skip icon --background "#5C6BC0" symbol.svg
 
 新しい順。基盤(Phase 1 とデザイン土台)の詳しい内訳は「現状」を見る。
 
+- **6.3 DB 接続を 1 本に**(2026-08-24)—— ① **`AppDatabase.shared()` を新設**し、
+  17 モデルの `context()` をすべて共有接続に移行(`database is locked` の根本対応。
+  UI モデルはメインスレッドからのみ触る前提を明記。テストは従来どおり個別のインメモリ接続)。
+  ② **練習ログと「追加する課題」の原文を 1 トランザクションに** ——
+  SkipSQL の `transaction` はネストできない(BEGIN を二重発行する)ので、
+  `PracticeRepository.createInCurrentTransaction` を切り出し、モデル側の
+  1 つの `db.transaction` に畳んだ。ロールバック / コミットのテスト +2(計 470)。
+  画面のモデルから `AppDatabase.open()` を直接呼ばないこと。**実機確認はまだ。**
 - **6.2 ローカライズの抽出**(2026-08-24)—— CLI の `xcodebuild` は SwiftPM モジュール内の
   文字列を抽出しないので、**`Scripts/sync-localizable.py` を新設**して
   `Text("…", bundle: .module)`(三項演算子の 2 キー形も)を走査し、
@@ -654,6 +657,10 @@ Android の `Bundle.main` は「メインモジュールの `Resources/`」を�
 - **`Int64` と `Int` リテラルの `==` / `!=` は Kotlin で通らない** — 比較演算子(`<` `>`)は通るので
   Swift 側では気づけない。`Int64(0)` のように型を揃える
 - **`XCTUnwrap` の戻り値から型を辿れない** — `var x: Issue = try XCTUnwrap(...)` と明示する
+- **`XCTAssertThrowsError` は Kotlin に変換されない** — `Unresolved reference` になる。
+  do / catch + フラグ + `XCTAssertTrue` で書く(2026-08-24)。
+  **`db.transaction { () -> T in ... }` の型注釈付きクロージャも不可** ——
+  skipstone が第 1 引数(mode)に割り当ててしまう。素の trailing closure で書く
 - **`.sensoryFeedback` は Android で `VIBRATE` パーミッションが要る** — 無くてもビルドは通り、
   **振動する瞬間に `SecurityException` でクラッシュする**(Robolectric のテストでも出ない)。
   `Android/app/src/main/AndroidManifest.xml` に
@@ -662,6 +669,10 @@ Android の `Bundle.main` は「メインモジュールの `Resources/`」を�
   ジェネリクス消去で衝突し `None of the following candidates is applicable` になる。
   `Stepper(タイトル文字列, onIncrement:onDecrement:)` の形にする(タイトルは
   `String` 型の変数で渡す —— リテラルだと LocalizedStringKey 版に取られる)(2026-08-24)
+- **SkipSQL の `transaction` はネストできない** — BEGIN を二重発行して
+  `cannot start a transaction within a transaction` になる。複数リポジトリの書き込みを
+  1 つに畳むときは、内側を `createInCurrentTransaction` のようなトランザクションを
+  開かない版にして、いちばん外だけで `db.transaction` する(6.3)
 - **`XCTAssertEqual(x, [])` の空配列リテラルは Kotlin で型推論できない** —
   `Cannot infer type for type parameter 'Element'` で全 JUnit テストが止まる。
   `[Int]()` のように型を書く(2026-08-23、MilestoneTests で踏んだ。

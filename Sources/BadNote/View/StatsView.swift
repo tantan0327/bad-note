@@ -22,7 +22,6 @@ import SkipSQL
     /// 棒グラフに出す月数。スマホの幅に収まる範囲(6〜12 のうち)。
     public static let monthsBack = 6
 
-    private var database: SQLContext? = nil
 
     public init() {
     }
@@ -42,12 +41,8 @@ import SkipSQL
     }
 
     private func context() throws -> SQLContext {
-        if let database = database {
-            return database
-        }
-        let opened = try AppDatabase.open()
-        database = opened
-        return opened
+        // 共有接続(6.3)。モデルごとに開くと database is locked を踏む
+        return try AppDatabase.shared()
     }
 }
 

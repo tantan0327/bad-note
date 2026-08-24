@@ -61,7 +61,6 @@ import SkipSQL
     /// 未整理の件数(§5.3)。**保存直後にだけ見せる。**常設のバッジにはしない。
     public private(set) var unorganizedCount = 0
 
-    private var database: SQLContext? = nil
 
     public init() {
     }
@@ -165,14 +164,18 @@ import SkipSQL
                 // 未選択(nil)でも行は作る。累計時間の集計元になるため
                 focus.append(FocusEntry(issueId: input.issue.id, result: input.result))
             }
-            let practice = try practices.create(practiceDate: practiceDate,
-                                                minutes: minutes,
-                                                kind: kind,
-                                                focus: focus)
-
-            // ここで書いた 1 行は未整理の課題として登録する(ここでは整理させない)
-            for words in pendingCoachWords() {
-                _ = try issues.create(coachWords: words)
+            // 練習ログと「追加する課題」の原文は 1 つのトランザクションで保存する(6.3)。
+            // 片方だけ残ると、§7.2 の保存後表示が嘘になる
+            let practice = try db.transaction {
+                let created = try practices.createInCurrentTransaction(practiceDate: practiceDate,
+                                                                       minutes: minutes,
+                                                                       kind: kind,
+                                                                       focus: focus)
+                // ここで書いた 1 行は未整理の課題として登録する(ここでは整理させない)
+                for words in pendingCoachWords() {
+                    _ = try issues.create(coachWords: words)
+                }
+                return created
             }
 
             let month = MonthRange.containing(practice.practiceDate)
@@ -251,11 +254,7 @@ import SkipSQL
     }
 
     private func context() throws -> SQLContext {
-        if let database = database {
-            return database
-        }
-        let opened = try AppDatabase.open()
-        database = opened
-        return opened
+        // 共有接続(6.3)。モデルごとに開くと database is locked を踏む
+        return try AppDatabase.shared()
     }
 }

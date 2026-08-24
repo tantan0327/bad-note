@@ -79,7 +79,6 @@ import SkipSQL
 
     public var errorText: String? = nil
 
-    private var database: SQLContext? = nil
 
     public init() {
     }
@@ -328,11 +327,7 @@ import SkipSQL
     }
 
     private func context() throws -> SQLContext {
-        if let database = database {
-            return database
-        }
-        let opened = try AppDatabase.open()
-        database = opened
-        return opened
+        // 共有接続(6.3)。モデルごとに開くと database is locked を踏む
+        return try AppDatabase.shared()
     }
 }

@@ -40,17 +40,27 @@ public final class PracticeRepository {
                        kind: PracticeKind? = nil,
                        focus: [FocusEntry] = []) throws -> Practice {
         return try db.transaction {
-            try db.exec(sql: "INSERT INTO practice (practice_date, minutes, kind, created_at) VALUES (?, ?, ?, ?)",
-                        parameters: [
-                            SQLValue.text(timestamps.text(from: practiceDate)),
-                            SQLValue.long(Int64(minutes)),
-                            textValue(kind?.rawValue),
-                            SQLValue.text(timestamps.text(from: now())),
-                        ])
-            let id = db.lastInsertRowID
-            try replaceFocusRecords(practiceId: id, focus: focus)
-            return try require(id: id)
+            try createInCurrentTransaction(practiceDate: practiceDate, minutes: minutes, kind: kind, focus: focus)
         }
+    }
+
+    /// トランザクションを開かない版(6.3)。呼び出し側が練習ログと他の書き込みを
+    /// 1 つのトランザクションに畳むときに使う(SkipSQL の transaction はネストできない)。
+    @discardableResult
+    public func createInCurrentTransaction(practiceDate: Date,
+                                           minutes: Int = 0,
+                                           kind: PracticeKind? = nil,
+                                           focus: [FocusEntry] = []) throws -> Practice {
+        try db.exec(sql: "INSERT INTO practice (practice_date, minutes, kind, created_at) VALUES (?, ?, ?, ?)",
+                    parameters: [
+                        SQLValue.text(timestamps.text(from: practiceDate)),
+                        SQLValue.long(Int64(minutes)),
+                        textValue(kind?.rawValue),
+                        SQLValue.text(timestamps.text(from: now())),
+                    ])
+        let id = db.lastInsertRowID
+        try replaceFocusRecords(practiceId: id, focus: focus)
+        return try require(id: id)
     }
 
     // MARK: - Read

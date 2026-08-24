@@ -11,9 +11,28 @@ public struct AppDatabase {
     private init() {
     }
 
+    /// アプリ全体で共有する 1 本の接続(tasks.md 6.3)。**画面のモデルは必ずこれを使う。**
+    ///
+    /// モデルごとに接続を開くと、書き込み中に別の接続が `database is locked` を踏む
+    /// (実際に通知設定の保存で踏んだ。インメモリのテストでは再現しない)。
+    /// UI のモデルはメインスレッドからしか触らない前提。テストは従来どおり
+    /// インメモリの接続を個別に作る。
+    public static func shared() throws -> SQLContext {
+        if let context = sharedContext {
+            return context
+        }
+        let opened = try open()
+        sharedContext = opened
+        return opened
+    }
+
+    // UI のモデル(メインスレッド)からしか触らない前提なので unsafe を許す
+    nonisolated(unsafe) private static var sharedContext: SQLContext? = nil
+
     /// アプリのデータベースを開く。`prepare(_:)` 済みの接続を返す。
     ///
     /// 保存先は Application Support。iOS も Android も同じコードで解決できる。
+    /// 画面からは直接呼ばず `shared()` を使うこと(6.3)。
     public static func open() throws -> SQLContext {
         let directory = URL.applicationSupportDirectory
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)

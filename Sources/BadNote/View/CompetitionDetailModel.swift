@@ -57,7 +57,6 @@ import SkipSQL
     public var errorText: String? = nil
     public var savedMessage: String? = nil
 
-    private var database: SQLContext? = nil
 
     public init(competitionID: Int64) {
         self.competitionID = competitionID
@@ -184,11 +183,7 @@ import SkipSQL
     }
 
     private func context() throws -> SQLContext {
-        if let database = database {
-            return database
-        }
-        let opened = try AppDatabase.open()
-        database = opened
-        return opened
+        // 共有接続(6.3)。モデルごとに開くと database is locked を踏む
+        return try AppDatabase.shared()
     }
 }
