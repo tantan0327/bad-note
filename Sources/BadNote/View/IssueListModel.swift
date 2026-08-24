@@ -29,6 +29,9 @@ import SkipSQL
     /// 整理前で属性が付いていないので、絞り込みの対象にはしない。
     public private(set) var unorganized: [Issue] = []
 
+    /// 層を動かした回数。触覚フィードバックのトリガー(5.2)。読み込みでは増えない
+    public private(set) var moveCount = 0
+
     public private(set) var focus: [Issue] = []
     public private(set) var next: [Issue] = []
     public private(set) var someday: [Issue] = []
@@ -210,6 +213,7 @@ import SkipSQL
             for issue in updated {
                 _ = try issues.update(issue)
             }
+            moveCount += 1
             errorText = nil
         } catch {
             errorText = "並び替えの保存に失敗しました: \(error)"

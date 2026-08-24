@@ -34,6 +34,8 @@ import SkipSQL
     public var minutesText = ""
     public var kind: PracticeKind? = nil
     public var focusInputs: [FocusInput] = []
+    /// 手応えを選んだ回数。触覚フィードバックのトリガー(5.2)。読み込みでは増えない
+    public private(set) var selectionCount = 0
     /// 「＋ もう 1 件追加」で確定した行
     public var addedCoachWords: [String] = []
     /// 入力中の 1 行
@@ -118,6 +120,7 @@ import SkipSQL
                 }
             }
         }
+        selectionCount += 1
     }
 
     public func addCoachWords() {

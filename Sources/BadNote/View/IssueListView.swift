@@ -83,6 +83,8 @@ public struct IssueListView: View {
             }
         }
         .navigationTitle(Text("課題", bundle: .module))
+        // 5.2 層の移動(スワイプ・ドラッグ)の触覚。トリガーは操作回数(読み込みでは鳴らない)
+        .sensoryFeedback(SensoryFeedback.impact, trigger: model.moveCount)
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 NavigationLink {

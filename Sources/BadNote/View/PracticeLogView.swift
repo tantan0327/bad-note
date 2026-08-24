@@ -31,6 +31,11 @@ public struct PracticeLogView: View {
                 .padding()
             }
             .navigationTitle(Text("練習を記録", bundle: .module))
+            // 5.2 画面を見ずに操作する場所の触覚。手応えの選択は軽く、保存できたら成功
+            .sensoryFeedback(SensoryFeedback.selection, trigger: model.selectionCount)
+            .sensoryFeedback(SensoryFeedback.success, trigger: model.isSaved) { old, new in
+                !old && new
+            }
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button {

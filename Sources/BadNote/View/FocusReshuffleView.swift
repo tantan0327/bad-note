@@ -13,6 +13,8 @@ import SkipSQL
     public private(set) var candidates: [Issue] = []
     /// 3 枠が埋まっているときの入れ替え候補
     public private(set) var swapCandidates: [Issue] = []
+    /// 層を動かした回数。触覚フィードバックのトリガー(5.2)。読み込みでは増えない
+    public private(set) var moveCount = 0
     public var isShowingSwap = false
     public var errorText: String? = nil
 
@@ -96,6 +98,7 @@ import SkipSQL
             for issue in updated {
                 _ = try issues.update(issue)
             }
+            moveCount += 1
             errorText = nil
         } catch {
             errorText = "保存に失敗しました: \(error)"
@@ -199,6 +202,8 @@ public struct FocusReshuffleView: View {
             }
         }
         .navigationTitle(Text("今週の重点を組み替える", bundle: .module))
+        // 5.2 選ぶ / 外すも層の移動。触覚を添える
+        .sensoryFeedback(SensoryFeedback.impact, trigger: model.moveCount)
         .confirmationDialog(Text("どれと入れ替えますか?", bundle: .module),
                             isPresented: $model.isShowingSwap,
                             titleVisibility: .visible) {
