@@ -12,8 +12,13 @@
     <!-- 触覚フィードバック(SkipUI の sensoryFeedback。無いと振動時に SecurityException で落ちる) -->
     <uses-permission android:name="android.permission.VIBRATE" />
 
+    <!-- 通知(§8)。Android 13 (API 33) 以降はこれが無いと許可ダイアログが出ず、
+         通知が黙って届かない。忘れ防止の中核が動かなくなる -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
     <application
         android:label="${PRODUCT_NAME}"
+        android:icon="@mipmap/ic_launcher"
         android:name=".AndroidAppMain"
         android:supportsRtl="true"
         android:allowBackup="true"

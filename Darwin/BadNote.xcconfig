@@ -15,8 +15,9 @@ INFOPLIST_FILE = Info.plist
 GENERATE_INFOPLIST_FILE = YES
 
 // The user-visible name of the app (localizable)
-//INFOPLIST_KEY_CFBundleDisplayName = App Name
-//INFOPLIST_KEY_LSApplicationCategoryType = public.app-category.utilities
+// ホーム画面の名前は短く保つ(ストアの表示名は fastlane の title.txt が持つ。7.2)
+INFOPLIST_KEY_CFBundleDisplayName = BadNote
+INFOPLIST_KEY_LSApplicationCategoryType = public.app-category.sports
 
 // iOS-specific Info.plist property keys
 INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphone*] = YES

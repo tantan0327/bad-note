@@ -12,11 +12,11 @@
 品質(6)→ 配信(7)** の順(1 新機能・2 画面の作り直しは済)。
 **見出しに「—— 済」が付くものは完了。** 完了したものの内訳は末尾の
 **「完了したこと」** に簡潔にまとめた。付いていない項目が残りのタスク。
-**§2 画面の作り直し・§3 家トレの磨き込みは完了。** いま **§4 迷わせない工夫** ——
-**§4・§5・§6 も完了。** §7 も 7.1(アイコン)と 7.3(データ書き出し)が済み、
-残る作業は **7.2 ストアのメタデータとスクリーンショット**のみ。
-実機確認待ちは**家トレの分数編集**・**課題追加の 1 欄化**・**節目のゲーミフィケーション**
-(§4〜§6・7.3 は iPhone で確認済み。2026-08-24)。
+**§2〜§6 は完了。§7 配信の準備もテキストと設定はすべて済み**(7.1 アイコン /
+7.2 ストアのメタデータ / 7.3 データ書き出し)。
+**残る作業は 7.2 のスクリーンショット撮影だけ。**
+実機確認待ちは**家トレの分数編集**・**課題追加の 1 欄化**・**節目のゲーミフィケーション**・
+**大会のねらい**(§4〜§6・7.3 は iPhone で確認済み。2026-08-24)。
 
 ---
 
@@ -299,25 +299,26 @@ Android エミュレータ(API 34 / SQLite 3.39.2)で DB 作成・マイグレ�
 
 ## 7. 配信の準備
 
-残りは 7.2 のみ。**スクリーンショットは作り直した画面(2)で撮る。**
+残りは **7.2 のスクリーンショット撮影だけ**。**作り直した画面(2)で撮る。**
 
-### 7.1 アプリアイコン —— **済(2026-08-24)**
+### 7.1 アプリアイコン —— **済(2026-08-25)**
 
-ユーザー側で作成済み(`skip icon --background "#5C6BC0"`)。
+iOS はユーザー側で作成済み(`skip icon --background "#5C6BC0"`)。
+**Android の `mipmap-*` が抜けていた**ので 7.2 のときに
+`skip icon --android <iOS の AppIcon.png>` で生成し、`AndroidManifest.xml` に
+`android:icon="@mipmap/ic_launcher"` を追加した(2026-08-25)。
 
-### 7.2 ストアのメタデータとスクリーンショット
+### 7.2 ストアのメタデータ —— **済(スクリーンショットを除く。2026-08-25)**
 
-`Skip.env` は `PRODUCT_NAME = BadNote` / `com.tange.badnote` のまま。決めるもの:
+テキストと設定は揃った(内訳は末尾「完了したこと」)。`skip verify` が通る状態。
 
-- 表示名(日本語のストア名)、サブタイトル、説明文、キーワード、カテゴリ、年齢レーティング
-- **スクリーンショット** — 端末サイズごとに必要。`skip-ui-automation` スキルの
-  Maestro + `skip app launch` で撮る手順がある
-- **プライバシー情報** — このアプリは**通信もデータ収集もしない**ので「収集なし」で通る。
-  ただしプライバシーポリシーの URL は要求される
-- 置き場は `Darwin/fastlane/metadata/` と `Android/fastlane/metadata/android/`
+**残っているのはスクリーンショットだけ:**
 
-0-
-  (`skip-localization` スキルにディレクトリ構成とバイト数の上限がある)
+- `Darwin/fastlane/screenshots/ja/N_ja.png`(iPhone 6.7" = 1290×2796)
+- `Android/fastlane/metadata/android/ja-JP/images/phoneScreenshots/N_ja-JP.png`
+- あわせて Play の `images/icon.png`(512×512)と `featureGraphic.png`(1024×500)
+- 手順は `skip-ui-automation` スキル(Maestro + `skip app launch`)。
+  **見映えのするデモデータの投入と削除**が要る(実データのままでは撮れない)
 
 ### 7.3 データの書き出し —— **済(2026-08-24)**
 
@@ -356,6 +357,21 @@ Android エミュレータ(API 34 / SQLite 3.39.2)で DB 作成・マイグレ�
 
 新しい順。基盤(Phase 1 とデザイン土台)の詳しい内訳は「現状」を見る。
 
+- **7.2 ストアのメタデータ**(2026-08-25)—— fastlane は 1 つも無かったのでゼロから作成。
+  ① `Darwin/fastlane/metadata/ja/`(title「BadNote バドミントン」26B / subtitle 27B /
+  keywords 90B / description 3270B / promotional_text 162B / release_notes / 各 URL)と
+  `Android/fastlane/metadata/android/ja-JP/`(title / short_description 69B /
+  full_description / changelogs/1.txt)。**ロケールは非対称**(App Store は `ja`、Play は `ja-JP`)。
+  ② **`skip verify` は `en-US` を必須のベースラインとして要求する**ので、
+  英語リスティングも作成した(冒頭に「UI は日本語のみ」と明記)。当初は日本語だけの
+  つもりだったが verify が通らないため方針を変えた。
+  ③ **`docs/privacy.md` を新設**(収集なし・通信なし・端末内のみ)。GitHub Pages 想定の
+  URL を privacy_url に仮入れ。④ `Skip.env` にストア ID の空欄、`BadNote.xcconfig` の
+  表示名(BadNote)とカテゴリ(`public.app-category.sports`)を有効化。
+  ⑤ **配信を止める不具合を 2 件修正** —— `POST_NOTIFICATIONS` の欠落
+  (Android 13+ で §8 の通知が黙って届かなかった)と、Android の launcher アイコンの欠落
+  (`skip icon --android` で mipmap を生成し `android:icon` を追加)。
+  `skip verify` 成功。**残るはスクリーンショット撮影のみ。**
 - **大会の「ねらい」**(2026-08-25)—— 目標大会が遠いと、手前の大会(練習試合・市民大会)に
   意味づけが無く、モチベーションが続かない問題への対応。**目標大会の仕組み(§5.1 の
   8 週間切り替え・§4.4 の調整期)は変えず**、すべての大会に 1 行の `aim` を持たせた。
@@ -715,6 +731,17 @@ Android の `Bundle.main` は「メインモジュールの `Resources/`」を�
   ジェネリクス消去で衝突し `None of the following candidates is applicable` になる。
   `Stepper(タイトル文字列, onIncrement:onDecrement:)` の形にする(タイトルは
   `String` 型の変数で渡す —— リテラルだと LocalizedStringKey 版に取られる)(2026-08-24)
+- **エミュレータの検証で `adb uninstall` を使わない** — アプリのデータごと消える。
+  再インストールは必ず `adb install -r`。アイコンなど新規インストールの確認が要るときは、
+  先に `run-as com.tange.badnote cp files/badnote.sqlite /sdcard/` などで**外に**退避する
+  (アプリ内に置いたバックアップも一緒に消える)。2026-08-25 に実際に消した
+- **`pm revoke` した権限は「ユーザーが拒否済み」扱いになり、許可ダイアログが二度と出ない** —
+  Android 13+ の通知許可を試すときは、`-g` を付けない素のインストールで確かめる
+  (`adb install` に `-g` を付けると全権限が自動付与されてダイアログが出ない)
+- **fastlane メタデータの長さ制限は「バイト数」** — 文字数ではない。日本語は 1 文字 3 バイトなので
+  30 バイトの `title.txt` は**実質 10 文字**、Play の `short_description`(80)は 26 文字。
+  検証は `wc -c`(`wc -m` ではない)。**`skip verify` は `en-US` を必須のベースラインとして
+  要求する**ので、日本語だけのアプリでも英語のリスティングが要る(2026-08-25)
 - **`ShareLink` は Android ではテキスト共有(`EXTRA_TEXT`)のみ** — `item: URL` は
   ファイルではなく **URL の文字列**が送られる(SkipUI の ShareLink.swift を読んで確認。
   2026-08-24)。ファイル共有は不可。バックアップ(7.3)は JSON 文字列をそのまま共有する

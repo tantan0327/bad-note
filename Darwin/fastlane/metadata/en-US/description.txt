@@ -1,0 +1,39 @@
+A practice notebook for badminton players.
+
+Note: the app interface is in Japanese only.
+
+Your coach tells you something. You notice something during a match. You remember it that day, and by the next practice it is gone. BadNote solves exactly two problems: forgetting, and losing motivation.
+
+■ Work down from where you want to be
+
+Vision, then the tournament you are aiming at, then three focus issues for the week, then your practice log. You do not pile up faults and grind them down; you start from the player you want to become. The weekly focus holds three issues at most, and adding a fourth asks which one it replaces.
+
+■ Resurface forgotten issues, once a week
+
+The most common failure is an issue you wrote down and never came back to. Once a week, BadNote surfaces the issues you have not touched, with the reason attached: "four weeks, never made it into your focus" or "six practices since it left your focus."
+
+It only suggests. It never rewrites your priorities on its own. Three choices settle it on the spot, and you can adjust the thresholds in settings.
+
+■ Every field is optional
+
+Log only the minutes, only how it felt, or a single line about something you noticed. Any of those saves. Sorting things out can wait until later.
+
+How it felt has three levels: done, closer, next. When the same issue comes up as "done" three times in a row, the app offers to raise its mastery level once. You decide.
+
+■ At-home training
+
+Fifty swings. Ten minutes of core work. A short daily checklist for what you do at home. Minutes are adjustable per day, and you can go back and tick yesterday. This time counts toward your total.
+
+■ Accumulated time
+
+Your lifetime practice total only goes up. Cross one hour, five, ten, and the app marks the moment. The ladder runs all the way to ten thousand hours.
+
+■ It does not push you
+
+Deliberately missing: streaks, unread badges, a running count of open issues, and the words "failed" or "missed." Notifications are capped at one per day. In the two weeks before a tournament, the app stops digging up old issues so you can concentrate.
+
+■ Your data
+
+No network access at all. Everything is stored on your device, and there is no account to create. You can export all of it from settings at any time.
+
+Works for both singles and doubles. In doubles, issues are still written as your own.

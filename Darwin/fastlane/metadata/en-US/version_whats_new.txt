@@ -1,0 +1,3 @@
+The first release of BadNote.
+
+Track badminton issues, practice logs, tournaments and at-home training. Once a week the app resurfaces the issues you have not touched, with the reason why. No network access: everything stays on your device.

@@ -698,7 +698,21 @@ CREATE TABLE training_log (
   足すこと(テストが入れ忘れを検出する)
 - **読み込み(復元)と iCloud / Google Drive 同期は Phase 2 以降**
 
-## 12. 実装順序
+## 12. 配信
+
+ストアのメタデータは fastlane の所定の場所に置く(2026-08-25)。
+
+- **ロケールは非対称** —— App Store は `Darwin/fastlane/metadata/ja/`、
+  Google Play は `Android/fastlane/metadata/android/ja-JP/`
+- **長さの上限はすべて UTF-8 のバイト数**(文字数ではない)。日本語は 1 文字 3 バイトなので、
+  30 バイトの `title.txt` は実質 10 文字。`wc -c` で確かめる
+- **`skip verify` は `en-US` を必須のベースラインとして要求する。**
+  アプリの UI は日本語のみなので、英語のリスティングには**冒頭でその旨を明記する**
+- プライバシー: 通信もデータ収集もしないので「収集なし」で申告する。
+  ポリシー本文は `docs/privacy.md`(GitHub Pages で公開する想定)
+- 出荷前の順序: `swift test` → `skip verify` → `skip meta index` → `skip export -c release`
+
+## 13. 実装順序
 
 1. Skip プロジェクトの雛形、iOS / Android 両方で起動確認
 2. **SkipSQL で CRUD だけの検証画面**(最大の関門)
