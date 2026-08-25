@@ -579,6 +579,86 @@ final class CompetitionRepositoryTests: XCTestCase {
         XCTAssertEqual(0, entries.count)
     }
 
+    // MARK: - 終わった大会の目標フラグ(§7.5)
+
+    /// 過ぎた大会は「目標大会」ではなくなる。**過去の大会が目標であり続けない。**
+    func testClearFinishedTargetsDropsPastTarget() throws {
+        let db = try makeDatabase()
+        defer { try? db.close() }
+        let repo = makeRepository(db)
+        _ = try repo.create(name: "終わった大会",
+                            eventDate: past,
+                            entries: [CompetitionEntry(discipline: .singles, isTarget: true)])
+
+        try repo.clearFinishedTargets(asOf: t0)
+
+        XCTAssertNil(try repo.fetchTarget(discipline: .singles))
+    }
+
+    /// エントリー種目そのものは消さない(出場した記録は残す)。
+    func testClearFinishedTargetsKeepsEntryRow() throws {
+        let db = try makeDatabase()
+        defer { try? db.close() }
+        let repo = makeRepository(db)
+        let created = try repo.create(name: "終わった大会",
+                                      eventDate: past,
+                                      entries: [CompetitionEntry(discipline: .singles, isTarget: true)])
+
+        try repo.clearFinishedTargets(asOf: t0)
+
+        let entries = try repo.fetchEntries(competitionId: created.id)
+        XCTAssertEqual(1, entries.count)
+        XCTAssertFalse(entries[0].isTarget)
+    }
+
+    /// これからの大会の目標はそのまま。
+    func testClearFinishedTargetsKeepsUpcomingTarget() throws {
+        let db = try makeDatabase()
+        defer { try? db.close() }
+        let repo = makeRepository(db)
+        _ = try repo.create(name: "これからの大会",
+                            eventDate: later,
+                            entries: [CompetitionEntry(discipline: .singles, isTarget: true)])
+
+        try repo.clearFinishedTargets(asOf: t0)
+
+        var target: Competition = try XCTUnwrap(repo.fetchTarget(discipline: .singles))
+        XCTAssertEqual(target.name, "これからの大会")
+    }
+
+    /// **当日の大会はまだ目標のまま**(`asOf` に今日の 0 時を渡す約束。
+    /// 当日の朝に目標が消えると、その日の意味づけが無くなる)。
+    func testClearFinishedTargetsKeepsTargetOnTheSameInstant() throws {
+        let db = try makeDatabase()
+        defer { try? db.close() }
+        let repo = makeRepository(db)
+        _ = try repo.create(name: "今日の大会",
+                            eventDate: t0,
+                            entries: [CompetitionEntry(discipline: .doubles, isTarget: true)])
+
+        try repo.clearFinishedTargets(asOf: t0)
+
+        XCTAssertNotNil(try repo.fetchTarget(discipline: .doubles))
+    }
+
+    /// 種目ごとに独立して判定する(片方だけ終わっても、もう片方は残る)。
+    func testClearFinishedTargetsIsPerDiscipline() throws {
+        let db = try makeDatabase()
+        defer { try? db.close() }
+        let repo = makeRepository(db)
+        _ = try repo.create(name: "終わったシングルス",
+                            eventDate: past,
+                            entries: [CompetitionEntry(discipline: .singles, isTarget: true)])
+        _ = try repo.create(name: "これからのダブルス",
+                            eventDate: later,
+                            entries: [CompetitionEntry(discipline: .doubles, isTarget: true)])
+
+        try repo.clearFinishedTargets(asOf: t0)
+
+        XCTAssertNil(try repo.fetchTarget(discipline: .singles))
+        XCTAssertNotNil(try repo.fetchTarget(discipline: .doubles))
+    }
+
     // MARK: - ねらい(§7.5。目標大会でなくても持てる)
 
     /// 書かないのが既定。促すが強制しない(入力は原則すべて任意)。

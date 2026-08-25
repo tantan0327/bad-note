@@ -137,15 +137,8 @@ public struct HomeView: View {
 
     @ViewBuilder private var countdownSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            if model.countdowns.isEmpty {
-                if !model.hasTargetCompetition {
-                    // 大会なしでもアプリは成立させる(§7.1)
-                    Text("大会を登録する", bundle: .module)
-                        .font(.headline)
-                    Text("目標の大会を決めると、残り日数と練習回数が出ます", bundle: .module)
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                }
+            if model.countdowns.isEmpty && !model.hasTargetCompetition {
+                noTargetCard
             }
             ForEach(model.countdowns) { countdown in
                 countdownCard(countdown)
@@ -155,6 +148,45 @@ public struct HomeView: View {
                 Text("調整期です。新しい課題は増やさず、今の 3 つに集中します", bundle: .module)
                     .font(.footnote)
                     .foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    /// 目標の大会が決まっていないとき(まだ登録していない / 目標大会が終わった)。
+    ///
+    /// **大会が終わるとここが空白になって手が止まっていた**(§7.5。2026-08-25 に修正)。
+    /// 状況を言葉にして、次の一手を押せる形で置く。大会なしでもアプリは成立させる(§7.1)ので、
+    /// 急かす文言にはしない。
+    @ViewBuilder private var noTargetCard: some View {
+        Card {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("目標の大会が決まっていません", bundle: .module)
+                    .font(.headline)
+                    .foregroundStyle(.primary)
+                Text("決めると、残り日数と残り練習回数が出ます", bundle: .module)
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                if let candidate = model.targetCandidate {
+                    // 手前に大会があるなら、それを目標にするのがいちばん近い一手。
+                    // 種目の指定が要るので編集画面へ送る(どの種目の目標かは本人が決める)
+                    NavigationLink {
+                        CompetitionEditView(competitionID: candidate.id)
+                    } label: {
+                        Text(verbatim: "「\(candidate.name)」を目標にする")
+                            .font(.footnote)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .accessibilityIdentifier("home-set-target")
+                } else {
+                    NavigationLink {
+                        CompetitionEditView()
+                    } label: {
+                        Text("大会を登録する", bundle: .module)
+                            .font(.footnote)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .accessibilityIdentifier("home-add-competition")
+                }
             }
         }
     }

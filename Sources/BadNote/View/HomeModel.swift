@@ -62,6 +62,9 @@ import SkipSQL
     /// 目標大会が遠いときに添える手前の大会(§7.5)。無ければ nil。
     public private(set) var nextCompetition: Competition? = nil
     public private(set) var nextCompetitionDays = 0
+    /// 目標大会が無いときに「これを目標にしませんか」と差し出す大会(§7.5)。
+    /// `nextCompetition` とは排他 —— 同じ大会をホームに 2 回出さない。
+    public private(set) var targetCandidate: Competition? = nil
     /// 調整期(§4.4)。stale の提示を止める判断に使う。
     public private(set) var isAdjustmentPeriod = false
 
@@ -118,6 +121,10 @@ import SkipSQL
         let competitions = CompetitionRepository(db: db)
         let practices = PracticeRepository(db: db)
 
+        // 終わった大会は目標から下ろす(§7.5)。残したままだと目標が埋まっている扱いになり、
+        // カウントダウンも次の目標大会の促しも出ないまま止まる
+        try competitions.clearFinishedTargets(asOf: today)
+
         var practiceDates: [Date] = []
         for practice in try practices.fetchAll() {
             practiceDates.append(practice.practiceDate)
@@ -152,32 +159,42 @@ import SkipSQL
         try loadNextCompetition(competitions: competitions, targets: targets, today: today)
     }
 
-    /// 目標大会が遠い(または未設定の)ときだけ、手前の大会を 1 件添える(§7.5)。
+    /// 手前の大会を 1 件選び、2 つの用途に振り分ける(§7.5)。
     ///
-    /// 目標大会が 8 週間以内に入っていたら出さない —— そこに集中する時期に
-    /// 別の大会を足すと焦点がぼける(§5.1 の裏返し)。
+    /// - **目標大会が無いとき** → `targetCandidate`。
+    ///   カウントダウン欄の「目標の大会が決まっていません」から目標に指定する相手にする。
+    ///   「次の大会」としては出さない —— 「手前」は目標があってはじめて意味を持つし、
+    ///   同じ大会がホームに 2 回出てしまう(2026-08-25)
+    /// - **目標大会が 8 週間より先のとき** → `nextCompetition`(「次の大会」セクション)
+    /// - **目標大会が 8 週間以内のとき** → どちらにも出さない。
+    ///   そこに集中する時期に別の大会を足すと焦点がぼける(§5.1 の裏返し)
     private func loadNextCompetition(competitions: CompetitionRepository,
                                      targets: [Competition],
                                      today: Date) throws {
-        for card in countdowns {
-            if card.emphasis == HomeEmphasis.countdown {
-                nextCompetition = nil
-                nextCompetitionDays = 0
-                return
-            }
-        }
+        nextCompetition = nil
+        nextCompetitionDays = 0
+        targetCandidate = nil
+
         var targetIds: [Int64] = []
         for target in targets {
             targetIds.append(target.id)
         }
         let upcoming = try competitions.fetchUpcoming(asOf: today)
-        let picked = NextCompetition.pick(upcoming: upcoming, targetIds: targetIds, asOf: today)
-        nextCompetition = picked
-        if let picked = picked {
-            nextCompetitionDays = HomeModel.days(from: today, to: picked.eventDate)
-        } else {
-            nextCompetitionDays = 0
+        guard let picked = NextCompetition.pick(upcoming: upcoming, targetIds: targetIds, asOf: today) else {
+            return
         }
+
+        if targets.isEmpty {
+            targetCandidate = picked
+            return
+        }
+        for card in countdowns {
+            if card.emphasis == HomeEmphasis.countdown {
+                return
+            }
+        }
+        nextCompetition = picked
+        nextCompetitionDays = HomeModel.days(from: today, to: picked.eventDate)
     }
 
     // MARK: - 今週の重点

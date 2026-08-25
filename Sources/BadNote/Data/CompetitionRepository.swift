@@ -264,6 +264,27 @@ public final class CompetitionRepository {
         }
     }
 
+    /// 終わった大会の目標フラグを下ろす(§7.5)。
+    ///
+    /// **過去の大会が「目標大会」であり続けないようにするための後始末。**
+    /// 目標が空になることで、ホームが次の目標大会を促せるようになる
+    /// (残したままだと `fetchTarget` が過去の大会を返し、カウントダウンも促しも出ない)。
+    ///
+    /// - Parameter asOf: 基準時刻。**この時刻ちょうどの大会は残す。**
+    ///   当日いっぱいは目標のままにしたいので、呼び出し側は今日の 0 時を渡す
+    ///   (`fetchUpcoming(asOf:)` と同じ約束)。
+    ///
+    /// エントリー種目の行そのものは消さない(出場した記録は残す)。
+    public func clearFinishedTargets(asOf: Date) throws {
+        try db.exec(sql: """
+            UPDATE competition_entry SET is_target = 0
+            WHERE is_target = 1 AND competition_id IN (
+              SELECT id FROM competition WHERE event_date < ?
+            )
+            """,
+            parameters: [.text(timestamps.text(from: asOf))])
+    }
+
     /// 同じ種目の他の大会の目標を解除する。消すのは目標フラグだけで、エントリー自体は残す。
     private func clearTarget(discipline: Discipline, exceptCompetitionId: Int64) throws {
         try db.exec(sql: "UPDATE competition_entry SET is_target = 0 WHERE discipline = ? AND competition_id != ?",

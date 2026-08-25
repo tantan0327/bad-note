@@ -42,6 +42,8 @@ import SkipSQL
             let repo = CompetitionRepository(db: db)
             // 当日の大会は当日いっぱい「これから」に残す
             let today = Calendar.current.startOfDay(for: now)
+            // 終わった大会に「目標大会」のバッジが残らないようにする(§7.5)
+            try repo.clearFinishedTargets(asOf: today)
             upcoming = try rows(for: try repo.fetchUpcoming(asOf: today), repo: repo)
             finished = try rows(for: try repo.fetchFinished(asOf: today), repo: repo)
             errorText = nil
