@@ -259,8 +259,14 @@ public struct IssueListView: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text(issue.displayTitle)
                     .font(.body)
-                // 文字だけにしない。ミニバーで進み具合が見える(2.3)
-                MasteryIndicator(level: issue.masteryLevel)
+                HStack(spacing: 8) {
+                    // 文字だけにしない。ミニバーで進み具合が見える(2.3)
+                    MasteryIndicator(level: issue.masteryLevel)
+                    // 影響度 × コストの目印(§3.4)。付くのは影響度が大きい課題だけ
+                    if let hint = PriorityHint.forIssue(impact: issue.impact, cost: issue.cost) {
+                        Badge(label: Text(hint.displayName), tint: hint.tint)
+                    }
+                }
             }
         }
         .accessibilityIdentifier("issue-row-\(issue.id)")

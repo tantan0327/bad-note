@@ -182,7 +182,13 @@ public struct FocusReshuffleView: View {
                             VStack(alignment: .leading, spacing: 4) {
                                 Text(issue.displayTitle)
                                     .font(.body)
-                                MasteryIndicator(level: issue.masteryLevel)
+                                HStack(spacing: 8) {
+                                    MasteryIndicator(level: issue.masteryLevel)
+                                    // 選ぶ場面でこそ効く目印(§3.4)。並べ替えはしない
+                                    if let hint = PriorityHint.forIssue(impact: issue.impact, cost: issue.cost) {
+                                        Badge(label: Text(hint.displayName), tint: hint.tint)
+                                    }
+                                }
                             }
                             Spacer()
                             // 押せる導線はリンク色(2.3)

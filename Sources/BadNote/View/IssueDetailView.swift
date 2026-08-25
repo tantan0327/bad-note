@@ -49,9 +49,15 @@ public struct IssueDetailView: View {
         VStack(alignment: .leading, spacing: 8) {
             Text(issue.displayTitle)
                 .font(.title2)
-            if issue.isFrequentlyResurfacing {
-                // §7.3 よく戻ってくる課題。弱点の本質を示す情報として出す
-                Badge(label: Text("よく戻ってくる課題", bundle: .module))
+            HStack(spacing: 8) {
+                if issue.isFrequentlyResurfacing {
+                    // §7.3 よく戻ってくる課題。弱点の本質を示す情報として出す
+                    Badge(label: Text("よく戻ってくる課題", bundle: .module))
+                }
+                // 影響度 × コストの目印(§3.4)。「属性を見る」の奥に隠さない
+                if let hint = PriorityHint.forIssue(impact: issue.impact, cost: issue.cost) {
+                    Badge(label: Text(hint.displayName), tint: hint.tint)
+                }
             }
         }
     }
