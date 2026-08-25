@@ -25,6 +25,7 @@ public struct HomeView: View {
                 countdownSection
                 focusSection
                 staleSection
+                nextCompetitionSection
                 statsLink
                 recordButton
             }
@@ -351,6 +352,52 @@ public struct HomeView: View {
                 }
             }
         }
+    }
+
+    // MARK: - 4.5 次の大会(目標大会が遠いときだけ。§7.5)
+
+    /// 目標大会が半年先だと、手前の大会に意味づけが無くなる。**小さく**添えて的にする。
+    /// カウントダウンの大数字は目標大会だけの特権なので、ここは `.footnote` に留める(§5.1)。
+    @ViewBuilder private var nextCompetitionSection: some View {
+        if let competition = model.nextCompetition {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("次の大会", bundle: .module)
+                    .font(.headline)
+                Card {
+                    NavigationLink {
+                        CompetitionDetailView(competitionID: competition.id)
+                    } label: {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(competition.name)
+                                .font(.body)
+                                .foregroundStyle(.primary)
+                            Text(verbatim: HomeView.nextCompetitionSubtitle(days: model.nextCompetitionDays))
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
+                            if let aim = competition.aim, !aim.isEmpty {
+                                Text(aim)
+                                    .font(.footnote)
+                                    .foregroundStyle(.primary)
+                            } else {
+                                // 的が決まっていない大会。促すが強制しない
+                                Text("ねらいを決める", bundle: .module)
+                                    .font(.footnote)
+                            }
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                    .accessibilityIdentifier("home-next-competition")
+                }
+            }
+        }
+    }
+
+    /// 「あと 19日」。当日は「今日」。
+    static func nextCompetitionSubtitle(days: Int) -> String {
+        if days <= 0 {
+            return "今日"
+        }
+        return "あと \(days)日"
     }
 
     // MARK: - 5. 積み上げ(通算はホームにも大きく出す —— 2.1 で決定)

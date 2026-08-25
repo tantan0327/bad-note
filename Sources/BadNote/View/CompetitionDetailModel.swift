@@ -94,6 +94,38 @@ import SkipSQL
         }
     }
 
+    // MARK: - ねらい(§7.5。目標大会でなくても持てる)
+
+    /// 編集中のねらい。シートの表示フラグは View 側の @State が持つ。
+    public var aimText = ""
+
+    public func beginEditingAim() {
+        aimText = competition?.aim ?? ""
+    }
+
+    /// ねらいを保存する。空にしたら未記入に戻す(消せること)。
+    public func saveAim() {
+        guard var target = competition else {
+            return
+        }
+        do {
+            let db = try context()
+            let competitions = CompetitionRepository(db: db)
+            let trimmed = aimText.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines)
+            var value: String? = nil
+            if !trimmed.isEmpty {
+                value = trimmed
+            }
+            target.aim = value
+            // update はエントリーを集合で置き換えるので、今の内容をそのまま渡す
+            let entries = try competitions.fetchEntries(competitionId: competitionID)
+            competition = try competitions.update(target, entries: entries)
+            errorText = nil
+        } catch {
+            errorText = "ねらいの保存に失敗しました: \(error)"
+        }
+    }
+
     /// §7.5 種目ごとにセクション分け。**`both` の課題は両方に出す。**
     private func loadSections(db: SQLContext, competitions: CompetitionRepository) throws {
         let issues = IssueRepository(db: db)

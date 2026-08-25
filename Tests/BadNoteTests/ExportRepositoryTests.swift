@@ -29,7 +29,9 @@ final class ExportRepositoryTests: XCTestCase {
 
         XCTAssertTrue(json.contains("\"app\": \"BadNote\""))
         XCTAssertTrue(json.contains("\"format\": 1"))
-        XCTAssertTrue(json.contains("\"schema_version\": 10"))
+        // マイグレーションを足すたびに書き換えずに済むよう DB から取る
+        XCTAssertTrue(json.contains("\"schema_version\": \(db.userVersion)"))
+        XCTAssertTrue(db.userVersion > 0)
         XCTAssertTrue(json.contains("\"exported_at\": \"2023-11-14T22:13:20Z\""))
     }
 

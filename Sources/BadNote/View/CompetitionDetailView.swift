@@ -7,6 +7,7 @@ import SwiftUI
 public struct CompetitionDetailView: View {
     @State private var model: CompetitionDetailModel
     @State private var isShowingDeleteConfirmation = false
+    @State private var isEditingAim = false
     @Environment(\.dismiss) private var dismiss
 
     public init(competitionID: Int64) {
@@ -28,6 +29,8 @@ public struct CompetitionDetailView: View {
                 }
                 if let competition = model.competition {
                     basicSection(competition)
+                    // 「何をしに行くか」は課題より先(目標大会でなくても出す)
+                    aimSection(competition)
                     if model.isAdjustmentPeriod {
                         adjustmentBanner
                     }
@@ -83,9 +86,110 @@ public struct CompetitionDetailView: View {
                 Text("やめる", bundle: .module)
             }
         }
+        .sheet(isPresented: $isEditingAim) {
+            aimEditor
+        }
         .onAppear {
             model.load()
         }
+    }
+
+    // MARK: - 1.5 この大会でのねらい(目標大会でなくても持てる。§7.5)
+
+    /// 大会版の小さな「めざす姿」。**書いてあれば主役の次に大きく、無ければ静かに誘う。**
+    /// 達成 / 未達の判定はしない(アプリは解釈しない)。
+    ///
+    /// 終了した大会では**書いたねらいを記録として引用**し、この下に続く振り返りと
+    /// 前 / 後で対にする。終わった大会に「ねらいを決める」とは促さない。
+    @ViewBuilder private func aimSection(_ competition: Competition) -> some View {
+        let aim = competition.aim ?? ""
+        if !aim.isEmpty {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("この大会でのねらい", bundle: .module)
+                    .font(.headline)
+                Card {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text(aim)
+                            .font(.title2)
+                            .foregroundStyle(.primary)
+                        if !model.isFinished {
+                            Button {
+                                model.beginEditingAim()
+                                isEditingAim = true
+                            } label: {
+                                Text("編集する", bundle: .module)
+                                    .font(.footnote)
+                            }
+                            .accessibilityIdentifier("competition-aim-edit")
+                        }
+                    }
+                    .accessibilityIdentifier("competition-aim")
+                }
+            }
+        } else if !model.isFinished {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("この大会でのねらい", bundle: .module)
+                    .font(.headline)
+                Card {
+                    VStack(alignment: .leading, spacing: 8) {
+                        // 促すが強制しない(入力は原則すべて任意)
+                        Text("何をしに行くかが決まると、当日までの練習に意味が出ます", bundle: .module)
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                        Button {
+                            model.beginEditingAim()
+                            isEditingAim = true
+                        } label: {
+                            Text("ねらいを決める", bundle: .module)
+                                .font(.footnote)
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .accessibilityIdentifier("competition-aim-empty")
+                    }
+                }
+            }
+        }
+    }
+
+    @ViewBuilder private var aimEditor: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 16) {
+                    Text("この大会で何をするかを 1 行で決めます。結果ではなく、自分の動きで書くと振り返りやすくなります", bundle: .module)
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                    TextField(text: $model.aimText) {
+                        Text("例: サーブレシーブで先に攻める", bundle: .module)
+                    }
+                    .textFieldStyle(.roundedBorder)
+                    .accessibilityIdentifier("competition-aim-field")
+                }
+                .padding()
+            }
+            .navigationTitle(Text("この大会でのねらい", bundle: .module))
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button {
+                        isEditingAim = false
+                    } label: {
+                        Text("閉じる", bundle: .module)
+                    }
+                    .accessibilityIdentifier("competition-aim-close")
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button {
+                        withAnimation(Motion.select) {
+                            model.saveAim()
+                        }
+                        isEditingAim = false
+                    } label: {
+                        Text("保存", bundle: .module)
+                    }
+                    .accessibilityIdentifier("competition-aim-save")
+                }
+            }
+        }
+        .presentationDetents([.medium])
     }
 
     // MARK: - 1. 基本情報

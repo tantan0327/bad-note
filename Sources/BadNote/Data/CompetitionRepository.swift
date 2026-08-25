@@ -28,9 +28,10 @@ public final class CompetitionRepository {
     }
 
     /// SELECT の列。並びは `decode(_:)` の添字と対応している。
-    private static let columns = "id, name, event_date, venue, created_at"
+    /// **足すときは末尾に。** 途中に入れると既存の添字がずれる。
+    private static let columns = "id, name, event_date, venue, created_at, aim"
     /// JOIN で使う `competition` 側の列。`columns` と同じ並びを保つこと。
-    private static let prefixedColumns = "c.id, c.name, c.event_date, c.venue, c.created_at"
+    private static let prefixedColumns = "c.id, c.name, c.event_date, c.venue, c.created_at, c.aim"
 
     // MARK: - Create
 
@@ -220,11 +221,12 @@ public final class CompetitionRepository {
     public func update(_ competition: Competition, entries: [CompetitionEntry]) throws -> Competition {
         try validate(entries)
         return try db.transaction {
-            try db.exec(sql: "UPDATE competition SET name = ?, event_date = ?, venue = ? WHERE id = ?",
+            try db.exec(sql: "UPDATE competition SET name = ?, event_date = ?, venue = ?, aim = ? WHERE id = ?",
                         parameters: [
                             SQLValue.text(competition.name),
                             SQLValue.text(timestamps.text(from: competition.eventDate)),
                             textValue(competition.venue),
+                            textValue(competition.aim),
                             SQLValue.long(competition.id),
                         ])
             try replaceEntries(competitionId: competition.id, entries: entries)
@@ -320,6 +322,7 @@ public final class CompetitionRepository {
                            name: name,
                            eventDate: eventDate,
                            venue: row[3].textValue,
+                           aim: row[5].textValue,
                            createdAt: createdAt)
     }
 

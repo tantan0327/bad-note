@@ -578,4 +578,61 @@ final class CompetitionRepositoryTests: XCTestCase {
 
         XCTAssertEqual(0, entries.count)
     }
+
+    // MARK: - ねらい(§7.5。目標大会でなくても持てる)
+
+    /// 書かないのが既定。促すが強制しない(入力は原則すべて任意)。
+    func testAimIsNilByDefault() throws {
+        let db = try makeDatabase()
+        defer { try? db.close() }
+        let repo = makeRepository(db)
+
+        let created = try repo.create(name: "市民大会", eventDate: soon)
+
+        XCTAssertNil(created.aim)
+    }
+
+    func testUpdateStoresAim() throws {
+        let db = try makeDatabase()
+        defer { try? db.close() }
+        let repo = makeRepository(db)
+        var competition = try repo.create(name: "市民大会", eventDate: soon)
+
+        competition.aim = "サーブレシーブで先に攻める"
+        let updated = try repo.update(competition, entries: [])
+
+        XCTAssertEqual(updated.aim, "サーブレシーブで先に攻める")
+        var reloaded: Competition = try XCTUnwrap(repo.fetch(id: competition.id))
+        XCTAssertEqual(reloaded.aim, "サーブレシーブで先に攻める")
+    }
+
+    /// 消せる(空にしたら未記入に戻る)。
+    func testUpdateClearsAim() throws {
+        let db = try makeDatabase()
+        defer { try? db.close() }
+        let repo = makeRepository(db)
+        var competition = try repo.create(name: "市民大会", eventDate: soon)
+        competition.aim = "サーブレシーブで先に攻める"
+        competition = try repo.update(competition, entries: [])
+
+        competition.aim = nil
+        let cleared = try repo.update(competition, entries: [])
+
+        XCTAssertNil(cleared.aim)
+    }
+
+    /// 目標大会でなくてもねらいは持てる(この機能の要点)。
+    func testAimWorksWithoutTargetEntry() throws {
+        let db = try makeDatabase()
+        defer { try? db.close() }
+        let repo = makeRepository(db)
+        var competition = try repo.create(name: "練習試合",
+                                          eventDate: soon,
+                                          entries: [CompetitionEntry(discipline: .singles, isTarget: false)])
+
+        competition.aim = "1 ゲーム目から動く"
+        let updated = try repo.update(competition, entries: [CompetitionEntry(discipline: .singles, isTarget: false)])
+
+        XCTAssertEqual(updated.aim, "1 ゲーム目から動く")
+    }
 }

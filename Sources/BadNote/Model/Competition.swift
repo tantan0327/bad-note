@@ -7,17 +7,22 @@ public struct Competition: Hashable, Identifiable {
     /// 開催日。§4.2 の比較とカウントダウン(§7.1)のため UTC の ISO 8601 で保存する。
     public var eventDate: Date
     public var venue: String?
+    /// この大会でのねらい(§7.5)。**目標大会でなくても持てる。**
+    /// 大会版の小さな「めざす姿」で、振り返り(後)の対になる前の記録。任意。
+    public var aim: String?
     public var createdAt: Date
 
     public init(id: Int64,
                 name: String,
                 eventDate: Date,
                 venue: String? = nil,
+                aim: String? = nil,
                 createdAt: Date) {
         self.id = id
         self.name = name
         self.eventDate = eventDate
         self.venue = venue
+        self.aim = aim
         self.createdAt = createdAt
     }
 }

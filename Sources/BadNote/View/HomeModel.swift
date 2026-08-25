@@ -59,6 +59,9 @@ import SkipSQL
     public private(set) var monthLevelUps = 0
     /// 目標大会が 1 つも無い(§7.1 大会未登録の扱い)
     public private(set) var hasTargetCompetition = false
+    /// 目標大会が遠いときに添える手前の大会(§7.5)。無ければ nil。
+    public private(set) var nextCompetition: Competition? = nil
+    public private(set) var nextCompetitionDays = 0
     /// 調整期(§4.4)。stale の提示を止める判断に使う。
     public private(set) var isAdjustmentPeriod = false
 
@@ -145,6 +148,36 @@ import SkipSQL
         countdowns = HomeModel.sortedByNearest(cards)
         hasTargetCompetition = !targets.isEmpty
         isAdjustmentPeriod = AdjustmentPeriod.isActive(targets: targets, asOf: today)
+
+        try loadNextCompetition(competitions: competitions, targets: targets, today: today)
+    }
+
+    /// 目標大会が遠い(または未設定の)ときだけ、手前の大会を 1 件添える(§7.5)。
+    ///
+    /// 目標大会が 8 週間以内に入っていたら出さない —— そこに集中する時期に
+    /// 別の大会を足すと焦点がぼける(§5.1 の裏返し)。
+    private func loadNextCompetition(competitions: CompetitionRepository,
+                                     targets: [Competition],
+                                     today: Date) throws {
+        for card in countdowns {
+            if card.emphasis == HomeEmphasis.countdown {
+                nextCompetition = nil
+                nextCompetitionDays = 0
+                return
+            }
+        }
+        var targetIds: [Int64] = []
+        for target in targets {
+            targetIds.append(target.id)
+        }
+        let upcoming = try competitions.fetchUpcoming(asOf: today)
+        let picked = NextCompetition.pick(upcoming: upcoming, targetIds: targetIds, asOf: today)
+        nextCompetition = picked
+        if let picked = picked {
+            nextCompetitionDays = HomeModel.days(from: today, to: picked.eventDate)
+        } else {
+            nextCompetitionDays = 0
+        }
     }
 
     // MARK: - 今週の重点

@@ -96,6 +96,10 @@ public struct AppDatabase {
                 try context.exec(sql: AppDatabase.createTrainingMenuTable)
                 try context.exec(sql: AppDatabase.createTrainingLogTable)
             },
+            { context in
+                // §7.5 大会のねらい。既存の大会は NULL(未記入)
+                try context.exec(sql: "ALTER TABLE competition ADD COLUMN aim TEXT")
+            },
         ])
     }
 
