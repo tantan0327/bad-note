@@ -59,6 +59,7 @@ public struct IssueDetailView: View {
                     Badge(label: Text(hint.displayName), tint: hint.tint)
                 }
             }
+            metaLine(issue)
         }
     }
 
@@ -98,22 +99,34 @@ public struct IssueDetailView: View {
 
     // MARK: - 3. もとの言葉(引用の見た目)
 
+    /// **言い換えを持っている課題にだけ出す**(2026-08-26)。
+    ///
+    /// 持っていない課題では `displayTitle` が原文そのものなので、引用すると
+    /// 画面の上の見出しと同じ文が 2 度出る(ナビゲーションタイトルと合わせて 3 度)。
+    /// 追加画面を 1 欄にしてから、言い換えを持たない課題のほうが多い。
+    /// コーチ名と日付は引用が無くても要るので、見出しの直下(`doneFormSection`)に移した。
     @ViewBuilder private func coachWordsSection(_ issue: Issue) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("もとの言葉", bundle: .module)
-                .font(.headline)
-            Card {
-                Text(issue.coachWords)
-            }
-            HStack(spacing: 8) {
-                if let coachName = issue.coachName, !coachName.isEmpty {
-                    Text(coachName)
+        if issue.hasDoneForm {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("もとの言葉", bundle: .module)
+                    .font(.headline)
+                Card {
+                    Text(issue.coachWords)
                 }
-                Text(issue.createdAt.formatted(date: .abbreviated, time: .omitted))
             }
-            .font(.caption)
-            .foregroundStyle(.secondary)
         }
+    }
+
+    /// コーチ名と書いた日。**課題そのものの情報**なので、引用の有無に関わらず出す。
+    @ViewBuilder private func metaLine(_ issue: Issue) -> some View {
+        HStack(spacing: 8) {
+            if let coachName = issue.coachName, !coachName.isEmpty {
+                Text(coachName)
+            }
+            Text(DateText.day(issue.createdAt))
+        }
+        .font(.caption)
+        .foregroundStyle(.secondary)
     }
 
     // MARK: - 4. 記録

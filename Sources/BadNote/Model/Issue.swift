@@ -138,6 +138,19 @@ extension Issue {
         }
         return coachWords
     }
+
+    /// **原文とは違う言い換えを持っているか。**
+    ///
+    /// 課題詳細で「もとの言葉」を引用するかの判定に使う(2026-08-26)。
+    /// 持っていなければ `displayTitle` が原文そのものなので、引用すると
+    /// **同じ文が画面に 2 度出る**。追加画面を 1 欄にしてから、
+    /// 言い換えを持たない課題のほうが多い。
+    public var hasDoneForm: Bool {
+        guard let doneForm = doneForm, !doneForm.isEmpty else {
+            return false
+        }
+        return doneForm != coachWords
+    }
 }
 
 extension Issue {
