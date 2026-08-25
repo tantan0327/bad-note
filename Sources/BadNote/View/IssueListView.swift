@@ -52,7 +52,7 @@ public struct IssueListView: View {
                             VStack(alignment: .leading, spacing: 4) {
                                 Text(issue.displayTitle)
                                     .font(.body)
-                                Text(issue.createdAt.formatted(date: .abbreviated, time: .omitted))
+                                Text(DateText.day(issue.createdAt))
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
                             }

@@ -81,7 +81,7 @@ public struct CompetitionListView: View {
     }
 
     private func dateText(_ date: Date) -> String {
-        return date.formatted(date: .abbreviated, time: .omitted)
+        return DateText.dayWithWeekday(date)
     }
 
     private func targetText(_ disciplines: [Discipline]) -> String {

@@ -198,7 +198,7 @@ public struct CompetitionDetailView: View {
         VStack(alignment: .leading, spacing: 8) {
             Text(competition.name)
                 .font(.title2)
-            Text(competition.eventDate.formatted(date: .abbreviated, time: .omitted))
+            Text(DateText.dayWithWeekday(competition.eventDate))
                 .font(.footnote)
                 .foregroundStyle(.secondary)
             if let venue = competition.venue, !venue.isEmpty {

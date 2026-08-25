@@ -181,23 +181,15 @@ import SkipSQL
         if isYesterday {
             return "昨日"
         }
-        return TrainingModel.dayText(date)
+        return DateText.dayWithWeekday(date)
     }
 
     /// 見出しの添え字。見出しが「今日 / 昨日」のときは日付、日付のときはさかのぼりの注記。
     public var daySubtitle: String {
         if isToday || isYesterday {
-            return TrainingModel.dayText(date)
+            return DateText.dayWithWeekday(date)
         }
         return "さかのぼって付けています"
-    }
-
-    /// 「8月24日(月)」。UI は日本語のみなので ja_JP 固定(英語対応は 6.2 と一緒に)。
-    static func dayText(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "ja_JP")
-        formatter.dateFormat = "M月d日(E)"
-        return formatter.string(from: date)
     }
 
     /// 付け忘れの大半は昨日の分(3.2)。1 タップでさかのぼる。

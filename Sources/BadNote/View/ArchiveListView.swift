@@ -58,7 +58,7 @@ public struct ArchiveListView: View {
                         Text(issue.displayTitle)
                             .font(.body)
                         if let archivedAt = issue.archivedAt {
-                            Text(archivedAt.formatted(date: .abbreviated, time: .omitted))
+                            Text(DateText.day(archivedAt))
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
