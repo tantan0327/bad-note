@@ -50,12 +50,18 @@ public struct IssueDetailView: View {
             Text(issue.displayTitle)
                 .font(.title2)
             HStack(spacing: 8) {
+                // 今どこにいるか。**重点のときだけ出す**(1.5)——「次にやる」「いつか」まで
+                // 出すと全部の課題にバッジが付いて、目印としての意味が無くなる。
+                // 層そのものは「種目や優先度を見る」の中にある
+                if issue.tier == Tier.focus {
+                    Badge(label: Text("今週の重点", bundle: .module), tint: Palette.accent)
+                }
                 if issue.isFrequentlyResurfacing {
                     // §7.3 よく戻ってくる課題。弱点の本質を示す情報として出す
                     Badge(label: Text("よく戻ってくる課題", bundle: .module))
                 }
                 // 影響度 × コストの目印(§3.4)。「属性を見る」の奥に隠さない
-                if let hint = PriorityHint.forIssue(impact: issue.impact, cost: issue.cost) {
+                if let hint = PriorityHint.forIssue(impact: issue.impact, cost: issue.cost, tier: issue.tier) {
                     Badge(label: Text(hint.displayName), tint: hint.tint)
                 }
             }
@@ -81,18 +87,35 @@ public struct IssueDetailView: View {
             .accessibilityValue(Text(verbatim: "\(issue.masteryLevel.rawValue)/4 \(issue.masteryLevel.displayName)"))
             Text(issue.masteryLevel.displayName)
                 .font(.body)
-            if let next = model.nextLevel {
-                Button {
-                    // バーの伸びは速く動かす(5.1)
-                    withAnimation(Motion.select) {
-                        model.raiseLevel()
+            // 上げる / 下げるはバーのすぐ下に並べる(文言が現在地に依存するので離さない)。
+            // **どちらも控えめにする** —— §3.2 は「自動で上げない。done 3 回で 1 度だけ提案する」
+            // 設計なので、手動昇格を画面で最も目立つボタンにすると提案の意味が薄れる(1.5)
+            HStack(spacing: 8) {
+                if let next = model.nextLevel {
+                    Button {
+                        // バーの伸びは速く動かす(5.1)
+                        withAnimation(Motion.select) {
+                            model.raiseLevel()
+                        }
+                    } label: {
+                        Text(verbatim: "「\(next.displayName)」に上げる")
                     }
-                } label: {
-                    Text(verbatim: "「\(next.displayName)」に上げる")
+                    .buttonStyle(.bordered)
+                    .font(.footnote)
+                    .accessibilityIdentifier("issue-detail-raise")
                 }
-                .buttonStyle(.borderedProminent)
-                .font(.footnote)
-                .accessibilityIdentifier("issue-detail-raise")
+                if issue.masteryLevel != MasteryLevel.solo && !model.isArchived {
+                    Button {
+                        withAnimation(Motion.select) {
+                            model.lowerLevel()
+                        }
+                    } label: {
+                        Text("1 つ下げる", bundle: .module)
+                    }
+                    .buttonStyle(.bordered)
+                    .font(.footnote)
+                    .accessibilityIdentifier("issue-detail-lower")
+                }
             }
         }
     }
@@ -245,7 +268,7 @@ public struct IssueDetailView: View {
             Button {
                 isShowingAttributes = !isShowingAttributes
             } label: {
-                Text(isShowingAttributes ? "属性を閉じる" : "属性を見る", bundle: .module)
+                Text(isShowingAttributes ? "閉じる" : "種目や優先度を見る", bundle: .module)
                     .font(.footnote)
             }
             .buttonStyle(.bordered)
@@ -328,7 +351,7 @@ public struct IssueDetailView: View {
                         model.overcome()
                     }
                 } label: {
-                    Text("克服した(定着確認へ)", bundle: .module)
+                    Text("克服した", bundle: .module)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 4)
                 }
@@ -339,18 +362,12 @@ public struct IssueDetailView: View {
                     Text(rejection)
                         .font(.caption)
                         .foregroundStyle(.secondary)
-                }
-                if issue.masteryLevel != MasteryLevel.solo {
-                    // 日常操作ではないので控えめに置く(§3.2)
-                    Button {
-                        withAnimation(Motion.select) {
-                            model.lowerLevel()
-                        }
-                    } label: {
-                        Text("レベルを 1 つ下げる", bundle: .module)
-                            .font(.footnote)
-                    }
-                    .accessibilityIdentifier("issue-detail-lower")
+                } else {
+                    // 括弧書きで「(定着確認へ)」と書いていたが、定着確認の間隔ロジックは
+                    // Phase 2 送りで存在しない。**実際に起きること**を書く(1.5)
+                    Text("設定の「定着した課題」に移ります。あとで再浮上させられます", bundle: .module)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 }
             }
         }

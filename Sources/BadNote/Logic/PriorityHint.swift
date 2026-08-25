@@ -19,7 +19,11 @@ public enum PriorityHint: Hashable {
     ///
     /// **影響度が大きい課題にだけ付ける。** 影響度が小さい課題にも付けると
     /// 目印だらけになって、目印としての意味が無くなる。
-    public static func forIssue(impact: Int?, cost: Int?) -> PriorityHint? {
+    ///
+    /// - Parameter tier: 課題の層。**すでに重点に入っている課題には `quickWin` を出さない**
+    ///   ——「重点に入れるべき候補」がもう重点にいるのは矛盾する(2026-08-26)。
+    ///   `seasonLong` は重点でも出す(「大会に間に合わないかも」は入ってからも意味がある)。
+    public static func forIssue(impact: Int?, cost: Int?, tier: Tier? = nil) -> PriorityHint? {
         guard let impact = impact, let cost = cost else {
             return nil
         }
@@ -27,6 +31,9 @@ public enum PriorityHint: Hashable {
             return nil
         }
         if cost == 1 {
+            if tier == Tier.focus {
+                return nil
+            }
             return PriorityHint.quickWin
         }
         if cost == 3 {

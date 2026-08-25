@@ -16,6 +16,24 @@ final class PriorityHintTests: XCTestCase {
         XCTAssertEqual(PriorityHint.forIssue(impact: 3, cost: 3), PriorityHint.seasonLong)
     }
 
+    // MARK: - すでに重点に入っている課題
+
+    /// **「重点に入れるべき候補」がすでに重点にいるのは矛盾**なので出さない(2026-08-26)。
+    func testQuickWinIsHiddenForFocusIssue() {
+        XCTAssertNil(PriorityHint.forIssue(impact: 3, cost: 1, tier: .focus))
+    }
+
+    /// 重点でなければ今までどおり出す。
+    func testQuickWinShowsOutsideFocus() {
+        XCTAssertEqual(PriorityHint.forIssue(impact: 3, cost: 1, tier: .next), PriorityHint.quickWin)
+        XCTAssertEqual(PriorityHint.forIssue(impact: 3, cost: 1, tier: .someday), PriorityHint.quickWin)
+    }
+
+    /// シーズン単位は重点でも出す —— 「大会に間に合わないかも」は入ってからも意味がある。
+    func testSeasonLongShowsEvenForFocusIssue() {
+        XCTAssertEqual(PriorityHint.forIssue(impact: 3, cost: 3, tier: .focus), PriorityHint.seasonLong)
+    }
+
     /// 影響度が大きくても、コストが中くらいなら目印を出さない。
     /// **目印だらけにすると目印の意味が無くなる。**
     func testNoHintForMiddleCost() {

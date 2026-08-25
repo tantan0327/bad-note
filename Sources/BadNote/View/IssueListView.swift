@@ -263,7 +263,7 @@ public struct IssueListView: View {
                     // 文字だけにしない。ミニバーで進み具合が見える(2.3)
                     MasteryIndicator(level: issue.masteryLevel)
                     // 影響度 × コストの目印(§3.4)。付くのは影響度が大きい課題だけ
-                    if let hint = PriorityHint.forIssue(impact: issue.impact, cost: issue.cost) {
+                    if let hint = PriorityHint.forIssue(impact: issue.impact, cost: issue.cost, tier: issue.tier) {
                         Badge(label: Text(hint.displayName), tint: hint.tint)
                     }
                 }

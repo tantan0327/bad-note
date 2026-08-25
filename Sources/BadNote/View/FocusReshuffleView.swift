@@ -185,7 +185,7 @@ public struct FocusReshuffleView: View {
                                 HStack(spacing: 8) {
                                     MasteryIndicator(level: issue.masteryLevel)
                                     // 選ぶ場面でこそ効く目印(§3.4)。並べ替えはしない
-                                    if let hint = PriorityHint.forIssue(impact: issue.impact, cost: issue.cost) {
+                                    if let hint = PriorityHint.forIssue(impact: issue.impact, cost: issue.cost, tier: issue.tier) {
                                         Badge(label: Text(hint.displayName), tint: hint.tint)
                                     }
                                 }
