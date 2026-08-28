@@ -31,6 +31,27 @@ public struct CompetitionListView: View {
                     .buttonStyle(.borderedProminent)
                     .accessibilityIdentifier("competition-empty-action")
                 }
+            } else if model.upcoming.isEmpty {
+                // **終わった大会だけが残っている状態**(いちばん起きやすい)。
+                // それまでは「終了した大会」の一覧が出るだけで、次に何をすればいいか
+                // 分からなかった(1.7。ホームのカウントダウン欄と同じ穴)
+                Section {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("登録すると、ホームに残り日数と残り練習回数が出ます", bundle: .module)
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                        NavigationLink {
+                            CompetitionEditView()
+                        } label: {
+                            Text("大会を登録する", bundle: .module)
+                                .font(.footnote)
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .accessibilityIdentifier("competition-upcoming-empty-action")
+                    }
+                } header: {
+                    Text("これからの大会", bundle: .module)
+                }
             }
             section(title: Text("これからの大会", bundle: .module), rows: model.upcoming)
             section(title: Text("終了した大会", bundle: .module), rows: model.finished)
