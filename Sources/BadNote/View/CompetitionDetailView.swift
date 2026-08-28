@@ -293,8 +293,15 @@ public struct CompetitionDetailView: View {
 
     @ViewBuilder private var reviewSection: some View {
         VStack(alignment: .leading, spacing: 24) {
-            Text("振り返り", bundle: .module)
-                .font(.headline)
+            VStack(alignment: .leading, spacing: 4) {
+                Text("振り返り", bundle: .module)
+                    .font(.headline)
+                // 大会直後に空欄が 4 つ並ぶと手が止まる。**全部埋めなくていい**と先に言う
+                // (CLAUDE.md「入力項目は原則すべて任意。必須項目を増やすと記録されなくなる」)
+                Text("結果だけでも保存できます。空のままの欄があっても構いません", bundle: .module)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
             ForEach(0..<model.reviews.count, id: \.self) { index in
                 reviewForm(index)
             }
@@ -307,11 +314,20 @@ public struct CompetitionDetailView: View {
                 Text(model.reviews[index].discipline.displayName)
                     .font(.subheadline)
 
-                field(Text("結果", bundle: .module), text: $model.reviews[index].result)
-                field(Text("うまくいったことは何か", bundle: .module), text: $model.reviews[index].wentWell)
+                // 欄ごとに書く量が違うので、1 行と複数行を使い分ける(1.6)
+                field(Text("結果", bundle: .module),
+                      placeholder: Text("例: 2回戦敗退", bundle: .module),
+                      text: $model.reviews[index].result)
+                // ここだけ数行になりやすい。1 行欄で書かせない
+                longField(Text("うまくいったことは何か", bundle: .module),
+                          example: Text("例: サーブレシーブで先に攻められた", bundle: .module),
+                          text: $model.reviews[index].wentWell)
+                // この欄はそのまま課題の 1 行になるので、課題の書き方に合わせて 1 行のまま
                 field(Text("理想の姿に近づくために次にやることは何か", bundle: .module),
+                      placeholder: Text("例: 後ろに下がる判断を先に出す", bundle: .module),
                       text: $model.reviews[index].nextAction)
                 field(Text("そのために必要なもの(人・道具・情報)は何か", bundle: .module),
+                      placeholder: Text("例: 試合の動画を撮ってもらう", bundle: .module),
                       text: $model.reviews[index].neededResources)
 
                 HStack(spacing: 8) {
@@ -322,13 +338,16 @@ public struct CompetitionDetailView: View {
                     }
                     .buttonStyle(.borderedProminent)
                     .accessibilityIdentifier("competition-review-save-\(model.reviews[index].discipline.rawValue)")
-                    // §7.5 3 つ目の回答からそのまま課題を登録できる導線
+                    // §7.5 3 つ目の回答からそのまま課題を登録できる導線。
+                    // **空のときは押せなくする**(1.6)—— それまでは押せるのに黙って
+                    // 何も起きず、押した側には失敗したのか成功したのか分からなかった
                     Button {
                         model.createIssueFromNextAction(model.reviews[index])
                     } label: {
                         Text("次にやることを課題にする", bundle: .module)
                     }
                     .buttonStyle(.bordered)
+                    .disabled(model.reviews[index].nextAction.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines).isEmpty)
                     .accessibilityIdentifier("competition-review-to-issue-\(model.reviews[index].discipline.rawValue)")
                 }
                 .font(.footnote)
@@ -336,15 +355,33 @@ public struct CompetitionDetailView: View {
         }
     }
 
-    @ViewBuilder private func field(_ label: Text, text: Binding<String>) -> some View {
+    /// 1 行で書く欄。**プレースホルダに例を置く**(1.6)——
+    /// 空欄が並ぶだけだと何を書けばいいか分からず、手が止まる。
+    @ViewBuilder private func field(_ label: Text, placeholder: Text, text: Binding<String>) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             label
                 .font(.caption)
                 .foregroundStyle(.secondary)
             TextField(text: text) {
-                Text("", bundle: .module)
+                placeholder
             }
             .textFieldStyle(.roundedBorder)
+        }
+    }
+
+    /// 数行になりやすい欄。`TextEditor` はプレースホルダを持てないので、
+    /// 例はラベルの下に置く(めざす姿の編集と同じ形)。
+    @ViewBuilder private func longField(_ label: Text, example: Text, text: Binding<String>) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            label
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            example
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            TextEditor(text: text)
+                .frame(minHeight: 88)
+                .border(Color.secondary.opacity(0.4), width: 1)
         }
     }
 }
