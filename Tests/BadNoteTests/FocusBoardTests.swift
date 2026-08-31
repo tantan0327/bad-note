@@ -269,4 +269,43 @@ final class FocusBoardTests: XCTestCase {
 
         XCTAssertNotNil(result.updatedIssues, "1 枠空いたので入れ替え無しで上げられる")
     }
+
+    // MARK: - 空き枠(組み替えの終わりの合図。1.9)
+
+    func testRemainingSlotsCountsDown() {
+        XCTAssertEqual(FocusBoard.remainingSlots(focusCount: 0), 3)
+        XCTAssertEqual(FocusBoard.remainingSlots(focusCount: 1), 2)
+        XCTAssertEqual(FocusBoard.remainingSlots(focusCount: 2), 1)
+    }
+
+    func testRemainingSlotsIsZeroWhenFull() {
+        XCTAssertEqual(FocusBoard.remainingSlots(focusCount: 3), 0)
+    }
+
+    /// 3 枠を超えて入っていても**負にしない**。
+    /// 「あと -1 枠」と出さないための歯止め。
+    func testRemainingSlotsNeverGoesNegative() {
+        XCTAssertEqual(FocusBoard.remainingSlots(focusCount: 4), 0)
+        XCTAssertEqual(FocusBoard.remainingSlots(focusCount: 10), 0)
+    }
+
+    // MARK: - 組み替える意味があるか(空振りする導線を出さない。1.9)
+
+    /// 重点も候補も無ければ、組み替え画面に行っても何もできない。
+    func testCannotReshuffleWithNothing() {
+        XCTAssertFalse(FocusBoard.canReshuffle(focusCount: 0, candidateCount: 0))
+    }
+
+    func testCanReshuffleWithCandidates() {
+        XCTAssertTrue(FocusBoard.canReshuffle(focusCount: 0, candidateCount: 1))
+    }
+
+    /// **外す相手がいるだけでも入る意味がある**(候補が無くても重点を外せる)。
+    func testCanReshuffleWithOnlyFocus() {
+        XCTAssertTrue(FocusBoard.canReshuffle(focusCount: 1, candidateCount: 0))
+    }
+
+    func testCanReshuffleWithBoth() {
+        XCTAssertTrue(FocusBoard.canReshuffle(focusCount: 2, candidateCount: 5))
+    }
 }

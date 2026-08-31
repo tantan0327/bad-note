@@ -27,10 +27,9 @@ import SkipSQL
         return FocusBoard.focusCapacity
     }
 
-    /// 空いている枠の数。
+    /// 空いている枠の数(1.9 で `FocusBoard` の純粋関数に寄せた)。
     public var remainingSlots: Int {
-        let remaining = FocusBoard.focusCapacity - focus.count
-        return remaining > 0 ? remaining : 0
+        return FocusBoard.remainingSlots(focusCount: focus.count)
     }
 
     public func load() {
@@ -117,6 +116,7 @@ import SkipSQL
 /// 「今週は何をやるか」を決めることだけに集中する画面。
 public struct FocusReshuffleView: View {
     @State private var model = FocusReshuffleModel()
+    @Environment(\.dismiss) private var dismiss
 
     public init() {
     }
@@ -202,6 +202,30 @@ public struct FocusReshuffleView: View {
                 }
             } header: {
                 Text("候補", bundle: .module)
+            }
+
+            // **終わりの合図**(1.9)。それまでは戻る矢印しかなく、
+            // 「今週はこれで決まり」の区切りが無かった
+            Section {
+                if model.remainingSlots == 0 {
+                    Text("今週の重点が 3 つ決まりました", bundle: .module)
+                        .font(.footnote)
+                        .foregroundStyle(Palette.done)
+                } else {
+                    // 空きを責めない(入力は原則すべて任意)
+                    Text(verbatim: "あと \(model.remainingSlots) 枠。空きのままでも構いません")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
+                Button {
+                    dismiss()
+                } label: {
+                    Text("組み替えを終える", bundle: .module)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 4)
+                }
+                .buttonStyle(.borderedProminent)
+                .accessibilityIdentifier("reshuffle-done")
             }
         }
         .navigationTitle(Text("今週の重点を組み替える", bundle: .module))

@@ -41,6 +41,22 @@ public struct FocusBoard {
     /// 重点の上限(§3.3)。
     public static let focusCapacity = 3
 
+    /// 空いている枠。**負にならない**(3 枠を超えて入っていても 0)。
+    ///
+    /// 組み替えモードの「あと N 枠」に使う(1.9)。
+    public static func remainingSlots(focusCount: Int) -> Int {
+        let remaining = FocusBoard.focusCapacity - focusCount
+        return remaining > 0 ? remaining : 0
+    }
+
+    /// 組み替え画面に行く意味があるか(1.9)。
+    ///
+    /// **外す相手がいるだけでも意味がある** —— 候補が無くても、今の重点を外して
+    /// 空にする操作はできる。両方 0 のときだけ空振りなので、そのときは導線を出さない。
+    public static func canReshuffle(focusCount: Int, candidateCount: Int) -> Bool {
+        return focusCount > 0 || candidateCount > 0
+    }
+
     /// 課題を指定の層の指定位置へ動かす。層内の並び替えも同じ入口。
     ///
     /// 重点へ上げようとして 3 枠が埋まっていれば `.needsSwap` を返し、**何も変更しない**。

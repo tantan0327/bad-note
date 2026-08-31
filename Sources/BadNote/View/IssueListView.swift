@@ -74,14 +74,19 @@ public struct IssueListView: View {
                     }
                 }
             }
-            Section {
-                NavigationLink {
-                    FocusReshuffleView()
-                } label: {
-                    Text("今週の重点を組み替える", bundle: .module)
-                        .font(.footnote)
+            // 重点も候補も無いと、組み替え画面は「まだ選んでいません」+「候補がありません」の
+            // 空の画面になる。**行っても何もできない導線は出さない**(1.9)
+            if FocusBoard.canReshuffle(focusCount: model.focus.count,
+                                       candidateCount: model.next.count + model.someday.count) {
+                Section {
+                    NavigationLink {
+                        FocusReshuffleView()
+                    } label: {
+                        Text("今週の重点を組み替える", bundle: .module)
+                            .font(.footnote)
+                    }
+                    .accessibilityIdentifier("issues-reshuffle")
                 }
-                .accessibilityIdentifier("issues-reshuffle")
             }
         }
         .navigationTitle(Text("課題", bundle: .module))
@@ -96,14 +101,17 @@ public struct IssueListView: View {
                 }
                 .accessibilityIdentifier("issues-add")
             }
-            // §5.3 未整理の件数はバッジで出さない。導線だけ置く
-            ToolbarItem(placement: .primaryAction) {
-                NavigationLink {
-                    InboxTriageView()
-                } label: {
-                    Text("整理", bundle: .module)
+            // §5.3 未整理の**件数**はバッジで出さない。導線だけ置く。
+            // ただし 0 件のときは押しても「整理する課題はありません」に着くだけなので出さない(1.9)
+            if !model.unorganized.isEmpty {
+                ToolbarItem(placement: .primaryAction) {
+                    NavigationLink {
+                        InboxTriageView()
+                    } label: {
+                        Text("整理", bundle: .module)
+                    }
+                    .accessibilityIdentifier("issues-triage")
                 }
-                .accessibilityIdentifier("issues-triage")
             }
         }
         .confirmationDialog(Text("どれと入れ替えますか?", bundle: .module),
