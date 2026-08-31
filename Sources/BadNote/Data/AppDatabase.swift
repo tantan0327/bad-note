@@ -54,7 +54,19 @@ public struct AppDatabase {
 
     /// 未適用のマイグレーションを順に適用する。適用済みの場合は何もしない。
     private static func migrate(_ db: SQLContext) throws {
-        try db.migrate(migrations: [
+        try db.migrate(migrations: AppDatabase.migrations)
+    }
+
+    /// スキーマの変遷。**末尾に 1 要素足す。既存の要素は書き換えない。**
+    ///
+    /// 配列として外に出してあるのは、テストが**前半だけを適用して古い版の DB を作り、
+    /// そこから今の版に上げられるか**を確かめるため(`MigrationTests`)。
+    /// 適用済みのバージョン数は `userVersion` に入る。
+    ///
+    /// 計算プロパティなのは、クロージャの配列を `static let` で持つと
+    /// 並行性の検査に引っかかるため(呼ぶのは起動時の 1 回だけなので作り直しでよい)。
+    static var migrations: [(SQLContext) throws -> Void] {
+        return [
             { context in
                 try context.exec(sql: AppDatabase.createIssueTable)
             },
@@ -100,7 +112,7 @@ public struct AppDatabase {
                 // §7.5 大会のねらい。既存の大会は NULL(未記入)
                 try context.exec(sql: "ALTER TABLE competition ADD COLUMN aim TEXT")
             },
-        ])
+        ]
     }
 
     /// 課題(§6)。日付・時刻は ISO 8601 の TEXT。json 関数は使わない。
