@@ -6,7 +6,7 @@ import SkipSQL
 ///
 /// 判定は既存の純粋関数に任せ、ここは読み込みと組み立てだけを行う。
 /// - 主数値の切り替え: `HomeEmphasis`(§5.1、種目ごとに独立)
-/// - 残り練習回数: `PracticeForecast`(§5.2)
+/// - 残り練習回数: `PracticePlan`(§5.2。登録された練習予定日を数える)
 /// - 調整期: `AdjustmentPeriod`(§4.4、全体で 1 つ)
 /// - 今月の範囲: `MonthRange`
 ///
@@ -67,6 +67,9 @@ import SkipSQL
     public private(set) var targetCandidate: Competition? = nil
     /// 調整期(§4.4)。stale の提示を止める判断に使う。
     public private(set) var isAdjustmentPeriod = false
+    /// 練習予定日が 1 日でも登録されているか(§5.2)。
+    /// **未設定なら残り回数を出さず、設定へ誘導する** —— 根拠のない数字を出さない。
+    public private(set) var hasPracticePlan = false
 
     /// めざす姿を書くよう促すか(§7.1)。初回は促さず、数回使った後に 1 度だけ。
     public private(set) var isPromptingVision = false
@@ -119,16 +122,17 @@ import SkipSQL
 
     private func loadCountdowns(db: SQLContext, today: Date) throws {
         let competitions = CompetitionRepository(db: db)
-        let practices = PracticeRepository(db: db)
 
         // 終わった大会は目標から下ろす(§7.5)。残したままだと目標が埋まっている扱いになり、
         // カウントダウンも次の目標大会の促しも出ないまま止まる
         try competitions.clearFinishedTargets(asOf: today)
 
-        var practiceDates: [Date] = []
-        for practice in try practices.fetchAll() {
-            practiceDates.append(practice.practiceDate)
+        // §5.2 残り練習回数は**登録された練習予定日を数える**(推定しない)
+        var planDays: [Date] = []
+        for planDay in try PracticePlanRepository(db: db).fetchUpcoming(asOf: today) {
+            planDays.append(planDay.date)
         }
+        hasPracticePlan = !planDays.isEmpty
 
         var targets: [Competition] = []
         var cards: [Countdown] = []
@@ -145,9 +149,9 @@ import SkipSQL
             cards.append(Countdown(discipline: discipline,
                                    competition: target,
                                    remainingDays: remainingDays,
-                                   remainingPractices: PracticeForecast.remainingPracticeCount(practiceDates: practiceDates,
-                                                                                               eventDate: target.eventDate,
-                                                                                               asOf: today),
+                                   remainingPractices: PracticePlan.remainingCount(planDays: planDays,
+                                                                                   eventDate: target.eventDate,
+                                                                                   asOf: today),
                                    emphasis: HomeEmphasis.forEvent(target.eventDate, asOf: today)))
         }
 

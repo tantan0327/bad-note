@@ -210,6 +210,16 @@ public struct CompetitionDetailView: View {
                 // 画面の主数字はホームのカウントダウンと同じ大きさ(tasks.md 1.2)
                 Text(remainingText())
                     .font(.system(size: 34, weight: .semibold))
+                // §5.2 予定日が未設定なら回数が出ないので、その場で決められるようにする
+                if !model.hasPracticePlan {
+                    NavigationLink {
+                        PracticePlanView()
+                    } label: {
+                        Text("練習予定日を決めると、あと何回練習できるかが出ます", bundle: .module)
+                            .font(.footnote)
+                    }
+                    .accessibilityIdentifier("competition-practice-plan")
+                }
             } else {
                 Text("終了しました", bundle: .module)
                     .font(.body)
@@ -218,13 +228,10 @@ public struct CompetitionDetailView: View {
         }
     }
 
-    /// 「あと 42日 / 12回」。回数が推定できないときは日数だけ(§5.2)。
+    /// 「あと 42日 / 12回」。練習予定日が未設定なら日数だけ(§5.2)。
     private func remainingText() -> String {
-        let days = model.remainingDays == 0 ? "今日" : "あと \(model.remainingDays)日"
-        if let practices = model.remainingPractices {
-            return "\(days) / \(practices)回"
-        }
-        return days
+        return RemainingText.text(remainingDays: model.remainingDays,
+                                  remainingPractices: model.remainingPractices)
     }
 
     // MARK: - 3. 調整期の帯

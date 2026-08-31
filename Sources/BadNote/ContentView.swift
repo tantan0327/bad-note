@@ -72,7 +72,18 @@ struct ContentView: View {
 struct SettingsView: View {
     var body: some View {
         Form {
-            // 上から「設定するもの」→「眺めるもの」の順(2.6)
+            // 上から「設定するもの」→「眺めるもの」の順(2.6)。
+            // 練習予定日は残り練習回数(§5.2)と練習前の通知(§8)の両方を支えるので通知より前
+            NavigationLink {
+                PracticePlanView()
+            } label: {
+                Label {
+                    Text("練習予定日", bundle: .module)
+                } icon: {
+                    Image("calendar_month", bundle: .module)
+                }
+            }
+            .accessibilityIdentifier("settings-practice-plan")
             NavigationLink {
                 NotificationSettingsView()
             } label: {

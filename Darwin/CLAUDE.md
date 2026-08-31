@@ -80,6 +80,7 @@ SkipSQL (SQLContext)
 - `CompetitionRepository`
 - `VisionRepository`
 - `TagRepository`
+- `PracticePlanRepository`(§5.2 / §7.6 練習予定日。残り練習回数はここを数える)
 - `TrainingRepository`(§10 家トレ)
 - `StatsRepository`(§10.3 積み上げ集計の唯一の入り口。累計はここ以外で足さない)
 - `ExportRepository`(§11 データの書き出し。全テーブルを生の値のまま JSON に写す)
@@ -109,6 +110,7 @@ SkipSQL のバージョンベースのマイグレーション機能を使う。
 | 優先度の層 | `Tier` | `focus`(今週の重点) / `next`(次にやる) / `someday`(いつか) |
 | 今週の重点 | `focus` | 最大 3 件 |
 | 練習ログ | `Practice` | 1 回の練習の記録 |
+| 練習予定日 | `PracticePlanDay` | これから練習する日。大会までの残り回数を数える単位(§5.2) |
 | 手応え | `FocusRecord` | 練習ログ内での、重点課題ごとの結果 |
 | 影響度 | `impact` | 1〜3 |
 | 習得コスト | `cost` | 1〜3 |
@@ -167,7 +169,7 @@ TDD で進める。実装より先にテストを書く。
 
 ### テストを厚くする対象
 stale 判定 / レベルアップ提案 / 重点 3 枠の入れ替え /
-残り練習回数の推定 / 調整期の判定 / 時間の按分集計
+残り練習回数(予定日の数え上げ)/ 調整期の判定 / 時間の按分集計
 
 ### テストしない対象
 SwiftUI の View(手で確認する)

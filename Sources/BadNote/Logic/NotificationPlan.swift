@@ -14,8 +14,6 @@ public enum NotificationKind: String, CaseIterable, Hashable, Sendable {
 public struct NotificationSettings: Hashable, Sendable {
     /// **既定は off。** 許可を求める前に勝手に鳴らさない。
     public var isEnabled: Bool
-    /// 練習リマインドを出す曜日
-    public var practiceWeekdays: [Int]
     /// 練習開始前の時刻(時)
     public var practiceHour: Int
     /// 練習開始前の時刻(分)。2.5 で「時:分」指定にした
@@ -28,14 +26,12 @@ public struct NotificationSettings: Hashable, Sendable {
     public var reshuffleWeekday: Int
 
     public init(isEnabled: Bool = false,
-                practiceWeekdays: [Int] = [],
                 practiceHour: Int = 18,
                 practiceMinute: Int = 0,
                 eveningHour: Int = 20,
                 eveningMinute: Int = 0,
                 reshuffleWeekday: Int = 0) {
         self.isEnabled = isEnabled
-        self.practiceWeekdays = practiceWeekdays
         self.practiceHour = practiceHour
         self.practiceMinute = practiceMinute
         self.eveningHour = eveningHour
@@ -75,6 +71,7 @@ public struct NotificationPlan {
     /// - 練習リマインドは毎週来るので、1 回飛んでも影響が小さい
     public static func notification(on day: Date,
                                     settings: NotificationSettings,
+                                    isPracticeDay: Bool,
                                     isCompetitionDay: Bool,
                                     calendar: Calendar = Calendar.current) -> PlannedNotification? {
         if !settings.isEnabled {
@@ -90,10 +87,8 @@ public struct NotificationPlan {
         if weekday == settings.reshuffleWeekday {
             return NotificationPlan.at(hour: settings.eveningHour, minute: settings.eveningMinute, on: day, kind: .staleReview, calendar: calendar)
         }
-        for practiceWeekday in settings.practiceWeekdays {
-            if practiceWeekday == weekday {
-                return NotificationPlan.at(hour: settings.practiceHour, minute: settings.practiceMinute, on: day, kind: .practiceReminder, calendar: calendar)
-            }
+        if isPracticeDay {
+            return NotificationPlan.at(hour: settings.practiceHour, minute: settings.practiceMinute, on: day, kind: .practiceReminder, calendar: calendar)
         }
         return nil
     }
@@ -102,6 +97,7 @@ public struct NotificationPlan {
     public static func plan(from start: Date,
                             days: Int,
                             settings: NotificationSettings,
+                            practicePlanDates: [Date],
                             competitionDates: [Date],
                             calendar: Calendar = Calendar.current) -> [PlannedNotification] {
         if !settings.isEnabled {
@@ -113,9 +109,12 @@ public struct NotificationPlan {
             guard let day = calendar.date(byAdding: Calendar.Component.day, value: offset, to: startOfDay) else {
                 continue
             }
+            // 大会と練習予定で**日の一致判定を同じ関数**にする(ずれると片方だけ鳴る)
             let isCompetitionDay = NotificationPlan.isSameDay(day, in: competitionDates, calendar: calendar)
+            let isPracticeDay = NotificationPlan.isSameDay(day, in: practicePlanDates, calendar: calendar)
             if let notification = NotificationPlan.notification(on: day,
                                                                 settings: settings,
+                                                                isPracticeDay: isPracticeDay,
                                                                 isCompetitionDay: isCompetitionDay,
                                                                 calendar: calendar) {
                 planned.append(notification)

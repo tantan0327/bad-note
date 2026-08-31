@@ -138,7 +138,6 @@ final class AppMetaRepositoryTests: XCTestCase {
         XCTAssertEqual(0, try repo.notificationSettings().eveningMinute)
 
         try repo.setNotificationSettings(NotificationSettings(isEnabled: true,
-                                                              practiceWeekdays: [1],
                                                               practiceHour: 18,
                                                               practiceMinute: 30,
                                                               eveningHour: 20,
@@ -156,14 +155,12 @@ final class AppMetaRepositoryTests: XCTestCase {
         let repo = AppMetaRepository(db: db)
 
         try repo.setNotificationSettings(NotificationSettings(isEnabled: true,
-                                                              practiceWeekdays: [2, 4],
                                                               practiceHour: 17,
                                                               eveningHour: 21,
                                                               reshuffleWeekday: 0))
 
         let settings = try repo.notificationSettings()
         XCTAssertTrue(settings.isEnabled)
-        XCTAssertEqual([2, 4], settings.practiceWeekdays)
         XCTAssertEqual(17, settings.practiceHour)
         XCTAssertEqual(21, settings.eveningHour)
     }
@@ -179,14 +176,4 @@ final class AppMetaRepositoryTests: XCTestCase {
         XCTAssertEqual(3, try repo.notificationSettings().reshuffleWeekday)
     }
 
-    func testPracticeWeekdaysCanBeCleared() throws {
-        let db = try makeDatabase()
-        defer { try? db.close() }
-        let repo = AppMetaRepository(db: db)
-
-        try repo.setNotificationSettings(NotificationSettings(isEnabled: true, practiceWeekdays: [1]))
-        try repo.setNotificationSettings(NotificationSettings(isEnabled: true, practiceWeekdays: []))
-
-        XCTAssertEqual(0, try repo.notificationSettings().practiceWeekdays.count)
-    }
 }

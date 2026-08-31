@@ -106,4 +106,29 @@ public struct ScaleLabel {
         default: return "シーズン単位"
         }
     }
+
+}
+
+/// 曜日の 1 文字。**0 = 日曜 ... 6 = 土曜**
+/// (`reshuffle_weekday` と練習予定日の生成で使う番号体系)。
+///
+/// アプリで唯一の「曜日の番号 → 日本語」の変換表。通知設定と
+/// 練習予定日のまとめて追加の 2 か所から参照する。
+/// 日付の中に曜日を出す場合は `DateText.dayWithWeekday(_:)` を使うこと
+/// (あちらは暦から曜日を出すので、この表とは役割が違う)。
+public struct WeekdayName {
+    private init() {
+    }
+
+    public static func of(_ value: Int) -> String {
+        switch value {
+        case 0: return "日"
+        case 1: return "月"
+        case 2: return "火"
+        case 3: return "水"
+        case 4: return "木"
+        case 5: return "金"
+        default: return "土"
+        }
+    }
 }

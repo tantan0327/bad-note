@@ -22,10 +22,10 @@ final class NotificationPlanTests: XCTestCase {
         return calendar
     }
 
-    /// 月曜に練習リマインド、日曜が組み替えの曜日。
+    /// 日曜が組み替えの曜日。練習リマインドは**曜日ではなく練習予定日**で決まるので、
+    /// 各テストが `isPracticeDay:` で渡す(§5.2 で曜日設定を廃止した)。
     private func settings() -> NotificationSettings {
         return NotificationSettings(isEnabled: true,
-                                    practiceWeekdays: [1],
                                     practiceHour: 18,
                                     eveningHour: 20,
                                     reshuffleWeekday: 0)
@@ -43,10 +43,11 @@ final class NotificationPlanTests: XCTestCase {
 
     // MARK: - どれを出すか
 
-    /// 練習リマインドの曜日 → 今週の重点 3 つ。
-    func testPracticeReminderOnConfiguredWeekday() throws {
+    /// 練習予定日 → 今週の重点 3 つ(§5.2 で曜日から予定日に変わった)。
+    func testPracticeReminderOnAPlannedPracticeDay() throws {
         let planned = NotificationPlan.notification(on: monday,
                                                     settings: settings(),
+                                                    isPracticeDay: true,
                                                     isCompetitionDay: false,
                                                     calendar: utcCalendar())
 
@@ -57,6 +58,7 @@ final class NotificationPlanTests: XCTestCase {
     func testStaleReviewOnReshuffleWeekday() throws {
         let planned = NotificationPlan.notification(on: sunday,
                                                     settings: settings(),
+                                                    isPracticeDay: false,
                                                     isCompetitionDay: false,
                                                     calendar: utcCalendar())
 
@@ -67,6 +69,7 @@ final class NotificationPlanTests: XCTestCase {
     func testCompetitionReviewOnEventDay() throws {
         let planned = NotificationPlan.notification(on: tuesday,
                                                     settings: settings(),
+                                                    isPracticeDay: false,
                                                     isCompetitionDay: true,
                                                     calendar: utcCalendar())
 
@@ -77,6 +80,7 @@ final class NotificationPlanTests: XCTestCase {
     func testNothingOnOtherDays() throws {
         let planned = NotificationPlan.notification(on: tuesday,
                                                     settings: settings(),
+                                                    isPracticeDay: false,
                                                     isCompetitionDay: false,
                                                     calendar: utcCalendar())
 
@@ -89,6 +93,7 @@ final class NotificationPlanTests: XCTestCase {
 
         let planned = NotificationPlan.notification(on: monday,
                                                     settings: off,
+                                                    isPracticeDay: true,
                                                     isCompetitionDay: false,
                                                     calendar: utcCalendar())
 
@@ -97,10 +102,11 @@ final class NotificationPlanTests: XCTestCase {
 
     // MARK: - 1 日 1 通(重なったときの優先)
 
-    /// 大会当日が練習リマインドの曜日と重なったら、大会を優先する。
+    /// 大会当日が練習予定日と重なったら、大会を優先する。
     func testCompetitionWinsOverPracticeReminder() throws {
         let planned = NotificationPlan.notification(on: monday,
                                                     settings: settings(),
+                                                    isPracticeDay: true,
                                                     isCompetitionDay: true,
                                                     calendar: utcCalendar())
 
@@ -111,19 +117,18 @@ final class NotificationPlanTests: XCTestCase {
     func testCompetitionWinsOverStaleReview() throws {
         let planned = NotificationPlan.notification(on: sunday,
                                                     settings: settings(),
+                                                    isPracticeDay: false,
                                                     isCompetitionDay: true,
                                                     calendar: utcCalendar())
 
         XCTAssertEqual(NotificationKind.competitionReview, planned?.kind)
     }
 
-    /// 組み替えの曜日が練習リマインドの曜日と重なったら、組み替えを優先する。
+    /// 組み替えの曜日が練習予定日と重なったら、組み替えを優先する。
     func testStaleReviewWinsOverPracticeReminder() throws {
-        var both = settings()
-        both.practiceWeekdays = [0]
-
         let planned = NotificationPlan.notification(on: sunday,
-                                                    settings: both,
+                                                    settings: settings(),
+                                                    isPracticeDay: true,
                                                     isCompetitionDay: false,
                                                     calendar: utcCalendar())
 
@@ -135,6 +140,7 @@ final class NotificationPlanTests: XCTestCase {
     func testPracticeReminderUsesConfiguredHour() throws {
         let planned = try XCTUnwrap(NotificationPlan.notification(on: monday,
                                                                   settings: settings(),
+                                                                  isPracticeDay: true,
                                                                   isCompetitionDay: false,
                                                                   calendar: utcCalendar()))
 
@@ -145,6 +151,7 @@ final class NotificationPlanTests: XCTestCase {
     func testEveningNotificationsUseEveningHour() throws {
         let planned = try XCTUnwrap(NotificationPlan.notification(on: tuesday,
                                                                   settings: settings(),
+                                                                  isPracticeDay: false,
                                                                   isCompetitionDay: true,
                                                                   calendar: utcCalendar()))
 
@@ -157,6 +164,7 @@ final class NotificationPlanTests: XCTestCase {
         custom.practiceMinute = 30
         let planned = try XCTUnwrap(NotificationPlan.notification(on: monday,
                                                                   settings: custom,
+                                                                  isPracticeDay: true,
                                                                   isCompetitionDay: false,
                                                                   calendar: utcCalendar()))
 
@@ -169,6 +177,7 @@ final class NotificationPlanTests: XCTestCase {
         custom.eveningMinute = 45
         let planned = try XCTUnwrap(NotificationPlan.notification(on: tuesday,
                                                                   settings: custom,
+                                                                  isPracticeDay: false,
                                                                   isCompetitionDay: true,
                                                                   calendar: utcCalendar()))
 
@@ -179,6 +188,7 @@ final class NotificationPlanTests: XCTestCase {
     func testMinutesDefaultToZero() throws {
         let planned = try XCTUnwrap(NotificationPlan.notification(on: monday,
                                                                   settings: settings(),
+                                                                  isPracticeDay: true,
                                                                   isCompetitionDay: false,
                                                                   calendar: utcCalendar()))
 
@@ -187,11 +197,12 @@ final class NotificationPlanTests: XCTestCase {
 
     // MARK: - 先の予定をまとめて作る
 
-    /// 1 週間分を計画すると、月曜と日曜の 2 通だけになる。
+    /// 1 週間分を計画すると、練習予定日(月曜)と組み替えの曜日(日曜)の 2 通だけになる。
     func testPlanCoversRequestedDaysWithOnePerDay() throws {
         let planned = NotificationPlan.plan(from: monday,
                                             days: 7,
                                             settings: settings(),
+                                            practicePlanDates: [monday],
                                             competitionDates: [],
                                             calendar: utcCalendar())
 
@@ -202,6 +213,7 @@ final class NotificationPlanTests: XCTestCase {
         let planned = NotificationPlan.plan(from: monday,
                                             days: 3,
                                             settings: settings(),
+                                            practicePlanDates: [monday],
                                             competitionDates: [tuesday],
                                             calendar: utcCalendar())
 
@@ -216,6 +228,7 @@ final class NotificationPlanTests: XCTestCase {
         let planned = NotificationPlan.plan(from: monday,
                                             days: 30,
                                             settings: off,
+                                            practicePlanDates: [monday],
                                             competitionDates: [tuesday],
                                             calendar: utcCalendar())
 

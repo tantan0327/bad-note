@@ -17,7 +17,6 @@ public struct AppMetaKey {
     public static let visionPromptShown = "vision_prompt_shown"
     /// §8 通知
     public static let notificationsEnabled = "notifications_enabled"
-    public static let practiceReminderWeekdays = "practice_reminder_weekdays"
     public static let practiceReminderHour = "practice_reminder_hour"
     public static let practiceReminderMinute = "practice_reminder_minute"
     public static let notificationEveningHour = "notification_evening_hour"
@@ -86,15 +85,7 @@ public final class AppMetaRepository {
 
     /// 通知の設定。**組み替えの曜日は §4.3 の設定を共有する**(二重に持たない)。
     public func notificationSettings() throws -> NotificationSettings {
-        let weekdays = try string(forKey: AppMetaKey.practiceReminderWeekdays) ?? ""
-        var practiceWeekdays: [Int] = []
-        for part in weekdays.split(separator: ",") {
-            if let value = Int(String(part)) {
-                practiceWeekdays.append(value)
-            }
-        }
         return NotificationSettings(isEnabled: try string(forKey: AppMetaKey.notificationsEnabled) == "1",
-                                    practiceWeekdays: practiceWeekdays,
                                     practiceHour: try int(forKey: AppMetaKey.practiceReminderHour) ?? NotificationSettings.standard.practiceHour,
                                     practiceMinute: try int(forKey: AppMetaKey.practiceReminderMinute) ?? NotificationSettings.standard.practiceMinute,
                                     eveningHour: try int(forKey: AppMetaKey.notificationEveningHour) ?? NotificationSettings.standard.eveningHour,
@@ -104,11 +95,6 @@ public final class AppMetaRepository {
 
     public func setNotificationSettings(_ settings: NotificationSettings) throws {
         try set(settings.isEnabled ? "1" : "0", forKey: AppMetaKey.notificationsEnabled)
-        var parts: [String] = []
-        for weekday in settings.practiceWeekdays {
-            parts.append(String(weekday))
-        }
-        try set(parts.joined(separator: ","), forKey: AppMetaKey.practiceReminderWeekdays)
         try setInt(settings.practiceHour, forKey: AppMetaKey.practiceReminderHour)
         try setInt(settings.practiceMinute, forKey: AppMetaKey.practiceReminderMinute)
         try setInt(settings.eveningHour, forKey: AppMetaKey.notificationEveningHour)

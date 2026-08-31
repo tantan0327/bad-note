@@ -46,8 +46,10 @@ import SkipSQL
     public private(set) var competition: Competition? = nil
     public private(set) var sections: [DisciplineSection] = []
     public private(set) var remainingDays = 0
-    /// 推定できないときは nil(§5.2)
+    /// 練習予定日が未設定なら nil(§5.2)。推定はしない
     public private(set) var remainingPractices: Int? = nil
+    /// 練習予定日が 1 日でも登録されているか(§5.2)。未設定なら設定へ誘導する
+    public private(set) var hasPracticePlan = false
     /// §4.4 調整期の帯
     public private(set) var isAdjustmentPeriod = false
     /// 当日を過ぎたら振り返りのフォームに切り替える(§7.5)
@@ -78,13 +80,15 @@ import SkipSQL
             isFinished = remainingDays < 0
             isAdjustmentPeriod = AdjustmentPeriod.isActive(targets: [loaded], asOf: today)
 
-            var practiceDates: [Date] = []
-            for practice in try PracticeRepository(db: db).fetchAll() {
-                practiceDates.append(practice.practiceDate)
+            // §5.2 残り練習回数は**登録された練習予定日を数える**(推定しない)
+            var planDays: [Date] = []
+            for planDay in try PracticePlanRepository(db: db).fetchUpcoming(asOf: today) {
+                planDays.append(planDay.date)
             }
-            remainingPractices = PracticeForecast.remainingPracticeCount(practiceDates: practiceDates,
-                                                                        eventDate: loaded.eventDate,
-                                                                        asOf: today)
+            hasPracticePlan = !planDays.isEmpty
+            remainingPractices = PracticePlan.remainingCount(planDays: planDays,
+                                                             eventDate: loaded.eventDate,
+                                                             asOf: today)
 
             try loadSections(db: db, competitions: competitions)
             try loadReviews(competitions: competitions)

@@ -7,23 +7,27 @@ import SkipSQL
 @Observable public final class NotificationSettingsModel {
 
     public var isEnabled = false
-    public var practiceWeekdays: [Int] = []
     public var practiceHour = 18
     public var practiceMinute = 0
     public var eveningHour = 20
     public var eveningMinute = 0
     public var reshuffleWeekday = 0
+    /// 登録されている練習予定日の数(§5.2)。**0 なら練習前の通知は出ない**ので、
+    /// その理由を画面で言うために持つ。
+    public private(set) var practicePlanCount = 0
     public var errorText: String? = nil
 
 
     public init() {
     }
 
-    public func load() {
+    public func load(now: Date = Date()) {
         do {
-            let settings = try AppMetaRepository(db: try context()).notificationSettings()
+            let db = try context()
+            practicePlanCount = try PracticePlanRepository(db: db)
+                .fetchUpcoming(asOf: Calendar.current.startOfDay(for: now)).count
+            let settings = try AppMetaRepository(db: db).notificationSettings()
             isEnabled = settings.isEnabled
-            practiceWeekdays = settings.practiceWeekdays
             practiceHour = settings.practiceHour
             practiceMinute = settings.practiceMinute
             eveningHour = settings.eveningHour
@@ -33,32 +37,6 @@ import SkipSQL
         } catch {
             errorText = "読み込みに失敗しました: \(error)"
         }
-    }
-
-    public func isPracticeDay(_ weekday: Int) -> Bool {
-        for value in practiceWeekdays {
-            if value == weekday {
-                return true
-            }
-        }
-        return false
-    }
-
-    public func togglePracticeDay(_ weekday: Int) {
-        var updated: [Int] = []
-        var removed = false
-        for value in practiceWeekdays {
-            if value == weekday {
-                removed = true
-            } else {
-                updated.append(value)
-            }
-        }
-        if !removed {
-            updated.append(weekday)
-        }
-        practiceWeekdays = updated
-        save()
     }
 
     public func updateEnabled(_ enabled: Bool) {
@@ -101,7 +79,6 @@ import SkipSQL
         do {
             let db = try context()
             try AppMetaRepository(db: db).setNotificationSettings(NotificationSettings(isEnabled: isEnabled,
-                                                                                       practiceWeekdays: practiceWeekdays,
                                                                                        practiceHour: practiceHour,
                                                                                        practiceMinute: practiceMinute,
                                                                                        eveningHour: eveningHour,
@@ -137,8 +114,6 @@ import SkipSQL
 /// **1 日 1 通まで。** 通知過多でオフにされると、忘れ防止の仕組みごと機能しなくなる。
 public struct NotificationSettingsView: View {
     @State private var model = NotificationSettingsModel()
-
-    private let weekdayNames = ["日", "月", "火", "水", "木", "金", "土"]
 
     public init() {
     }
@@ -181,38 +156,28 @@ public struct NotificationSettingsView: View {
         VStack(alignment: .leading, spacing: 8) {
             Text("練習の前に重点を知らせる", bundle: .module)
                 .font(.headline)
-            HStack(spacing: 4) {
-                ForEach(0..<7, id: \.self) { weekday in
-                    weekdayButton(weekday)
-                }
-            }
             timeRow(hour: model.practiceHour, minute: model.practiceMinute) { date in
                 model.updatePracticeTime(date)
             }
             .accessibilityIdentifier("notification-practice-time")
-            Text("練習に行く曜日を選びます。選ばなければ出しません", bundle: .module)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-        }
-    }
-
-    @ViewBuilder private func weekdayButton(_ weekday: Int) -> some View {
-        if model.isPracticeDay(weekday) {
-            Button {
-                model.togglePracticeDay(weekday)
-            } label: {
-                Text(verbatim: weekdayNames[weekday]).frame(minWidth: 28)
+            // 曜日ではなく**登録された練習予定日**に出す(§5.2)。
+            // 鳴らない理由(予定日が未登録)をその場で解決できるよう導線を置く
+            if model.practicePlanCount == 0 {
+                Text("練習予定日が未設定なので、練習前の通知は出ません", bundle: .module)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            } else {
+                Text(verbatim: "登録した練習予定日(\(model.practicePlanCount)日)に届きます")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
-            .buttonStyle(.borderedProminent)
-            .accessibilityIdentifier("notification-weekday-\(weekday)")
-        } else {
-            Button {
-                model.togglePracticeDay(weekday)
+            NavigationLink {
+                PracticePlanView()
             } label: {
-                Text(verbatim: weekdayNames[weekday]).frame(minWidth: 28)
+                Text("練習予定日を見る", bundle: .module)
+                    .font(.footnote)
             }
-            .buttonStyle(.bordered)
-            .accessibilityIdentifier("notification-weekday-\(weekday)")
+            .accessibilityIdentifier("notification-practice-plan")
         }
     }
 
@@ -245,9 +210,9 @@ public struct NotificationSettingsView: View {
         VStack(alignment: .leading, spacing: 4) {
             Text("いま設定されている通知", bundle: .module)
                 .font(.headline)
-            Text(verbatim: "・練習前(\(NotificationSettingsModel.timeText(hour: model.practiceHour, minute: model.practiceMinute))): 今週の重点 3 つ")
+            Text(verbatim: "・練習予定日(\(NotificationSettingsModel.timeText(hour: model.practiceHour, minute: model.practiceMinute))): 今週の重点 3 つ")
             Text(verbatim: "・大会当日(\(NotificationSettingsModel.timeText(hour: model.eveningHour, minute: model.eveningMinute))): 振り返りを促す")
-            Text(verbatim: "・毎週\(weekdayNames[model.reshuffleWeekday])曜(\(NotificationSettingsModel.timeText(hour: model.eveningHour, minute: model.eveningMinute))): しばらく触れていない課題")
+            Text(verbatim: "・毎週\(WeekdayName.of(model.reshuffleWeekday))曜(\(NotificationSettingsModel.timeText(hour: model.eveningHour, minute: model.eveningMinute))): しばらく触れていない課題")
             Text("同じ日に重なったときは、大会 → 触れていない課題 → 練習前 の順で 1 通だけ出します", bundle: .module)
                 .font(.caption)
                 .foregroundStyle(.secondary)

@@ -143,11 +143,39 @@ public struct HomeView: View {
             ForEach(model.countdowns) { countdown in
                 countdownCard(countdown)
             }
+            if !model.hasPracticePlan && !model.countdowns.isEmpty {
+                practicePlanPrompt
+            }
             if model.isAdjustmentPeriod {
                 // §4.4 調整期。直前に忘れていた課題を掘り返さない期間
                 Text("調整期です。新しい課題は増やさず、今の 3 つに集中します", bundle: .module)
                     .font(.footnote)
                     .foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    /// 練習予定日が未設定のとき(§5.2)。
+    ///
+    /// **カードの中ではなくセクションに 1 回だけ置く** —— カウントダウンのカードは
+    /// 種目ごとに 2 枚出るので、カード内に置くと同じ文が 2 回並ぶ。
+    /// 練習予定日は種目に依らない 1 つの設定なので、置き場もひとつでよい。
+    ///
+    /// 目標大会が無いときは出さない(`countdowns.isEmpty`)——
+    /// 数える相手がいないのに設定を促しても意味が無い。
+    @ViewBuilder private var practicePlanPrompt: some View {
+        Card {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("練習予定日を決めると、あと何回練習できるかが出ます", bundle: .module)
+                    .font(.footnote)
+                NavigationLink {
+                    PracticePlanView()
+                } label: {
+                    Text("練習予定日を決める", bundle: .module)
+                        .font(.footnote)
+                }
+                .buttonStyle(.bordered)
+                .accessibilityIdentifier("home-practice-plan")
             }
         }
     }
@@ -219,13 +247,10 @@ public struct HomeView: View {
         }
     }
 
-    /// 「あと 42日 / 12回」。回数が推定できないときは日数だけ(§5.2)。
+    /// 「あと 42日 / 12回」。練習予定日が未設定なら日数だけ(§5.2)。
     private func remainingText(_ countdown: HomeModel.Countdown) -> String {
-        let days = countdown.remainingDays == 0 ? "今日" : "あと \(countdown.remainingDays)日"
-        if let practices = countdown.remainingPractices {
-            return "\(days) / \(practices)回"
-        }
-        return days
+        return RemainingText.text(remainingDays: countdown.remainingDays,
+                                  remainingPractices: countdown.remainingPractices)
     }
 
     /// 「今月 14 時間 / レベルアップ 2」

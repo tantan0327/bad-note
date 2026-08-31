@@ -56,7 +56,7 @@ final class NotificationServiceTests: XCTestCase {
         return makeCalendar().component(Calendar.Component.weekday, from: now) - 1
     }
 
-    /// 練習リマインドを**今日の曜日**に入れる。
+    /// 練習リマインドを**今日と 7 日後**に入れる(§5.2 で曜日から練習予定日に変わった)。
     ///
     /// 組み替え曜日は必ず別の曜日にする —— 同じ日だと stale が優先されて
     /// 練習リマインドが消え、何を見ているのか分からないテストになる。
@@ -66,19 +66,18 @@ final class NotificationServiceTests: XCTestCase {
         let repo = AppMetaRepository(db: db)
         try repo.setReshuffleWeekday((todayWeekday() + 1) % 7)
         try repo.setNotificationSettings(NotificationSettings(isEnabled: true,
-                                                              practiceWeekdays: [todayWeekday()],
                                                               practiceHour: hour,
                                                               practiceMinute: minute,
                                                               eveningHour: 20,
                                                               eveningMinute: 0))
+        try PracticePlanRepository(db: db).addAll([day(0, at: 12), day(7, at: 12)])
     }
 
-    /// 練習リマインドは使わず、夜の通知(大会の振り返り)だけを見る設定。
+    /// 練習予定日を入れず、夜の通知(大会の振り返り)だけを見る設定。
     private func enableEveningOnly(_ db: SQLContext) throws {
         let repo = AppMetaRepository(db: db)
         try repo.setReshuffleWeekday((todayWeekday() + 1) % 7)
         try repo.setNotificationSettings(NotificationSettings(isEnabled: true,
-                                                              practiceWeekdays: [Int](),
                                                               practiceHour: 18,
                                                               practiceMinute: 0,
                                                               eveningHour: 20,
@@ -169,6 +168,35 @@ final class NotificationServiceTests: XCTestCase {
         let planned = try makeService(db).plannedNotifications(now: now)
 
         XCTAssertFalse(contains(planned, .practiceReminder, at: day(0, at: 13)))
+    }
+
+    // MARK: - 練習前の通知は練習予定日に出す(§5.2)
+
+    /// **練習予定日を 1 日も入れていなければ、練習前の通知は出ない。**
+    ///
+    /// 曜日で出していた頃は「毎週火曜」と決めれば永久に鳴ったが、
+    /// いまは予定日を登録した日にだけ鳴る。休む日に鳴らないのが利点で、
+    /// **入れ忘れると鳴らない**のが代償。通知設定の画面はこの状態を言葉で説明する。
+    func testNoPracticeReminderWithoutPlannedDays() throws {
+        let db = try makeDatabase()
+        defer { try? db.close() }
+        try enableEveningOnly(db)
+
+        let planned = try makeService(db).plannedNotifications(now: now)
+
+        XCTAssertEqual(0, dates(planned, of: .practiceReminder).count)
+    }
+
+    /// 21 日より先の予定日は登録しない(起動のたびに入れ直すので足りる)。
+    func testDoesNotScheduleRemindersBeyondThreeWeeks() throws {
+        let db = try makeDatabase()
+        defer { try? db.close() }
+        try enableEveningOnly(db)
+        try PracticePlanRepository(db: db).add(day(30, at: 12))
+
+        let planned = try makeService(db).plannedNotifications(now: now)
+
+        XCTAssertEqual(0, dates(planned, of: .practiceReminder).count)
     }
 
     // MARK: - 大会は DB から拾う

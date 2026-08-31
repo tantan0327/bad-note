@@ -46,15 +46,27 @@ public final class NotificationService {
             return []
         }
 
+        // 基準は「今」ではなく**今日の 0 時**。「今」にすると午前中に始まった大会が
+        // 昼の時点で終了扱いになり、その日の夜の振り返り通知が出なくなる
+        let today = calendar.startOfDay(for: now)
+
         var competitionDates: [Date] = []
-        for competition in try CompetitionRepository(db: db).fetchUpcoming(asOf: calendar.startOfDay(for: now)) {
+        for competition in try CompetitionRepository(db: db).fetchUpcoming(asOf: today) {
             competitionDates.append(competition.eventDate)
+        }
+
+        // §5.2 練習前の通知は**登録された練習予定日**に出す(曜日ではない)。
+        // 予定日を 1 日も入れていなければ、練習前の通知は出ない
+        var practicePlanDates: [Date] = []
+        for planDay in try PracticePlanRepository(db: db).fetchUpcoming(asOf: today) {
+            practicePlanDates.append(planDay.date)
         }
 
         var upcoming: [PlannedNotification] = []
         for notification in NotificationPlan.plan(from: now,
                                                   days: NotificationService.scheduledDays,
                                                   settings: settings,
+                                                  practicePlanDates: practicePlanDates,
                                                   competitionDates: competitionDates,
                                                   calendar: calendar) {
             // 過ぎた時刻には登録しない
