@@ -24,7 +24,7 @@ public final class ExportRepository {
     /// (`testTableListMatchesSchema` が入れ忘れを検出する)。
     public static let tables = [
         "issue", "tag", "issue_tag",
-        "practice", "focus_record",
+        "practice", "focus_record", "practice_plan",
         "competition", "competition_entry", "competition_review", "issue_competition",
         "vision", "level_change", "focus_span", "stale_flag",
         "training_menu", "training_log", "app_meta",

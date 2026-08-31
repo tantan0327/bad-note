@@ -101,6 +101,7 @@ final class MigrationTests: XCTestCase {
         "issue_tag: issue_id,tag_id",
         "level_change: created_at,from_level,id,issue_id,to_level",
         "practice: created_at,id,kind,minutes,practice_date",
+        "practice_plan: created_at,plan_date",
         "stale_flag: evaluated_at,issue_id,reason",
         "tag: id,name",
         "training_log: done_at,id,menu_id,minutes,training_date",
@@ -266,6 +267,23 @@ final class MigrationTests: XCTestCase {
         let competitionRows = try db.selectAll(sql: "SELECT aim FROM competition")
         XCTAssertEqual(1, competitionRows.count)
         XCTAssertNil(competitionRows.first?.first?.textValue)
+    }
+
+    /// **役目を終えた設定は更新のときに消す。**
+    ///
+    /// 練習前の通知は曜日ではなく練習予定日(§5.2)で出すようになったので、
+    /// `practice_reminder_weekdays` はもう誰も読まない。残すと `ExportRepository` が
+    /// 書き出し続け、「設定は残っているのに曜日では鳴らない」状態になる。
+    /// キーの定数は削除済みなので、ここでは生の文字列で書く。
+    func testRetiredNotificationWeekdayKeyIsRemovedByTheUpgrade() throws {
+        let db = try makeDatabase(migratedUpTo: 11)
+        defer { try? db.close() }
+        try db.exec(sql: "INSERT OR REPLACE INTO app_meta (key, value) VALUES ('practice_reminder_weekdays', '1,3,5')")
+
+        try AppDatabase.prepare(db)
+
+        let rows = try db.selectAll(sql: "SELECT value FROM app_meta WHERE key = 'practice_reminder_weekdays'")
+        XCTAssertEqual(0, rows.count)
     }
 
     // MARK: - 何度呼んでも同じ

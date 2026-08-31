@@ -56,6 +56,41 @@ final class DayStampTests: XCTestCase {
         XCTAssertEqual(DayStamp().text(from: date(2026, 3, 1, hour: 0)), "2026-03-01")
     }
 
+    // MARK: - 文字列から戻す(§5.2 練習予定日)
+
+    /// 書いた文字列から**同じ暦日**に戻せる。
+    /// 練習予定日は保存文字列を id にして削除するので、往復が崩れると消せなくなる。
+    func testParsesBackToTheSameDay() {
+        let stamp = DayStamp()
+        let original = date(2026, 1, 4)
+
+        let parsed: Date = stamp.date(from: stamp.text(from: original)) ?? Date()
+
+        XCTAssertEqual(stamp.text(from: original), stamp.text(from: parsed))
+    }
+
+    /// 戻した日付は**その日の 0 時**。数え上げの区間の端に使うので時刻を持たせない。
+    func testParsedDayStartsAtMidnight() {
+        let stamp = DayStamp()
+
+        let parsed: Date = stamp.date(from: "2026-03-01") ?? Date()
+
+        let components = Calendar.current.dateComponents([Calendar.Component.hour,
+                                                          Calendar.Component.minute],
+                                                         from: parsed)
+        XCTAssertEqual(0, components.hour)
+        XCTAssertEqual(0, components.minute)
+    }
+
+    /// 読めない文字列は nil。壊れた行を「今日」として扱わない。
+    func testReturnsNilForUnreadableText() {
+        let stamp = DayStamp()
+
+        XCTAssertNil(stamp.date(from: ""))
+        XCTAssertNil(stamp.date(from: "2026-13-45"))
+        XCTAssertNil(stamp.date(from: "きのう"))
+    }
+
     // MARK: - 並び
 
     /// **辞書順の比較 = 日付順の比較。**

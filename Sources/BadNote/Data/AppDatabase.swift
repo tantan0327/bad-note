@@ -112,6 +112,14 @@ public struct AppDatabase {
                 // §7.5 大会のねらい。既存の大会は NULL(未記入)
                 try context.exec(sql: "ALTER TABLE competition ADD COLUMN aim TEXT")
             },
+            { context in
+                try context.exec(sql: AppDatabase.createPracticePlanTable)
+                // §8 練習前の通知は曜日ではなく練習予定日で出すようになった。
+                // 役目を終えたキーを残すと、`ExportRepository` が書き出し続け、
+                // 「設定は残っているのに曜日では鳴らない」状態になる。
+                // `appMetaDefaults` にこのキーは無いので復活しない
+                try context.exec(sql: "DELETE FROM app_meta WHERE key = 'practice_reminder_weekdays'")
+            },
         ]
     }
 
@@ -288,6 +296,22 @@ public struct AppDatabase {
           minutes       INTEGER,
           done_at       TEXT,
           UNIQUE (menu_id, training_date)
+        )
+        """
+
+    /// 練習予定日(§5.2)。**大会までの残り練習回数はここを数える**(推定しない)。
+    ///
+    /// `plan_date` はローカルの暦日の TEXT(`2026-09-07`)。タイムスタンプではない ——
+    /// 「9/7 に練習する」の単位は家トレの `training_date` と同じ暦日で、
+    /// 辞書順 = 日付順なので期間の絞り込みがそのまま効く。
+    ///
+    /// **主キーが `plan_date`** なので、同じ日は 1 行しか持てない。
+    /// `INSERT OR IGNORE` だけで重複が構造的に起きず、まとめて追加を何度押しても増えない。
+    /// 大会には紐付けない —— 練習予定は生活の予定で、種目ごとに二重に持つものではない。
+    static let createPracticePlanTable = """
+        CREATE TABLE practice_plan (
+          plan_date  TEXT PRIMARY KEY,
+          created_at TEXT NOT NULL
         )
         """
 

@@ -409,6 +409,11 @@ Android の `Bundle.main` は「メインモジュールの `Resources/`」を�
 
 ### Skip の落とし穴(実際に踏んだもの)
 
+- **`DateFormatter.date(from:)` は Android だけ寛容** — `2026-13-45` を iOS は nil にするが、
+  Android は **2027-02-14 に繰り上げて受け入れる**(2026-08-31 に `DayStamp.date(from:)` で踏んだ)。
+  **書き戻して一致するかで確かめる**(`formatter.string(from: date) != text` なら nil)。
+  ゼロ埋めしていない `2026-3-1` も同時に弾ける
+
 - **`sorted()` / `map` / `filter` の戻り値は変更不可** — `insert` / `append` すると Android だけ
   実行時に `UnsupportedOperationException`。新しい配列に写してから触る
 - **`Int64` と `Int` リテラルの `==` / `!=` は Kotlin で通らない** — 比較演算子(`<` `>`)は通るので
