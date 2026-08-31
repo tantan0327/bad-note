@@ -15,7 +15,7 @@
 
 ## 現状
 
-テスト 548 本(JUnit 549)。iOS / Android(Robolectric)の両方でパス。
+テスト 555 本(JUnit 556)。iOS / Android(Robolectric)の両方でパス。
 両プラットフォームでビルド成功。`skip verify`(ストアのメタデータ)も通る。
 
 **データ層** — Repository は 8 つ(`Issue` / `Practice` / `Competition` / `Vision` / `Tag` /
@@ -517,6 +517,22 @@ colorset が `Bundle.main` にあると、SkipUI が Material 3 の `primary` �
 Android の `Bundle.main` は「メインモジュールの `Resources/`」を指すので、
 アプリのアクセントを変えるときは `Module.xcassets` 側の `AccentColor` を直すこと
 (`Darwin/Assets.xcassets` は iOS にしか効かない。2 か所の値を揃える)。
+
+### 保存形式は「保存された文字列そのもの」を検査する(2026-08-31)
+
+リポジトリ経由の往復テストは、**書いて読むのが同じフォーマッタ**なので
+**書式が変わっても通ってしまう**(往復は成立するが、既存データが読めなくなる)。
+
+- `SQLTimestamp` は `testEventDateIsStoredAsUTCISO8601Text` /
+  `testPracticeDateIsStoredAsUTCISO8601Text` が保存文字列を直接検査していて守られている
+- `DayStamp`(家トレの `training_date`)は無防備だったので同じ守り方を足した
+  (`DayStampTests` + `testTrainingDateIsStoredAsLocalDayText`)
+
+**期待値はリテラルで書く。** `DayStamp().text(from:)` と突き合わせると同じ穴に落ちる。
+**日付はゼロ埋めが要るもの**(1 月 4 日など)を選ぶ —— 11 月 14 日のような 2 桁同士だと
+`yyyy-M-d` に変わっても 10 文字のままで気づけない(実際にこの見落としを踏んだ)。
+
+**書いたテストは一度わざと壊して検出力を確かめる。** 上の見落としはそれで見つけた。
 
 ### Skip の落とし穴(実際に踏んだもの)
 

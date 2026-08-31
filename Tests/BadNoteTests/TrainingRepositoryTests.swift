@@ -290,6 +290,35 @@ final class TrainingRepositoryTests: XCTestCase {
         XCTAssertEqual(try repo.totalMinutes(from: day(0), to: day(1)), 10)
     }
 
+    /// **保存されている文字列そのもの**を検査する(`SQLTimestamp` 側の
+    /// `testPracticeDateIsStoredAsUTCISO8601Text` と同じ守り方)。
+    ///
+    /// 期待値は**リテラルで書く**。`DayStamp` の出力と突き合わせると、
+    /// 書いて読むのが同じフォーマッタになって書式の変化を検出できない。
+    /// 日付も**ゼロ埋めが要る 1 月 4 日**を選ぶ —— 11 月 14 日のような 2 桁同士だと
+    /// `yyyy-M-d` に変わっても同じ 10 文字のままで気づけない。
+    func testTrainingDateIsStoredAsLocalDayText() throws {
+        let db = try makeDatabase()
+        defer { try? db.close() }
+        let repo = makeRepository(db)
+        let menu = try repo.createMenu(name: "体幹", minutes: 10)
+
+        var components = DateComponents()
+        components.year = 2026
+        components.month = 1
+        components.day = 4
+        components.hour = 12
+        let january4: Date = try XCTUnwrap(Calendar.current.date(from: components))
+
+        let checked = try repo.check(menuId: menu.id, on: january4)
+
+        let rows = try db.selectAll(sql: "SELECT training_date FROM training_log WHERE menu_id = ?",
+                                    parameters: [.long(menu.id)])
+        var storedText: String = try XCTUnwrap(rows.first?.first?.textValue)
+        XCTAssertEqual("2026-01-04", storedText)
+        XCTAssertEqual("2026-01-04", checked.trainingDate)
+    }
+
     // MARK: - その日の分数の編集(日によって時間が変わる)
 
     /// チェック済みの日の分数を後から直せる。done_at は変えない。
