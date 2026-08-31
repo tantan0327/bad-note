@@ -19,8 +19,17 @@ public struct VisionEditView: View {
                         .foregroundStyle(.red)
                 }
 
-                Text("なりたい選手像を書きます", bundle: .module)
+                // **何を書く場所かを先に決める**(1.8)。成績(「全国大会に出る」)を
+                // ここに書くと、それを持つべき下の層(目標の大会 = 通過点・締め切り)と
+                // 役割が重なって 4 層構造が崩れる
+                Text("なりたい選手像を書きます。大会の結果ではなく「どんな選手か」で書きます", bundle: .module)
                     .font(.footnote)
+                    .foregroundStyle(.secondary)
+
+                // いちばん抽象的で書き出しにくい画面なので例を置く。
+                // TextEditor はプレースホルダを持てないので、欄の上に出す(1.6 と同じ形)
+                Text("例: 守りから攻めに切り替えるのが速い選手 / 終盤でも足が止まらない選手", bundle: .module)
+                    .font(.caption)
                     .foregroundStyle(.secondary)
 
                 TextEditor(text: $model.body)
