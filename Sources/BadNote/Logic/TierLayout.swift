@@ -6,6 +6,10 @@ public enum TierRowKind: Hashable, Sendable {
     case header
     /// 空の層の落下先。動かせないが、**ドラッグの落とし先にはなる**
     case placeholder
+    /// 重点の空き枠(1.10)。ホームと同じ「空き枠 / 選ぶ」を一覧にも出す。
+    /// `placeholder` と分けているのは**表示が違う**ため
+    /// (空の層は「まだありません」、空き枠は「空き枠」+ 選ぶ導線)
+    case slot
     /// 課題そのもの
     case issue
 }
@@ -25,6 +29,10 @@ public struct TierRow: Identifiable, Hashable, Sendable {
         return kind == TierRowKind.placeholder
     }
 
+    public var isSlot: Bool {
+        return kind == TierRowKind.slot
+    }
+
     public static func header(_ tier: Tier) -> TierRow {
         return TierRow(id: "header-" + tier.rawValue, tier: tier, kind: .header, issue: nil)
     }
@@ -36,6 +44,12 @@ public struct TierRow: Identifiable, Hashable, Sendable {
 
     public static func item(_ issue: Issue) -> TierRow {
         return TierRow(id: "issue-\(issue.id)", tier: issue.tier, kind: .issue, issue: issue)
+    }
+
+    /// 重点の空き枠(1.10)。**落下先にもなる**が、位置には数えない
+    /// (`TierLayout.target` は課題の行だけ数えるため)。
+    public static func slot(_ tier: Tier, index: Int) -> TierRow {
+        return TierRow(id: "slot-" + tier.rawValue + "-\(index)", tier: tier, kind: .slot, issue: nil)
     }
 }
 
@@ -63,9 +77,29 @@ public struct TierLayout {
     ///
     /// **空の層には落下先の行を 1 つ置く。** 見出しは動かせないので、
     /// 見出しだけだとその層がドラッグの落とし先にならない。
+    /// **重点には空き枠の行を並べる**(1.10)。ホームが「空き枠 / 選ぶ」を 3 枠分出すのに
+    /// 一覧は見出しの「1/3」だけ、という見せ方の食い違いを無くす。
+    /// 空き枠は落下先にもなるので、ドラッグで運ぶ的にもなる。
+    ///
+    /// ただし **3 層すべて空のときは空き枠を出さない** —— 課題が 1 つも無い人に
+    /// 空き枠だけ 3 つ見せても意味が無い(初回の案内はホームが持つ。4.1)。
     public static func rows(focus: [Issue], next: [Issue], someday: [Issue]) -> [TierRow] {
+        let isEmptyBoard = focus.isEmpty && next.isEmpty && someday.isEmpty
         var rows: [TierRow] = []
-        TierLayout.append(tier: Tier.focus, issues: focus, to: &rows)
+        if isEmptyBoard {
+            // 盤面が空のときは従来どおり「まだありません」の落下先だけ
+            TierLayout.append(tier: Tier.focus, issues: focus, to: &rows)
+        } else {
+            rows.append(TierRow.header(Tier.focus))
+            for issue in focus {
+                rows.append(TierRow.item(issue))
+            }
+            // 空き枠が落下先を兼ねるので、重点には placeholder を置かない
+            let slots = FocusBoard.remainingSlots(focusCount: focus.count)
+            for index in 0..<slots {
+                rows.append(TierRow.slot(Tier.focus, index: index))
+            }
+        }
         TierLayout.append(tier: Tier.next, issues: next, to: &rows)
         TierLayout.append(tier: Tier.someday, issues: someday, to: &rows)
         return rows

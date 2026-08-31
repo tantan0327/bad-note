@@ -228,7 +228,13 @@ public struct FocusReshuffleView: View {
                 .accessibilityIdentifier("reshuffle-done")
             }
         }
-        .navigationTitle(Text("今週の重点を組み替える", bundle: .module))
+        // 押し込んだ画面は inline で揃える(1.10。ここだけ大タイトルで 2 行を占めていた)。
+        // inline は長いと省略されるので、タイトル自体も短くする
+        // (一覧側のリンク文言「今週の重点を組み替える」はそのまま)
+        .navigationTitle(Text("重点の組み替え", bundle: .module))
+        #if os(iOS) || os(Android)
+        .navigationBarTitleDisplayMode(.inline)
+        #endif
         // 5.2 選ぶ / 外すも層の移動。触覚を添える
         .sensoryFeedback(SensoryFeedback.impact, trigger: model.moveCount)
         .confirmationDialog(Text("どれと入れ替えますか?", bundle: .module),

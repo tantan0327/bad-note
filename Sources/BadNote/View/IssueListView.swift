@@ -19,10 +19,6 @@ public struct IssueListView: View {
             }
             Section {
                 filterRow
-            } footer: {
-                // 4.3 スワイプとドラッグは画面から見えない操作なので、言葉で常設しておく
-                // (初回だけのヒントは忘れた頃に効かず、グリップはドラッグの開始点と誤解させる)
-                Text("行は長押しで並び替え、左右スワイプで層の上げ下げができます", bundle: .module)
             }
             // §7.4 層をまたぐドラッグのため、3 層を 1 つの ForEach に畳んでいる
             ForEach(model.rows) { row in
@@ -30,6 +26,8 @@ public struct IssueListView: View {
                     headerRow(row.tier)
                 } else if row.isPlaceholder {
                     emptyRow
+                } else if row.isSlot {
+                    slotRow
                 } else if let issue = row.issue {
                     self.row(issue)
                 }
@@ -40,6 +38,15 @@ public struct IssueListView: View {
                     model.moveRows(from: Array(offsets), to: toOffset)
                 }
             }
+            // 4.3 スワイプとドラッグは画面から見えない操作なので、言葉で常設しておく
+            // (初回だけのヒントは忘れた頃に効かず、グリップはドラッグの開始点と誤解させる)。
+            // **説明する行の後ろに置く**(1.10。絞り込みの直下は一等地なので明け渡した)
+            Section {
+                Text("行は長押しで並び替え、左右スワイプで層の上げ下げができます", bundle: .module)
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
+
             // 4.2 練習ログで書いた 1 行(inbox)の置き場。「書いたのに見つからない」を無くす。
             // 件数は層見出しと同じ出し方(タブのバッジにはしない §5.3)。
             // ドラッグの 1 本の ForEach には混ぜない(構造を崩すとドラッグが壊れる)
@@ -232,6 +239,29 @@ public struct IssueListView: View {
         Text("まだありません", bundle: .module)
             .font(.footnote)
             .foregroundStyle(.secondary)
+    }
+
+    /// 重点の空き枠(1.10)。**ホームと同じ言葉・同じ導線**にして、
+    /// 「同じ概念の見せ方が 2 通りある」状態を無くす。
+    /// `moveDisabled` を付けない —— ここがドラッグで運ぶ的になる。
+    @ViewBuilder private var slotRow: some View {
+        HStack {
+            Text("空き枠", bundle: .module)
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+            Spacer()
+            // 外す相手も候補もいないのに「選ぶ」を出すと空振りになる(1.9 の判断を再利用)
+            if FocusBoard.canReshuffle(focusCount: model.focus.count,
+                                       candidateCount: model.next.count + model.someday.count) {
+                NavigationLink {
+                    FocusReshuffleView()
+                } label: {
+                    Text("選ぶ", bundle: .module)
+                        .font(.footnote)
+                }
+                .accessibilityIdentifier("issues-slot-pick")
+            }
+        }
     }
 
     /// 層の見出し。ドラッグの落下位置を決める区切りでもあるので、行として並べる。
