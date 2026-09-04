@@ -94,9 +94,39 @@ public final class PracticeRepository {
         return records
     }
 
-    /// 課題ごとの手応え履歴。**新しい練習が先**(§3.2 のレベルアップ判定に渡す形)。
+    /// **いまの段になってからの**手応え履歴。新しい順。
     ///
-    /// 未入力(NULL)も nil として含める。連続の数え方は `LevelUpSuggestion` 側の責務。
+    /// 昇格・降格の提案はこれを材料にする。`fetchFocusResults`(全履歴)を渡すと、
+    /// **上げた直後に同じ履歴でもう一度提案が出る** —— 段が変わっても履歴は変わらないので、
+    /// 先頭の done×3 がそのまま残るため。
+    ///
+    /// 切る基準は `practice_date` ではなく **`created_at`(いつ入力したか)**。
+    /// `practice_date` は過去日を選べるので、昇格後に過去日を入れると昇格前の証拠が混ざる。
+    ///
+    /// レベルが一度も変わっていない課題は全履歴になる
+    /// (`COALESCE(…, '')`。ISO 8601 は必ず空文字より大きい)。
+    public func fetchFocusResultsSinceLevelChange(issueId: Int64) throws -> [FocusResult?] {
+        let rows = try db.selectAll(sql: """
+            SELECT f.result
+            FROM focus_record f
+            JOIN practice p ON p.id = f.practice_id
+            WHERE f.issue_id = ?
+              AND p.created_at > COALESCE((SELECT MAX(created_at) FROM level_change WHERE issue_id = ?), '')
+            ORDER BY p.practice_date DESC, p.id DESC
+            """,
+            parameters: [.long(issueId), .long(issueId)])
+        var results: [FocusResult?] = []
+        for row in rows {
+            results.append(try decodeResult(row[0]))
+        }
+        return results
+    }
+
+    /// 課題ごとの手応え履歴の**全部**。新しい練習が先。
+    ///
+    /// 未入力(NULL)も nil として含める。
+    /// **提案の判定には使わない** —— そちらは `fetchFocusResultsSinceLevelChange`。
+    /// こちらはホームの「直近 1 件」の表示に使う。
     public func fetchFocusResults(issueId: Int64) throws -> [FocusResult?] {
         let rows = try db.selectAll(sql: """
             SELECT f.result

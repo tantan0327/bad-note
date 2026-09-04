@@ -10,30 +10,20 @@ public struct LevelUpSuggestion {
     private init() {
     }
 
-    /// 提案に必要な `done` の連続回数(§3.2)。
-    private static let requiredStreak = 3
-
     /// 直近から数えた `done` の連続回数。
     ///
     /// `recentResults` は**新しい順**(先頭が最新)。
+    /// 数え方は `MasteryTrend` に集約してある —— 昇格・戻す・克服が同じ 1 本を読むことで、
+    /// 「進んでいます」と出ているのに提案が出ない、が起きないようにしている。
     ///
-    /// - `closer` / `next` が出たらそこで打ち切る
-    /// - **nil(未入力)は連続を切らない。** 数にも入れず、飛ばして次を見る。
-    ///   手応えは未選択でも練習ログを保存できる(§7.2)ので、入力していないことを
-    ///   「できなかった」と解釈しない
+    /// - **`closer`(近づいた)は連続を切らない**(2026-09-04)。数えもしない中立。
+    ///   「近づいた」は前進なので、積み上げたものを戻さない
+    /// - **nil(未入力)も中立。** 手応えは未選択でも保存できる(§7.2)ので、
+    ///   入力していないことを「できなかった」と解釈しない
+    /// - `next`(次にやる)だけが打ち切る
     public static func consecutiveDoneCount(recentResults: [FocusResult?]) -> Int {
-        var count = 0
-        for result in recentResults {
-            guard let result = result else {
-                continue
-            }
-            if result == FocusResult.done {
-                count += 1
-            } else {
-                break
-            }
-        }
-        return count
+        let trend = MasteryTrend.of(recentResults: recentResults)
+        return trend.direction == MasteryDirection.forward ? trend.count : 0
     }
 
     /// 課題の状態を見て提案すべきレベルを返す。提案しないときは nil。
@@ -41,10 +31,11 @@ public struct LevelUpSuggestion {
     /// §3.2「1 度だけ提案する」—— 同じレベルで一度断られていれば、もう聞かない。
     /// レベルが変われば `levelUpDeclinedLevel` と一致しなくなるので、また提案できる。
     public static func suggestedLevel(recentResults: [FocusResult?], for issue: Issue) -> MasteryLevel? {
-        if let declined = issue.levelUpDeclinedLevel, declined == issue.masteryLevel.rawValue {
+        let standing = MasteryStanding.of(recentResults: recentResults, issue: issue)
+        guard let offer = standing.offer, offer.kind == MasteryOfferKind.levelUp else {
             return nil
         }
-        return LevelUpSuggestion.suggestedLevel(recentResults: recentResults, currentLevel: issue.masteryLevel)
+        return offer.level
     }
 
     /// 提案すべきレベル。提案しないときは nil。
@@ -61,7 +52,7 @@ public struct LevelUpSuggestion {
         guard let nextLevel = MasteryLevel(rawValue: currentLevel.rawValue + 1) else {
             return nil
         }
-        if LevelUpSuggestion.consecutiveDoneCount(recentResults: recentResults) < LevelUpSuggestion.requiredStreak {
+        if LevelUpSuggestion.consecutiveDoneCount(recentResults: recentResults) < MasteryTrend.requiredStreak {
             return nil
         }
         return nextLevel

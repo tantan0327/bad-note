@@ -26,13 +26,14 @@ final class LevelUpSuggestionTests: XCTestCase {
         XCTAssertEqual(3, count)
     }
 
-    /// closer が挟まったらそこで打ち切り。
-    func testStreakStopsAtCloser() throws {
+    /// **closer は連続を切らない**(2026-09-04)。「近づいた」は前進なので、
+    /// 積み上げたものを戻さない。数えはしない(中立)。
+    func testStreakIsNotBrokenByCloser() throws {
         let results: [FocusResult?] = [FocusResult.done, FocusResult.done, FocusResult.closer, FocusResult.done]
 
         let count = LevelUpSuggestion.consecutiveDoneCount(recentResults: results)
 
-        XCTAssertEqual(2, count)
+        XCTAssertEqual(3, count)
     }
 
     /// next も同じく打ち切り。
@@ -61,12 +62,20 @@ final class LevelUpSuggestionTests: XCTestCase {
         XCTAssertEqual(3, count)
     }
 
-    func testStreakIsZeroWhenNewestIsCloser() throws {
+    /// 先頭(最新)が closer でも中立。飛ばして次を見る。
+    func testStreakSkipsLeadingCloser() throws {
         let results: [FocusResult?] = [FocusResult.closer, FocusResult.done, FocusResult.done, FocusResult.done]
 
         let count = LevelUpSuggestion.consecutiveDoneCount(recentResults: results)
 
-        XCTAssertEqual(0, count)
+        XCTAssertEqual(3, count)
+    }
+
+    /// **closer だけなら 0。** 中立は「進む」ではない —— 止まらないだけ。
+    func testStreakIsZeroForAllCloserHistory() throws {
+        let results: [FocusResult?] = [FocusResult.closer, FocusResult.closer, FocusResult.closer]
+
+        XCTAssertEqual(0, LevelUpSuggestion.consecutiveDoneCount(recentResults: results))
     }
 
     /// 未入力しか無いなら連続 0。提案の材料にならない。
@@ -122,12 +131,13 @@ final class LevelUpSuggestionTests: XCTestCase {
         XCTAssertNil(suggested)
     }
 
-    func testDoesNotSuggestWhenCloserBreaksStreak() throws {
+    /// **closer が挟まっても提案は出る**(2026-09-04)。
+    func testCloserDoesNotBlockTheSuggestion() throws {
         let results: [FocusResult?] = [FocusResult.done, FocusResult.closer, FocusResult.done, FocusResult.done]
 
         let suggested = LevelUpSuggestion.suggestedLevel(recentResults: results, currentLevel: .solo)
 
-        XCTAssertNil(suggested)
+        XCTAssertEqual(MasteryLevel.drill, suggested)
     }
 
     /// 未入力を挟んでいても 3 回連続とみなす。
@@ -149,7 +159,7 @@ final class LevelUpSuggestionTests: XCTestCase {
     func testOnlyTheNewestStreakMatters() throws {
         let results: [FocusResult?] = [
             FocusResult.done,
-            FocusResult.closer,
+            FocusResult.next,
             FocusResult.done,
             FocusResult.done,
             FocusResult.done,
@@ -162,12 +172,14 @@ final class LevelUpSuggestionTests: XCTestCase {
 
     /// 配列の先頭が最新。順序を逆に渡すと結果が変わる。
     func testTreatsFirstElementAsNewest() throws {
-        let newestIsCloser: [FocusResult?] = [FocusResult.closer, FocusResult.done, FocusResult.done, FocusResult.done]
-        let oldestIsCloser: [FocusResult?] = [FocusResult.done, FocusResult.done, FocusResult.done, FocusResult.closer]
+        // 打ち切り役は closer ではなく next(closer は中立になった)。
+        // このテストの主張は「先頭が最新」であって closer ではない
+        let newestIsNext: [FocusResult?] = [FocusResult.next, FocusResult.done, FocusResult.done, FocusResult.done]
+        let oldestIsNext: [FocusResult?] = [FocusResult.done, FocusResult.done, FocusResult.done, FocusResult.next]
 
-        XCTAssertNil(LevelUpSuggestion.suggestedLevel(recentResults: newestIsCloser, currentLevel: .solo))
+        XCTAssertNil(LevelUpSuggestion.suggestedLevel(recentResults: newestIsNext, currentLevel: .solo))
         XCTAssertEqual(MasteryLevel.drill,
-                       LevelUpSuggestion.suggestedLevel(recentResults: oldestIsCloser, currentLevel: .solo))
+                       LevelUpSuggestion.suggestedLevel(recentResults: oldestIsNext, currentLevel: .solo))
     }
 
     // MARK: - 1 度だけ提案する(§3.2)

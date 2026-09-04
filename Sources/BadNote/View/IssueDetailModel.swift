@@ -70,8 +70,7 @@ import SkipSQL
         do {
             var edited = current
             edited.masteryLevel = next
-            // 上げたので、提案を断った記録は用済み
-            edited.levelUpDeclinedLevel = nil
+            // 断った記録の消去は `IssueRepository.update` が行う(経路が増えても漏れない)
             _ = try IssueRepository(db: try context()).update(edited)
             load()
         } catch {

@@ -682,4 +682,117 @@ final class PracticeRepositoryTests: XCTestCase {
 
         XCTAssertEqual(0, try repo.count())
     }
+
+    // MARK: - レベルが変わったら数え直す(§3.2)
+
+    /// **昇格を承認した直後に、同じ履歴でもう一度提案されるのを防ぐ。**
+    ///
+    /// `fetchFocusResults` は全履歴を返すので、上げても先頭の done×3 が残ったままだった。
+    /// 提案の材料は「**この段になってからの**手応え」でなければならない。
+    func testFocusResultsSinceLevelChangeReturnsEverythingWithoutAChange() throws {
+        let db = try makeDatabase()
+        defer { try? db.close() }
+        let repo = makePracticeRepository(db)
+        let issues = makeIssueRepository(db)
+        let issue = try issues.create(coachWords: "ハイクリアが浅い")
+        try log(repo, issue: issue.id, result: .done)
+        try log(repo, issue: issue.id, result: .done)
+
+        let results = try repo.fetchFocusResultsSinceLevelChange(issueId: issue.id)
+
+        XCTAssertEqual(2, results.count)
+    }
+
+    func testFocusResultsSinceLevelChangeExcludesOlderEntries() throws {
+        let db = try makeDatabase()
+        defer { try? db.close() }
+        let repo = makePracticeRepository(db)
+        let issues = makeIssueRepository(db)
+        var issue = try issues.create(coachWords: "ハイクリアが浅い")
+        try log(repo, issue: issue.id, result: .done)
+        try log(repo, issue: issue.id, result: .done)
+
+        clock = t0.addingTimeInterval(3_600)
+        issue.masteryLevel = MasteryLevel.drill
+        issue = try issues.update(issue)
+
+        clock = t0.addingTimeInterval(7_200)
+        try log(repo, issue: issue.id, result: .closer)
+
+        let results = try repo.fetchFocusResultsSinceLevelChange(issueId: issue.id)
+
+        XCTAssertEqual(1, results.count)
+    }
+
+    /// 変更が複数あるときは**最後の**変更以降だけ。
+    func testFocusResultsSinceLevelChangeUsesTheLatestChange() throws {
+        let db = try makeDatabase()
+        defer { try? db.close() }
+        let repo = makePracticeRepository(db)
+        let issues = makeIssueRepository(db)
+        var issue = try issues.create(coachWords: "ハイクリアが浅い")
+
+        clock = t0.addingTimeInterval(3_600)
+        issue.masteryLevel = MasteryLevel.drill
+        issue = try issues.update(issue)
+        clock = t0.addingTimeInterval(7_200)
+        try log(repo, issue: issue.id, result: .done)
+
+        clock = t0.addingTimeInterval(10_800)
+        issue.masteryLevel = MasteryLevel.pattern
+        issue = try issues.update(issue)
+        clock = t0.addingTimeInterval(14_400)
+        try log(repo, issue: issue.id, result: .next)
+
+        let results = try repo.fetchFocusResultsSinceLevelChange(issueId: issue.id)
+
+        XCTAssertEqual(1, results.count)
+    }
+
+    /// 変更と同時刻ちょうどは含めない(`>` であって `>=` ではない)。
+    func testFocusResultsSinceLevelChangeExcludesTheChangeMoment() throws {
+        let db = try makeDatabase()
+        defer { try? db.close() }
+        let repo = makePracticeRepository(db)
+        let issues = makeIssueRepository(db)
+        var issue = try issues.create(coachWords: "ハイクリアが浅い")
+
+        clock = t0.addingTimeInterval(3_600)
+        try log(repo, issue: issue.id, result: .done)
+        issue.masteryLevel = MasteryLevel.drill
+        _ = try issues.update(issue)
+
+        let results = try repo.fetchFocusResultsSinceLevelChange(issueId: issue.id)
+
+        XCTAssertEqual(0, results.count)
+    }
+
+    /// 並びは新しい順のまま(`MasteryTrend` が先頭を最新として読む)。
+    func testFocusResultsSinceLevelChangeIsNewestFirst() throws {
+        let db = try makeDatabase()
+        defer { try? db.close() }
+        let repo = makePracticeRepository(db)
+        let issues = makeIssueRepository(db)
+        let issue = try issues.create(coachWords: "ハイクリアが浅い")
+        clock = t0.addingTimeInterval(3_600)
+        try log(repo, issue: issue.id, result: .next, on: t0)
+        clock = t0.addingTimeInterval(7_200)
+        try log(repo, issue: issue.id, result: .done, on: t1)
+
+        let results = try repo.fetchFocusResultsSinceLevelChange(issueId: issue.id)
+
+        XCTAssertEqual(2, results.count)
+        XCTAssertEqual(FocusResult.done, results[0])
+    }
+
+    /// 手応えつきの練習ログを 1 件足す。
+    @discardableResult
+    private func log(_ repo: PracticeRepository,
+                     issue: Int64,
+                     result: FocusResult,
+                     on date: Date? = nil) throws -> Practice {
+        return try repo.create(practiceDate: date ?? t0,
+                               minutes: 60,
+                               focus: [FocusEntry(issueId: issue, result: result)])
+    }
 }

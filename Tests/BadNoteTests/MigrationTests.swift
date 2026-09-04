@@ -96,7 +96,7 @@ final class MigrationTests: XCTestCase {
         "competition_review: competition_id,created_at,discipline,id,needed_resources,next_action,result,went_well",
         "focus_record: id,issue_id,practice_id,result",
         "focus_span: entered_at,id,issue_id,left_at",
-        "issue: archived_at,coach_name,coach_words,cost,created_at,discipline,done_form,id,impact,last_focused_at,level_up_declined_level,mastery_level,resurface_count,sort_order,status,tier,updated_at",
+        "issue: archived_at,coach_name,coach_words,cost,created_at,discipline,done_form,id,impact,last_focused_at,level_up_declined_level,mastery_level,resurface_count,sort_order,status,step_down_declined_level,tier,updated_at",
         "issue_competition: competition_id,issue_id",
         "issue_tag: issue_id,tag_id",
         "level_change: created_at,from_level,id,issue_id,to_level",

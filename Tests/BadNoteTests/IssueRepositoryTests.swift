@@ -715,4 +715,66 @@ final class IssueRepositoryTests: XCTestCase {
 
         XCTAssertEqual(["対象"], found.map { $0.coachWords })
     }
+
+    // MARK: - 断った記録(§3.2)
+
+    /// 新しい列の既定は nil(まだ断っていない)。
+    func testStepDownDeclinedLevelStartsNil() throws {
+        let db = try makeDatabase()
+        defer { try? db.close() }
+        let repo = makeRepository(db)
+
+        let issue = try repo.create(coachWords: "ハイクリアが浅い")
+
+        XCTAssertNil(issue.stepDownDeclinedLevel)
+    }
+
+    func testStepDownDeclinedLevelRoundTrip() throws {
+        let db = try makeDatabase()
+        defer { try? db.close() }
+        let repo = makeRepository(db)
+        var issue = try repo.create(coachWords: "ハイクリアが浅い")
+
+        issue.stepDownDeclinedLevel = 2
+        let saved = try repo.update(issue)
+
+        XCTAssertEqual(2, saved.stepDownDeclinedLevel)
+    }
+
+    /// **段が変わったら断った記録は 2 列とも消える。**
+    ///
+    /// 呼び出し側に書かせると、レベルを変える経路(提案の承認 / 手動の上げ下げ /
+    /// 再浮上)× 列の数だけ書き忘れが起きる。`update` の中で一度に消す。
+    func testChangingTheLevelClearsBothDeclinedColumns() throws {
+        let db = try makeDatabase()
+        defer { try? db.close() }
+        let repo = makeRepository(db)
+        var issue = try repo.create(coachWords: "ハイクリアが浅い")
+        issue.levelUpDeclinedLevel = 1
+        issue.stepDownDeclinedLevel = 1
+        issue = try repo.update(issue)
+
+        issue.masteryLevel = MasteryLevel.drill
+        let saved = try repo.update(issue)
+
+        XCTAssertNil(saved.levelUpDeclinedLevel)
+        XCTAssertNil(saved.stepDownDeclinedLevel)
+    }
+
+    /// 段が変わらない更新では消さない(断ったことを覚えておく)。
+    func testUpdatingWithoutLevelChangeKeepsDeclinedColumns() throws {
+        let db = try makeDatabase()
+        defer { try? db.close() }
+        let repo = makeRepository(db)
+        var issue = try repo.create(coachWords: "ハイクリアが浅い")
+        issue.levelUpDeclinedLevel = 1
+        issue.stepDownDeclinedLevel = 1
+        issue = try repo.update(issue)
+
+        issue.coachName = "コーチ"
+        let saved = try repo.update(issue)
+
+        XCTAssertEqual(1, saved.levelUpDeclinedLevel)
+        XCTAssertEqual(1, saved.stepDownDeclinedLevel)
+    }
 }

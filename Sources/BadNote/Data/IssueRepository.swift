@@ -23,7 +23,7 @@ public final class IssueRepository {
     }
 
     /// SELECT の列。並びは `decode(_:)` の添字と対応している。
-    private static let columns = "id, coach_words, done_form, coach_name, discipline, mastery_level, tier, sort_order, impact, cost, status, resurface_count, last_focused_at, created_at, updated_at, archived_at, level_up_declined_level"
+    private static let columns = "id, coach_words, done_form, coach_name, discipline, mastery_level, tier, sort_order, impact, cost, status, resurface_count, last_focused_at, created_at, updated_at, archived_at, level_up_declined_level, step_down_declined_level"
 
     // MARK: - Create
 
@@ -175,6 +175,12 @@ public final class IssueRepository {
                 // §4.3 重点にする時に last_focused_at を更新する
                 target.lastFocusedAt = now()
             }
+            if try hasLevelChanged(issue) {
+                // §3.2 段が変われば、断った記録は用済み。**ここで消す** ——
+                // 呼び出し側に書かせると、レベルを変える経路 × 列の数だけ書き忘れが起きる
+                target.levelUpDeclinedLevel = nil
+                target.stepDownDeclinedLevel = nil
+            }
             try writeIssue(target)
             return try require(id: target.id)
         }
@@ -184,6 +190,13 @@ public final class IssueRepository {
     ///
     /// **記録は `update(_:)` の中で行う。** 呼び出し側に書かせると、
     /// レベルを変える経路が増えたときに書き忘れて「レベルアップ回数」が嘘になる。
+    private func hasLevelChanged(_ issue: Issue) throws -> Bool {
+        guard let stored = try fetch(id: issue.id) else {
+            return false
+        }
+        return stored.masteryLevel != issue.masteryLevel
+    }
+
     private func recordLevelChangeIfNeeded(for issue: Issue) throws {
         guard let stored = try fetch(id: issue.id) else {
             return
@@ -330,7 +343,7 @@ public final class IssueRepository {
 
     private func writeIssue(_ issue: Issue) throws {
         try db.exec(sql: """
-            UPDATE issue SET coach_words = ?, done_form = ?, coach_name = ?, discipline = ?, mastery_level = ?, tier = ?, sort_order = ?, impact = ?, cost = ?, status = ?, resurface_count = ?, last_focused_at = ?, updated_at = ?, archived_at = ?, level_up_declined_level = ?
+            UPDATE issue SET coach_words = ?, done_form = ?, coach_name = ?, discipline = ?, mastery_level = ?, tier = ?, sort_order = ?, impact = ?, cost = ?, status = ?, resurface_count = ?, last_focused_at = ?, updated_at = ?, archived_at = ?, level_up_declined_level = ?, step_down_declined_level = ?
             WHERE id = ?
             """,
             parameters: [
@@ -349,6 +362,7 @@ public final class IssueRepository {
                 .text(timestamps.text(from: now())),
                 dateValue(issue.archivedAt),
                 intValue(issue.levelUpDeclinedLevel),
+                intValue(issue.stepDownDeclinedLevel),
                 .long(issue.id),
             ])
     }
@@ -429,6 +443,7 @@ public final class IssueRepository {
                      resurfaceCount: Int(resurfaceCount),
                      lastFocusedAt: dateOrNil(row[12]),
                      levelUpDeclinedLevel: intOrNil(row[16]),
+                     stepDownDeclinedLevel: intOrNil(row[17]),
                      createdAt: createdAt,
                      updatedAt: updatedAt,
                      archivedAt: dateOrNil(row[15]))

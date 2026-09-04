@@ -89,6 +89,9 @@ public struct Issue: Hashable, Identifiable, Sendable {
     /// このレベルでのレベルアップ提案を断ったときの `masteryLevel`(§3.2 の「1 度だけ提案」)。
     /// レベルが変われば再び提案してよい。
     public var levelUpDeclinedLevel: Int?
+    /// 「1 つ戻す」提案を断ったレベル(§3.2)。**昇格の記録と分けてある** ——
+    /// 上げるのを断ったことが、戻す提案まで黙らせるのは誤り
+    public var stepDownDeclinedLevel: Int?
     public var createdAt: Date
     public var updatedAt: Date
     public var archivedAt: Date?
@@ -107,6 +110,7 @@ public struct Issue: Hashable, Identifiable, Sendable {
                 resurfaceCount: Int = 0,
                 lastFocusedAt: Date? = nil,
                 levelUpDeclinedLevel: Int? = nil,
+                stepDownDeclinedLevel: Int? = nil,
                 createdAt: Date,
                 updatedAt: Date,
                 archivedAt: Date? = nil) {
@@ -124,6 +128,7 @@ public struct Issue: Hashable, Identifiable, Sendable {
         self.resurfaceCount = resurfaceCount
         self.lastFocusedAt = lastFocusedAt
         self.levelUpDeclinedLevel = levelUpDeclinedLevel
+        self.stepDownDeclinedLevel = stepDownDeclinedLevel
         self.createdAt = createdAt
         self.updatedAt = updatedAt
         self.archivedAt = archivedAt

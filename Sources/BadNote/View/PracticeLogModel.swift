@@ -221,8 +221,7 @@ import SkipSQL
         do {
             var issue = proposal.issue
             issue.masteryLevel = proposal.suggestedLevel
-            // 上げたので、断った記録は用済み
-            issue.levelUpDeclinedLevel = nil
+            // 断った記録の消去は `IssueRepository.update` が行う(経路が増えても漏れない)
             _ = try IssueRepository(db: try context()).update(issue)
             removeProposal(proposal)
             errorText = nil

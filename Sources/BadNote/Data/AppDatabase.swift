@@ -120,6 +120,12 @@ public struct AppDatabase {
                 // `appMetaDefaults` にこのキーは無いので復活しない
                 try context.exec(sql: "DELETE FROM app_meta WHERE key = 'practice_reminder_weekdays'")
             },
+            { context in
+                // §3.2 「1 つ戻す」提案を断った記録。既存の課題は NULL(まだ断っていない)。
+                // `level_up_declined_level` と列を分けるのは、**上げるのを断ったことが
+                // 戻す提案まで黙らせるのは誤り**だから
+                try context.exec(sql: "ALTER TABLE issue ADD COLUMN step_down_declined_level INTEGER")
+            },
         ]
     }
 
