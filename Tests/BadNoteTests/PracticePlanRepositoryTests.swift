@@ -31,6 +31,16 @@ final class PracticePlanRepositoryTests: XCTestCase {
         return t0.addingTimeInterval(Double(days) * 86_400 - 3_600)
     }
 
+    /// 2026 年の指定した月日の 12 時。月境界のテスト用。
+    private func monthDay(_ month: Int, _ day: Int) -> Date {
+        var components = DateComponents()
+        components.year = 2026
+        components.month = month
+        components.day = day
+        components.hour = 12
+        return Calendar.current.date(from: components) ?? t0
+    }
+
     // MARK: - 追加
 
     func testAddStoresTheDay() throws {
@@ -217,6 +227,94 @@ final class PracticePlanRepositoryTests: XCTestCase {
         var stored: PracticePlanDay = try XCTUnwrap(try repo.fetchAll().first)
 
         XCTAssertEqual(stored.day, DayStamp().text(from: stored.date))
+    }
+
+    // MARK: - 期間で取り出す(§7.6 カレンダー)
+
+    /// カレンダーは**見えている 42 日分だけ**を読む。
+    /// `fetchAll` だと毎タップで全期間を読み、判定が View 層に落ちてテストできなくなる。
+    func testFetchRangeReturnsOnlyDaysInside() throws {
+        let db = try makeDatabase()
+        defer { try? db.close() }
+        let repo = makeRepository(db)
+        try repo.addAll([day(-1), day(1), day(3), day(5)])
+
+        let days = try repo.fetchRange(from: day(1), through: day(3))
+
+        XCTAssertEqual(2, days.count)
+    }
+
+    /// **両端を含む**(`PracticePlan.dates(from:through:)` と揃える)。
+    func testFetchRangeIncludesBothEnds() throws {
+        let db = try makeDatabase()
+        defer { try? db.close() }
+        let repo = makeRepository(db)
+        try repo.addAll([day(1), day(5)])
+
+        let days = try repo.fetchRange(from: day(1), through: day(5))
+
+        XCTAssertEqual(2, days.count)
+    }
+
+    func testFetchRangeIsOrderedOldestFirst() throws {
+        let db = try makeDatabase()
+        defer { try? db.close() }
+        let repo = makeRepository(db)
+        try repo.addAll([day(5), day(1), day(3)])
+
+        let days = try repo.fetchRange(from: day(0), through: day(9))
+
+        XCTAssertEqual(3, days.count)
+        XCTAssertTrue(days[0].day < days[1].day)
+        XCTAssertTrue(days[1].day < days[2].day)
+    }
+
+    /// 月の境界。9/1〜10/1 に 8/31 は入らず、9/30 と 10/1 は入る。
+    func testFetchRangeHandlesMonthBoundaries() throws {
+        let db = try makeDatabase()
+        defer { try? db.close() }
+        let repo = makeRepository(db)
+        try repo.addAll([monthDay(8, 31), monthDay(9, 30), monthDay(10, 1)])
+
+        let days = try repo.fetchRange(from: monthDay(9, 1), through: monthDay(10, 1))
+
+        XCTAssertEqual(2, days.count)
+    }
+
+    /// **時刻に左右されない**(暦日の文字列で比較しているため)。
+    func testFetchRangeIgnoresTheTimeOfDay() throws {
+        let db = try makeDatabase()
+        defer { try? db.close() }
+        let repo = makeRepository(db)
+        try repo.add(day(1))
+
+        // 朝 8 時から夜 23 時までを指定しても、同じ暦日の 1 件が返る
+        let days = try repo.fetchRange(from: day(1).addingTimeInterval(-18_000),
+                                       through: day(1).addingTimeInterval(39_600))
+
+        XCTAssertEqual(1, days.count)
+    }
+
+    func testFetchRangeReturnsNothingWhenEmpty() throws {
+        let db = try makeDatabase()
+        defer { try? db.close() }
+        let repo = makeRepository(db)
+
+        let days = try repo.fetchRange(from: day(1), through: day(5))
+
+        XCTAssertEqual(0, days.count)
+    }
+
+    /// 逆転した期間は空(呼び出し側で弾く前提だが、落ちないこと)。
+    func testFetchRangeReturnsNothingWhenReversed() throws {
+        let db = try makeDatabase()
+        defer { try? db.close() }
+        let repo = makeRepository(db)
+        try repo.addAll([day(1), day(3)])
+
+        let days = try repo.fetchRange(from: day(5), through: day(1))
+
+        XCTAssertEqual(0, days.count)
     }
 
     // MARK: - 保存形式

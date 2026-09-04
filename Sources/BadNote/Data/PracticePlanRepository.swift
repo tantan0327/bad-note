@@ -93,6 +93,20 @@ public final class PracticePlanRepository {
         return try decodeAll(rows)
     }
 
+    /// 期間内の予定日。**両端を含む。** 古い順。
+    ///
+    /// カレンダー(§7.6)が**見えている 42 日分だけ**を読むために使う。
+    /// 閉区間なのは `PracticePlan.dates(from:through:)` と揃えるため。
+    /// 比較は暦日の文字列なので、`asOf` と同じく時刻を持ち込みようがない。
+    public func fetchRange(from: Date, through: Date) throws -> [PracticePlanDay] {
+        let rows = try db.selectAll(sql: "SELECT plan_date, created_at FROM practice_plan WHERE plan_date >= ? AND plan_date <= ? ORDER BY plan_date",
+                                    parameters: [
+                                        SQLValue.text(days.text(from: from)),
+                                        SQLValue.text(days.text(from: through)),
+                                    ])
+        return try decodeAll(rows)
+    }
+
     private func decodeAll(_ rows: [[SQLValue]]) throws -> [PracticePlanDay] {
         var result: [PracticePlanDay] = []
         for row in rows {

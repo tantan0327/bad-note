@@ -2,7 +2,7 @@
 
 `spec.md` のうち、何ができていて何が残っているか。
 
-最終更新: 2026-08-31
+最終更新: 2026-09-04
 
 **アプリとして作るものは終わっている。** Phase 1 の機能・デザインの土台・磨き込み・
 UI/UX の改善はすべて完了し、実機で確認済み。テストで守れない長押しドラッグも
@@ -16,11 +16,15 @@ UI/UX の改善はすべて完了し、実機で確認済み。テストで守�
 「あと N回」が実際と合わないという報告を受け、練習予定日(§7.6)を登録して
 数える方式にした。`PracticeForecast` は役目を終えたので削除。
 
+2026-09-04 に**予定日の登録を月カレンダーに変えた**(§7.6)。
+1 日ずつ `DatePicker` で入れるのが面倒という報告。日をタップして入れる / 外す形にし、
+`DatePicker` は「別の月へ」に役割を変えて残した。
+
 ---
 
 ## 現状
 
-テスト 606 本(JUnit 607)。iOS / Android(Robolectric)の両方でパス。
+テスト 648 本(JUnit 649)。iOS / Android(Robolectric)の両方でパス。
 両プラットフォームでビルド成功。`skip verify`(ストアのメタデータ)も通る。
 
 **データ層** — Repository は 9 つ(`Issue` / `Practice` / `PracticePlan` / `Competition` /
@@ -47,6 +51,7 @@ UI/UX の改善はすべて完了し、実機で確認済み。テストで守�
 | `CompetitionFeasibility` | §7.5「この大会では厳しいかもしれません」の判定 |
 | `TierLayout` | §7.4 長押しドラッグの落下位置から層と位置を逆算 |
 | `NotificationPlan` | §8 いつ何を通知するか(1 日 1 通の絞り込み含む) |
+| `MonthGrid` | §7.6 月カレンダーの升目(常に 42 個、先頭は日曜) |
 
 **画面** — ホーム(§7.1)/ 練習ログ入力(§7.2)/ 課題一覧(§7.4 の一部)/ 課題の登録・編集(§3)/
 インボックス整理 / めざす姿の編集(§7.1、テキストのみ)/ 大会一覧・登録(§7.5 の一部)/
@@ -115,6 +120,10 @@ UI/UX の改善はすべて完了し、実機で確認済み。テストで守�
 
 - **年は今年と違うときだけ出す**(「2027年2月20日(土)」)。常に出すと冗長で、
   出さないと去年の記録が今年のものに見える。目標大会は半年先=翌年になることが多い
+- **例外 1: `DateText.month(_:)`(「2026年9月」)は年を常に出す** ——
+  カレンダーは何か月も先へ送れるので、年が無いと現在地が分からない
+- **例外 2: カレンダーのセルの数字は `Text(verbatim:)`** —— 書式を持たないので
+  `DateText` を通さない。ただし `accessibilityLabel` は `DateText.dayWithWeekday` を通す
 - **OS が描く日付ピッカーは対象外**(上のプラットフォーム差の線引きに従う)
 
 **面と余白**(新しい面はこの 3 種類から選ぶ):
@@ -125,6 +134,7 @@ UI/UX の改善はすべて完了し、実機で確認済み。テストで守�
 | バッジ(表示のみ) | `.caption` / 横 8 縦 4 / 角丸 4 / `Palette.surfaceRaised` | `View/Badge.swift`。押せる部品には使わない |
 | ピル(押せる絞り込み) | `.footnote` / 横 12 縦 8 / 角丸 16 | 課題一覧の絞り込み行のみ |
 | 行の習熟度 | ミニ 4 分割バー + `.caption` の段階名 | `View/MasteryIndicator.swift`。課題詳細のバーの縮小版 |
+| カレンダーのセル | `.footnote` / 高さ 40 / 角丸 8 / 幅は 7 等分 / 登録済みは `Palette.accent` 塗り | `View/PracticePlanView.swift`。列の間隔 2 は 4 の倍数の例外(幅が足りない) |
 
 - **動き** —— 選択・チェック・バーの伸縮 = `Motion.select`(easeOut 0.15)、
   行の移動・出入り・画面の切り替わり = `Motion.move`(easeInOut 0.3)。
@@ -426,6 +436,45 @@ Android の `Bundle.main` は「メインモジュールの `Resources/`」を�
 `NotificationPlan` の `plan` と `notification` に 1 つずつ)。1 つ 2 つ外しても
 テストは通る —— 3 か所すべて外して初めて落ちる。**層ではなく約束のほうを固定している**ので
 これで正しい(全部外れたら素の DB でも stale が 3 件漏れる)。
+
+### 格子(カレンダー)を組むときの制約(2026-09-04)
+
+**スキルの対応表より `.build/checkouts` のソースを信じること。**
+`~/.claude/skills/building-skip-ui/references/components.md` は `Grid` / `GridRow` を
+「Full」と書いているが、ピン留めしている skip-ui 1.59.2 では**丸ごとコメントアウト**されている。
+
+| 部品 | 可否 | 根拠 |
+|---|---|---|
+| `MultiDatePicker` | **不可** | `Controls/DatePicker.swift:334-563` が `/* */`。型が存在しない |
+| `Grid` / `GridRow` | **不可** | `Containers/Grid.swift:60-1216` が `/* */`。使えるのは `GridItem` 型だけ |
+| `LazyVGrid` を `List` の中に | **不可** | `Containers/LazyVGrid.swift:58-63` —— 自前でスクロールするので、親のスクロールを検知すると *nested scroll error を避けるため描画を中断*する |
+| `.listRowInsets(_:)` | **不可** | `Containers/List.swift:1369` が `@available(*, unavailable)` |
+
+- **格子は `VStack` + `HStack` で組む。** `List` の中に置くなら**格子全体を 1 行に収める** ——
+  週ごとに行を分けると区切り線が格子の中に入り、列もずれる
+- **行の左右 16dp は消せない**(`listRowInsets` が不可)。横に n 個並べる行は
+  「画面幅 − 32」で設計する。360dp 端末で 7 列なら 1 列 46dp しかない
+- **1 行に 7 個並べるセルは `.plain` + 自前の `.background` で組む。**
+  Material のボタンは `ButtonDefaults.ContentPadding`(左右 24dp)と `defaultMinSize`(58dp)を
+  持つので、`.bordered` 系だと 46dp の列に収まらない見込み(実測はしていない)。
+  `.plain` は Android では「ラベルに `clickable` を貼るだけ」なので、
+  **`.frame` がそのままタップ領域になる** —— カレンダーはこれで両 OS とも問題なく出た。
+  ボタンが 2〜3 個の行(月送りなど)は `.bordered` のままで入る
+- **等分するには `.frame(maxWidth: .infinity)` をボタンとラベルの両方に**付ける
+  (`ChipStyle.swift` の踏み跡)。`minWidth` で固定すると小さい端末ではみ出す
+- **押せないセルを `.disabled()` の Button にしない** —— VoiceOver が空振りの操作対象として
+  読み上げる。押せないなら `Text` にする
+
+### エミュレータの検証はビルドと並走させない(2026-09-04)
+
+カレンダーを実装した直後、アプリが `ANR in com.tange.badnote`
+(`Input dispatching timed out`)を起こした。コードを削って切り分けたが、
+**最終的にどの変更とも相関しなかった** —— 同じコードで 3 回続けて再現しない。
+ANR ログの `Load: 3.83 / 2.61 / 1.51` と、**先に Pixel Launcher 自身が ANR していた**ことから、
+`xcodebuild` / Gradle と並走してエミュレータが飽和していたのが実態。
+
+**`adb` で確認するときはビルドを止めてから。** ANR が出たら、まずコードを疑う前に
+`logcat -c` してビルドの無い状態で 3 回試すこと(切り分けに 30 分使った)。
 
 ### Skip の落とし穴(実際に踏んだもの)
 

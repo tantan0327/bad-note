@@ -28,6 +28,19 @@ public struct DateText {
         return string(date, asOf: asOf, base: "M月d日(E)")
     }
 
+    /// 「2026年9月」。**年は常に出す。**
+    ///
+    /// `day` / `dayWithWeekday` は「今年なら年を省く」規則だが、これはその例外 ——
+    /// カレンダー(§7.6)は何か月も先へ送れるので、年が無いと自分がどこにいるか
+    /// 分からなくなる。`asOf` を取らないのはそのため。
+    public static func month(_ date: Date) -> String {
+        // DateFormatter は Sendable ではないので使い捨てにする
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "ja_JP")
+        formatter.dateFormat = "yyyy年M月"
+        return formatter.string(from: date)
+    }
+
     private static func string(_ date: Date, asOf: Date, base: String) -> String {
         let calendar = Calendar.current
         let year = calendar.component(Calendar.Component.year, from: date)

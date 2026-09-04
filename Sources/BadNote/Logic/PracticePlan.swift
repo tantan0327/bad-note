@@ -53,6 +53,24 @@ public struct PracticePlan {
         return count
     }
 
+    /// その日の予定日。無ければ nil(§7.6 カレンダー)。
+    ///
+    /// **「登録済みか」と「どの行を消すか」を 1 本の関数から出す。**
+    /// 判定と削除を別々に書くと「印は付いているのに消えない」がありうる。
+    /// 返るのは保存文字列を持った行そのものなので、そのまま
+    /// `PracticePlanRepository.remove(_:)` に渡せる ——
+    /// あちらは `Date` から作り直さず**保存された文字列で消す**(タイムゾーン対策)。
+    public static func planned(_ planDays: [PracticePlanDay],
+                               on day: Date,
+                               calendar: Calendar = Calendar.current) -> PracticePlanDay? {
+        for planDay in planDays {
+            if calendar.isDate(planDay.date, inSameDayAs: day) {
+                return planDay
+            }
+        }
+        return nil
+    }
+
     /// 曜日と期間から個別の日付を作る。**両端を含む。**
     ///
     /// 数え上げが半開区間なのに対してこちらが閉区間なのは意図的 ——

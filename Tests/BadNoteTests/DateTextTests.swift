@@ -60,4 +60,24 @@ final class DateTextTests: XCTestCase {
         let text = DateText.day(date(2026, 1, 4), asOf: date(2026, 8, 25))
         XCTAssertEqual(text, "1月4日")
     }
+
+    // MARK: - 月の見出し(§7.6 カレンダー)
+
+    func testMonthShowsYearAndMonth() {
+        XCTAssertEqual(DateText.month(date(2026, 9, 7)), "2026年9月")
+    }
+
+    /// **今年でも年を出す。** `day` / `dayWithWeekday` との違い ——
+    /// カレンダーは何か月も先へ送れるので、年が無いと自分がどこにいるか分からなくなる。
+    func testMonthShowsTheYearEvenForThisYear() {
+        let thisYear = Calendar.current.component(Calendar.Component.year, from: Date())
+        let text = DateText.month(date(thisYear, 9, 7))
+
+        XCTAssertTrue(text.hasPrefix("\(thisYear)年"))
+    }
+
+    /// 月はゼロ詰めしない。期待値はリテラルで書く(開発メモ)。
+    func testMonthDoesNotPadTheMonth() {
+        XCTAssertEqual(DateText.month(date(2026, 1, 4)), "2026年1月")
+    }
 }

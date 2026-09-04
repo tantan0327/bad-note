@@ -124,6 +124,58 @@ final class PracticePlanTests: XCTestCase {
         XCTAssertEqual(2, count(planDays, to: date(2026, 10, 5, 9), asOf: date(2026, 9, 7, 13)))
     }
 
+    // MARK: - その日の予定日を引き当てる(§7.6 カレンダー)
+
+    private func planDay(_ date: Date) -> PracticePlanDay {
+        return PracticePlanDay(day: DayStamp().text(from: date), date: date)
+    }
+
+    private func planned(_ days: [PracticePlanDay], on day: Date) -> PracticePlanDay? {
+        return PracticePlan.planned(days, on: day, calendar: makeCalendar())
+    }
+
+    /// カレンダーのセルが登録済みかを見るのと、**どの行を消すか**を 1 本の関数から出す。
+    /// 別々にすると「印は付いているのに消えない」がありうる。
+    func testFindsThePlanOnTheSameDay() {
+        let days = [planDay(date(2026, 9, 8))]
+
+        XCTAssertNotNil(planned(days, on: date(2026, 9, 8)))
+    }
+
+    /// 時刻が違っても同じ暦日なら見つかる。
+    func testFindsThePlanRegardlessOfTime() {
+        let days = [planDay(date(2026, 9, 8, 8))]
+
+        XCTAssertNotNil(planned(days, on: date(2026, 9, 8, 23)))
+    }
+
+    func testReturnsNilForADayWithoutAPlan() {
+        let days = [planDay(date(2026, 9, 8))]
+
+        XCTAssertNil(planned(days, on: date(2026, 9, 9)))
+    }
+
+    func testReturnsNilWhenThereAreNoPlans() {
+        XCTAssertNil(planned([PracticePlanDay](), on: date(2026, 9, 8)))
+    }
+
+    /// **月をまたいだ隣接日を取り違えない**(8/31 と 9/1)。
+    func testDoesNotConfuseAdjacentDaysAcrossMonths() {
+        let days = [planDay(date(2026, 8, 31))]
+
+        XCTAssertNotNil(planned(days, on: date(2026, 8, 31)))
+        XCTAssertNil(planned(days, on: date(2026, 9, 1)))
+    }
+
+    /// 返るのは**保存文字列を持った行そのもの**。そのまま削除に渡せる。
+    func testReturnsTheStoredRowSoItCanBeDeleted() {
+        let target = planDay(date(2026, 9, 8))
+        let days = [planDay(date(2026, 9, 5)), target]
+
+        var found: PracticePlanDay = planned(days, on: date(2026, 9, 8)) ?? planDay(date(2000, 1, 1))
+        XCTAssertEqual(target.day, found.day)
+    }
+
     // MARK: - 曜日から日付を作る
 
     private func dates(_ weekdays: [Int], _ from: Date, _ through: Date) -> [Date] {
