@@ -66,6 +66,74 @@ public struct PracticeLogView: View {
 
     // MARK: - 保存後(無言で閉じない)
 
+    /// 本人に聞く 1 手(§3.2)。**事実 → 問い**の順に置く(判断の材料を先に見せる)。
+    ///
+    /// **戻す提案は失敗に見せない。** 上げるときだけ承認を `.borderedProminent` にし、
+    /// 戻すときは両方 `.bordered` —— アプリが下向きに背中を押さない。
+    /// 克服は問いではなく**扉**なので、断るボタンを持たせない。
+    @ViewBuilder private func offerCard(_ row: PracticeLogModel.OfferRow) -> some View {
+        Card {
+            VStack(alignment: .leading, spacing: 8) {
+                Text(row.issue.displayTitle)
+                    .font(.body)
+                Text(row.offer.reasonText)
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                Text(row.offer.promptText)
+                    .font(.body)
+                if row.offer.kind == MasteryOfferKind.overcome {
+                    NavigationLink {
+                        IssueDetailView(issueID: row.issue.id)
+                    } label: {
+                        Text(row.offer.acceptText)
+                            .font(.footnote)
+                    }
+                    .buttonStyle(.bordered)
+                    .accessibilityIdentifier("practice-offer-overcome-\(row.id)")
+                } else {
+                    HStack(spacing: 8) {
+                        acceptButton(row)
+                        Button {
+                            withAnimation(Motion.move) {
+                                model.decline(row)
+                            }
+                        } label: {
+                            Text("今はしない", bundle: .module)
+                        }
+                        .buttonStyle(.bordered)
+                        .accessibilityIdentifier("practice-offer-decline-\(row.id)")
+                    }
+                    .font(.footnote)
+                }
+            }
+        }
+    }
+
+    /// 上げるときだけ強いボタン。戻すときは枠だけ(§3.2 失敗に見せない)。
+    @ViewBuilder private func acceptButton(_ row: PracticeLogModel.OfferRow) -> some View {
+        if row.offer.kind == MasteryOfferKind.levelUp {
+            Button {
+                withAnimation(Motion.move) {
+                    model.accept(row)
+                }
+            } label: {
+                Text(row.offer.acceptText)
+            }
+            .buttonStyle(.borderedProminent)
+            .accessibilityIdentifier("practice-offer-accept-\(row.id)")
+        } else {
+            Button {
+                withAnimation(Motion.move) {
+                    model.accept(row)
+                }
+            } label: {
+                Text(row.offer.acceptText)
+            }
+            .buttonStyle(.bordered)
+            .accessibilityIdentifier("practice-offer-accept-\(row.id)")
+        }
+    }
+
     @ViewBuilder private var savedSection: some View {
         VStack(alignment: .leading, spacing: 24) {
             // §7.2 記録内容と今月の累計
@@ -85,36 +153,28 @@ public struct PracticeLogView: View {
                 .accessibilityIdentifier("practice-milestone-\(hours)")
             }
 
-            // §3.2 done が 3 回連続した課題のレベルアップ提案
-            ForEach(model.levelUpProposals) { proposal in
+            // §7.2 手応えを付けた課題の現在地。**提案が出た課題はここに出さない**
+            // (提案カードが課題名と現在地を既に語っている)
+            if !model.standings.isEmpty {
                 Card {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text(proposal.issue.displayTitle)
-                            .font(.body)
-                        Text(verbatim: "「\(proposal.suggestedLevel.displayName)」に上げますか?")
-                            .font(.footnote)
-                            .foregroundStyle(.secondary)
-                        HStack(spacing: 8) {
-                            Button {
-                                withAnimation(Motion.move) {
-                                    model.acceptLevelUp(proposal)
-                                }
-                            } label: {
-                                Text("上げる", bundle: .module)
+                    VStack(alignment: .leading, spacing: 12) {
+                        ForEach(model.standings) { row in
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(row.issue.displayTitle)
+                                    .font(.footnote)
+                                Text(row.standing.displayName)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
                             }
-                            .buttonStyle(.borderedProminent)
-                            Button {
-                                withAnimation(Motion.move) {
-                                    model.declineLevelUp(proposal)
-                                }
-                            } label: {
-                                Text("今はしない", bundle: .module)
-                            }
-                            .buttonStyle(.bordered)
+                            .accessibilityIdentifier("practice-standing-\(row.id)")
                         }
-                        .font(.footnote)
                     }
                 }
+            }
+
+            // §3.2 本人に聞く 1 手(上げる / 戻す / 克服)
+            ForEach(model.offers) { row in
+                offerCard(row)
             }
 
             // §5.3 未整理の促し。ここでだけ聞く(常設のバッジにはしない)

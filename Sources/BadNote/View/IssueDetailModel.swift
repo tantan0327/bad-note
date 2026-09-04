@@ -17,6 +17,9 @@ import SkipSQL
     public private(set) var focusCount = 0
     /// 手応えの履歴。**古い順**(進み方をそのまま左から並べる)。nil は未入力。
     public private(set) var progress: [FocusResult?] = []
+    /// 今どこにいるか(§3.2)。**提案の判定と同じ値から作る**ので、
+    /// 「進んでいます」と出ているのに提案が出ない、が起きない
+    public private(set) var standing: MasteryStanding? = nil
 
     public var errorText: String? = nil
     /// Lv.4 未満で「克服した」を押したときの理由(§7.3)
@@ -54,6 +57,9 @@ import SkipSQL
             focusCount = try issues.focusSpanCount(issueId: issueID)
             // 新しい順で返るので、時系列に並べ直す
             progress = IssueDetailModel.oldestFirst(try practices.fetchFocusResults(issueId: issueID))
+            // 現在地は**いまの段になってから**の手応えで決める(全履歴だと段を上げても変わらない)
+            standing = MasteryStanding.of(recentResults: try practices.fetchFocusResultsSinceLevelChange(issueId: issueID),
+                                          issue: loaded)
             errorText = nil
         } catch {
             errorText = "読み込みに失敗しました: \(error)"

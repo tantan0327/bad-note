@@ -41,10 +41,21 @@ import SkipSQL
     /// 入力中の 1 行
     public var coachWordsDraft = ""
 
-    /// レベルアップの提案(§3.2)。承認するのはユーザー。
-    public struct LevelUpProposal: Identifiable, Hashable {
+    /// 本人に聞く 1 手(§3.2)。上げる / 戻す / 克服の 3 種を 1 本にまとめてある ——
+    /// 判定を分けると「両方立つ」バグを自分で作ることになる。
+    public struct OfferRow: Identifiable, Hashable {
         public var issue: Issue
-        public var suggestedLevel: MasteryLevel
+        public var offer: MasteryOffer
+
+        public var id: Int64 {
+            return issue.id
+        }
+    }
+
+    /// 提案は出ないが「今どこにいるか」を伝える課題(§7.2)。
+    public struct StandingRow: Identifiable, Hashable {
+        public var issue: Issue
+        public var standing: MasteryStanding
 
         public var id: Int64 {
             return issue.id
@@ -57,7 +68,10 @@ import SkipSQL
     public var summaryText = ""
     public var isSaved = false
     /// 保存直後にだけ出す提案(§3.2)。承認 / 見送りで消える。
-    public private(set) var levelUpProposals: [LevelUpProposal] = []
+    public private(set) var offers: [OfferRow] = []
+    /// 提案が出なかった課題の現在地(§7.2)。**提案が出た課題はここに出さない** ——
+    /// 提案カードが課題名と現在地を既に語っている
+    public private(set) var standings: [StandingRow] = []
     /// 未整理の件数(§5.3)。**保存直後にだけ見せる。**常設のバッジにはしない。
     public private(set) var unorganizedCount = 0
     /// この保存で越えた節目(時間)。保存直後にだけ祝う(§10.5。ふつうは空)。
@@ -189,7 +203,7 @@ import SkipSQL
             let lifetime = try stats.lifetimeMinutes()
             reachedMilestones = Milestone.crossedHours(fromMinutes: lifetime - practice.minutes,
                                                        toMinutes: lifetime)
-            levelUpProposals = try collectLevelUpProposals(practices: practices, issues: issues)
+            try collectStandings(practices: practices, issues: issues)
             unorganizedCount = try issues.fetch(statuses: [.inbox]).count
             errorText = nil
             isSaved = true
@@ -198,59 +212,77 @@ import SkipSQL
         }
     }
 
-    /// 今回の重点のうち、done が 3 回連続した課題を拾う(§3.2)。
+    /// 今回**手応えを付けた**課題の現在地を集める(§7.2)。
     ///
-    /// 提案するだけで、レベルは自動で上げない。
-    private func collectLevelUpProposals(practices: PracticeRepository,
-                                         issues: IssueRepository) throws -> [LevelUpProposal] {
-        var proposals: [LevelUpProposal] = []
+    /// **手応えを選んだ課題だけを見る。** それまで重点 3 件を無条件に回していたので、
+    /// 1 つも選ばずに保存しても提案が湧いていた。提案は「いま押したことの結果」であるべき。
+    ///
+    /// 履歴は `fetchFocusResultsSinceLevelChange`(**いまの段になってから**)を使う。
+    /// 全履歴を渡すと、上げた直後に同じ履歴でもう一度提案が出る。
+    private func collectStandings(practices: PracticeRepository, issues: IssueRepository) throws {
+        var collectedOffers: [OfferRow] = []
+        var collectedStandings: [StandingRow] = []
         for input in focusInputs {
+            if input.result == nil {
+                continue
+            }
             guard let issue = try issues.fetch(id: input.issue.id) else {
                 continue
             }
-            let history = try practices.fetchFocusResults(issueId: issue.id)
-            if let suggested = LevelUpSuggestion.suggestedLevel(recentResults: history, for: issue) {
-                proposals.append(LevelUpProposal(issue: issue, suggestedLevel: suggested))
+            let history = try practices.fetchFocusResultsSinceLevelChange(issueId: issue.id)
+            let standing = MasteryStanding.of(recentResults: history, issue: issue)
+            if let offer = standing.offer {
+                collectedOffers.append(OfferRow(issue: issue, offer: offer))
+            } else {
+                collectedStandings.append(StandingRow(issue: issue, standing: standing))
             }
         }
-        return proposals
+        offers = collectedOffers
+        standings = collectedStandings
     }
 
-    /// 提案を受け入れてレベルを上げる。
-    public func acceptLevelUp(_ proposal: LevelUpProposal) {
+    /// 提案を受け入れる(上げる / 戻す)。**克服はここを通らない** —— あちらは扉であって問いではない。
+    public func accept(_ row: OfferRow) {
         do {
-            var issue = proposal.issue
-            issue.masteryLevel = proposal.suggestedLevel
+            var issue = row.issue
+            issue.masteryLevel = row.offer.level
             // 断った記録の消去は `IssueRepository.update` が行う(経路が増えても漏れない)
             _ = try IssueRepository(db: try context()).update(issue)
-            removeProposal(proposal)
+            removeOffer(row)
             errorText = nil
         } catch {
             errorText = "レベルの更新に失敗しました: \(error)"
         }
     }
 
-    /// 今は上げない。同じレベルでは二度と聞かない(§3.2 1 度だけ提案する)。
-    public func declineLevelUp(_ proposal: LevelUpProposal) {
+    /// 今はしない。同じ段では二度と聞かない(§3.2 1 度だけ提案する)。
+    ///
+    /// **上げると戻すで列を分けてある** —— 上げるのを断ったことが、
+    /// 戻す提案まで黙らせるのは誤り。
+    public func decline(_ row: OfferRow) {
         do {
-            var issue = proposal.issue
-            issue.levelUpDeclinedLevel = issue.masteryLevel.rawValue
+            var issue = row.issue
+            if row.offer.kind == MasteryOfferKind.levelUp {
+                issue.levelUpDeclinedLevel = issue.masteryLevel.rawValue
+            } else {
+                issue.stepDownDeclinedLevel = issue.masteryLevel.rawValue
+            }
             _ = try IssueRepository(db: try context()).update(issue)
-            removeProposal(proposal)
+            removeOffer(row)
             errorText = nil
         } catch {
             errorText = "更新に失敗しました: \(error)"
         }
     }
 
-    private func removeProposal(_ proposal: LevelUpProposal) {
-        var remaining: [LevelUpProposal] = []
-        for existing in levelUpProposals {
-            if existing.id != proposal.id {
+    private func removeOffer(_ row: OfferRow) {
+        var remaining: [OfferRow] = []
+        for existing in offers {
+            if existing.id != row.id {
                 remaining.append(existing)
             }
         }
-        levelUpProposals = remaining
+        offers = remaining
     }
 
     /// 「90 分を記録しました / 今月の累計 14 時間」(§7.2)。

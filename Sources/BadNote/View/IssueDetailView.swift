@@ -87,6 +87,14 @@ public struct IssueDetailView: View {
             .accessibilityValue(Text(verbatim: "\(issue.masteryLevel.rawValue)/4 \(issue.masteryLevel.displayName)"))
             Text(issue.masteryLevel.displayName)
                 .font(.body)
+            // §3.2 いまどこにいるか。**連続回数は出さない**(§5.3)——
+            // 数字を出すと途切れた瞬間に 0 に落ち、実装しないと決めたストリークになる
+            if let standing = model.standing, issue.status != IssueStatus.archived {
+                Text(standing.displayName)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .accessibilityIdentifier("issue-detail-standing")
+            }
             // 上げる / 下げるはバーのすぐ下に並べる(文言が現在地に依存するので離さない)。
             // **どちらも控えめにする** —— §3.2 は「自動で上げない。done 3 回で 1 度だけ提案する」
             // 設計なので、手動昇格を画面で最も目立つボタンにすると提案の意味が薄れる(1.5)
@@ -206,6 +214,9 @@ public struct IssueDetailView: View {
                 // 点の列は VoiceOver に伝わらないので、まとめて読み上げる(6.1)
                 .accessibilityLabel(Text("進み方", bundle: .module))
                 .accessibilityValue(Text(verbatim: progressSummary()))
+                // 目で見る人にも意味が分かるように(読み上げには要約があるので隠す)
+                progressLegend
+                    .accessibilityHidden(true)
             }
         }
     }
@@ -346,17 +357,9 @@ public struct IssueDetailView: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
             } else {
-                Button {
-                    withAnimation(Motion.move) {
-                        model.overcome()
-                    }
-                } label: {
-                    Text("克服した", bundle: .module)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 4)
-                }
-                .buttonStyle(.bordered)
-                .accessibilityIdentifier("issue-detail-overcome")
+                // §7.3 **Lv.4 で できた が続いているときだけ強いボタンにする。**
+                // それまで Lv.4 に達しても気づく手がかりが無く、克服まで届かなかった
+                overcomeButton
                 if let rejection = model.overcomeRejection {
                     // §7.3 Lv.3 以下で押したら理由を出す
                     Text(rejection)
@@ -372,5 +375,59 @@ public struct IssueDetailView: View {
             }
         }
         .padding(.top, 8)
+    }
+
+    /// 克服の導線。**梯子の最後**(§7.3)。
+    ///
+    /// 手応えが「できた」で続いていて Lv.4 なら強いボタンにする ——
+    /// 評価 → 昇格 → 克服 の道筋が、ここで最後までつながる。
+    @ViewBuilder private var overcomeButton: some View {
+        if model.standing?.offer?.kind == MasteryOfferKind.overcome {
+            Button {
+                withAnimation(Motion.move) {
+                    model.overcome()
+                }
+            } label: {
+                Text("克服した", bundle: .module)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 4)
+            }
+            .buttonStyle(.borderedProminent)
+            .accessibilityIdentifier("issue-detail-overcome")
+        } else {
+            Button {
+                withAnimation(Motion.move) {
+                    model.overcome()
+                }
+            } label: {
+                Text("克服した", bundle: .module)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 4)
+            }
+            .buttonStyle(.bordered)
+            .accessibilityIdentifier("issue-detail-overcome")
+        }
+    }
+
+    /// 進み方の点の凡例(§7.3)。
+    ///
+    /// それまでマークの意味は VoiceOver にしか無く、目で見る人には
+    /// **説明のない図形が並んでいるだけ**だった。
+    @ViewBuilder private var progressLegend: some View {
+        HStack(spacing: 12) {
+            legendItem(progressMark(FocusResult.done), "できた")
+            legendItem(progressMark(FocusResult.closer), "近づいた")
+            legendItem(progressMark(FocusResult.next), "次にやる")
+            legendItem(progressMark(nil), "記録なし")
+        }
+        .font(.caption)
+        .foregroundStyle(.secondary)
+    }
+
+    @ViewBuilder private func legendItem(_ mark: some View, _ label: String) -> some View {
+        HStack(spacing: 4) {
+            mark
+            Text(verbatim: label)
+        }
     }
 }

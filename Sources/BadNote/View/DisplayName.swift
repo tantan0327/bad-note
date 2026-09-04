@@ -109,6 +109,58 @@ public struct ScaleLabel {
 
 }
 
+extension MasteryStanding {
+    /// 「いまどこにいるか」の 1 文(§3.2)。
+    ///
+    /// **連続回数は出さない**(§5.3)。数字を出すと、途切れた瞬間に 0 に落ちる体験になり、
+    /// 実装しないと決めたストリークと同じものになる。出すのは向きだけで、
+    /// 「進んでいます」→「の段階です」という語の変化にとどめる。
+    public var displayName: String {
+        if trend.direction == MasteryDirection.forward {
+            guard let next = MasteryLevel(rawValue: level.rawValue + 1) else {
+                return "試合で出せています"
+            }
+            return "「\(next.displayName)」へ進んでいます"
+        }
+        if trend.direction == MasteryDirection.restart {
+            return "「\(level.displayName)」で仕切り直しています"
+        }
+        return "「\(level.displayName)」の段階です"
+    }
+}
+
+extension MasteryOffer {
+    /// 添える事実。**問いの前に置く** —— 判断の材料を先に見せる(§4.3 と同じ形)。
+    public var reasonText: String {
+        switch kind {
+        case .levelUp: return "「できた」が続いています"
+        case .overcome: return "「できた」が続いています"
+        case .stepDown: return "「次にやる」が続いています"
+        }
+    }
+
+    /// 問いの文。
+    ///
+    /// 戻す側は「下げる」「降格」ではなく**「戻す」** ——
+    /// 再浮上の「レベルは 1 つ下から再開します」と同じ語感に寄せ、失敗と読ませない。
+    public var promptText: String {
+        switch kind {
+        case .levelUp: return "「\(level.displayName)」に上げますか?"
+        case .stepDown: return "「\(level.displayName)」に戻しますか?"
+        case .overcome: return "試合で出せています"
+        }
+    }
+
+    /// 承認ボタンの文言。
+    public var acceptText: String {
+        switch kind {
+        case .levelUp: return "上げる"
+        case .stepDown: return "戻す"
+        case .overcome: return "課題を見る"
+        }
+    }
+}
+
 /// 曜日の 1 文字。**0 = 日曜 ... 6 = 土曜**
 /// (`reshuffle_weekday` と練習予定日の生成で使う番号体系)。
 ///
