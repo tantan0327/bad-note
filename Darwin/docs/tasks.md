@@ -49,12 +49,17 @@ Android のビルドとテストは引き続き通し続ける(両 OS で動く�
 
 ### 1.3 iOS 側の申告
 
-- [ ] **`PrivacyInfo.xcprivacy` を追加する** —— `ContentView.swift:14` の `@AppStorage("tab")` は
-      `UserDefaults` なので Apple の「理由の申告が要る API」に当たる。
-      無いとアップロード後に ITMS-91053 の警告メールが来て、審査で弾かれる。
-      `Darwin/` に置いて Xcode のターゲットに含め、
-      `NSPrivacyAccessedAPICategoryUserDefaults` / 理由 `CA92.1`、
-      `NSPrivacyTracking = false`、`NSPrivacyCollectedDataTypes = []` を書く
+- [x] **`PrivacyInfo.xcprivacy` を追加した**(2026-10-11)—— `Darwin/PrivacyInfo.xcprivacy`。
+      Xcode のターゲット(App グループ + Resources フェーズ)に登録済みで、
+      `.app` の直下に入ることをビルドで確認した。
+      申告しているのは **`UserDefaults` 1 つだけ** —— `ContentView.swift` の
+      `@AppStorage("tab")`(最後に開いたタブ)。理由は `CA92.1`(同じアプリ自身の情報)。
+      トラッキング無し・収集データ無しも明記。
+      **ファイルのタイムスタンプ / 起動時間 / 空き容量 / キーボードの API は使っていない** ——
+      `SkipFoundation` の `FileAttributeKey` は `#if SKIP` で Android 側だけなので
+      iOS のバイナリには入らない(確認済み)。`FileManager.createDirectory` は申告対象外。
+      **追加する API が増えたらここも直す**(アップロード後に ITMS-91053 の
+      メールが来たら、そこに書かれたカテゴリを足す)
 - [ ] App Store Connect のプライバシー質問は「データを収集しない」で回答
 - [ ] 年齢レーティングの質問票(すべて「なし」で 4+)
 - [ ] `ITSAppUsesNonExemptEncryption = false` は `Info.plist` に済み(確認のみ)
@@ -80,6 +85,15 @@ fastlane のテキストは済み。**画像が 1 枚も無い。**
 
 - [ ] 出荷前の順序を通す: `swift test` → `skip verify` → `skip meta index` → `skip export -c release`
       (`skip meta index` は `APPLE_APP_STORE_ID` が要るので §1.6 の登録を先に)
+- [ ] **`.app` の中に空の `.lproj` が残っていないか見る**(2026-10-11 に気づいた)——
+      Debug ビルドの `BadNote.app` 直下と `bad-note_BadNote.bundle` の中に
+      `ja` / `es` / `fr` / `zh-Hans` の `.lproj` が**中身ゼロで**できていた。
+      文字列カタログの翻訳は 0 件(キーがそのまま日本語)なので中身が無いのは当然だが、
+      **App Store は `.lproj` の有無で「対応言語」を決める** ので、
+      このままだとスペイン語・フランス語・中国語に対応していると表示される。
+      `project.pbxproj` の `knownRegions` は `en / Base / es / ja / zh-Hans`(`fr` は別口)。
+      まず `rm -rf` した DerivedData できれいにビルドして**再現するか確かめる**
+      (古いビルドの残骸かもしれない)。再現するなら `knownRegions` を `en / Base / ja` に絞る
 - [ ] Xcode の Archive → App Store Connect へアップロード(署名は自動管理のまま)
 - [ ] TestFlight の内部テストで**実機**に入れて一通り触る —— 通知の許可ダイアログ /
       新規インストールでの DB 作成 / 週次評価の初回 / 長押しドラッグ(`adb` でも

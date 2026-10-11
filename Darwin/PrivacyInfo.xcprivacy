@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- トラッキングはしない。広告・解析・クラッシュレポートの SDK を 1 つも入れていない -->
+	<key>NSPrivacyTracking</key>
+	<false/>
+	<key>NSPrivacyTrackingDomains</key>
+	<array/>
+	<!-- 収集するデータは無い。通信もせず、すべて端末内の SQLite に保存する(docs/privacy.md) -->
+	<key>NSPrivacyCollectedDataTypes</key>
+	<array/>
+	<!-- 理由の申告が要る API。
+	     UserDefaults だけ —— ContentView の @AppStorage("tab") が最後に開いたタブを覚える。
+	     CA92.1 = 同じアプリ自身の情報の読み書き(App Group も端末間同期も使わない)。
+	     ファイルのタイムスタンプ / 起動時間 / 空き容量 / キーボードの API は使っていない
+	     (SkipFoundation の FileAttributeKey は #if SKIP で Android 側だけ。
+	     iOS のバイナリには入らない。2026-10-11 確認)。 -->
+	<key>NSPrivacyAccessedAPITypes</key>
+	<array>
+		<dict>
+			<key>NSPrivacyAccessedAPIType</key>
+			<string>NSPrivacyAccessedAPICategoryUserDefaults</string>
+			<key>NSPrivacyAccessedAPITypeReasons</key>
+			<array>
+				<string>CA92.1</string>
+			</array>
+		</dict>
+	</array>
+</dict>
+</plist>

@@ -25,6 +25,21 @@ JAVA_HOME=... xcodebuild -workspace Project.xcworkspace -scheme "BadNote App" \
   -destination "generic/platform=iOS Simulator" -configuration Debug build
 ```
 
+### `xcodebuild` は最後に APK を**インストール**しようとする
+
+「Run skip gradle」フェーズが走らせるのは `gradle -p ../Android launchDebug` で、
+**エミュレータが無いと `installDebug` で落ちる**(`No connected devices!`)。
+
+```
+> Task :app:packageDebug          ← ここまで成功していれば両 OS ともコンパイルは通っている
+> Task :app:installDebug FAILED
+```
+
+**`** BUILD FAILED **` でも、iOS の `.app` と Android の APK は出来ている。**
+`:app:packageDebug` まで成功しているかをログで見てから、コードを疑うこと。
+iOS 側の成果物だけ確かめたいときは、エミュレータを起動せずにビルドして
+`DerivedData/.../Build/Products/Debug-iphonesimulator/BadNote.app` を直接見る。
+
 ### Android エミュレータの起動
 
 **SDK が 2 つある。** arm64 のシステムイメージは homebrew 側(`ANDROID_HOME` が指す場所)にあり、
@@ -249,6 +264,30 @@ ANR ログの `Load: 3.83 / 2.61 / 1.51` と、**先に Pixel Launcher 自身が
 
 **`adb` で確認するときはビルドを止めてから。** ANR が出たら、まずコードを疑う前に
 `logcat -c` してビルドの無い状態で 3 回試すこと(切り分けに 30 分使った)。
+
+### 理由の申告が要る API を数える(2026-10-11)
+
+`PrivacyInfo.xcprivacy` に何を書くかは、**推測せずバイナリと `#if` を見て決める**。
+
+- **アプリのコードを grep する** —— `UserDefaults` / `@AppStorage` /
+  `fileModificationDate` / `creationDate` / `systemUptime` / `mach_absolute_time` /
+  `volumeAvailableCapacity` / `activeInputModes`。
+  `FileManager.createDirectory` は**対象外**(対象はタイムスタンプを読む API だけ)
+- **依存ライブラリは `#if SKIP` を見る** —— `skip-foundation` の `FileManager.swift` は
+  丸ごと `#if SKIP` なので **Android 側にしか入らない**。
+  `FileAttributeKey.modificationDate` が grep に出ても iOS のバイナリには無い
+- **決め手はビルドしたバイナリ** —— `strings .build/debug/libBadNote.dylib | grep NSUserDefaults` 。
+  Apple が見るのもバイナリのシンボルなので、ここに出なければ申告は要らない
+
+いま申告しているのは `NSPrivacyAccessedAPICategoryUserDefaults` / `CA92.1` の 1 つだけ。
+**アップロードして ITMS-91053 のメールが来たら、そこに書かれたカテゴリを足す** ——
+事前に全部盛りにしない(使っていない API を申告するのも誤り)。
+
+`.app` に入ったかの確認:
+
+```
+find Darwin/build -name "PrivacyInfo.xcprivacy" -path "*.app/*"
+```
 
 ### Skip の落とし穴(実際に踏んだもの)
 
