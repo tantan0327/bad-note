@@ -31,6 +31,19 @@ extension FocusResult {
     }
 }
 
+extension IssueSortOrder {
+    /// §3.3 課題一覧を眺める順。**向きを名前に入れる** ——
+    /// 「影響度」だけだと大きい順か小さい順か分からない。
+    public var displayName: String {
+        switch self {
+        case .manual: return "手動の並び"
+        case .idle: return "放置が長い順"
+        case .impact: return "影響度が大きい順"
+        case .mastery: return "習熟度が高い順"
+        }
+    }
+}
+
 extension Discipline {
     public var displayName: String {
         switch self {

@@ -22,6 +22,11 @@ import SkipSQL
     /// 絞り込みに出すタグの候補
     public private(set) var availableTags: [Tag] = []
 
+    /// §3.3 眺める順。**表示の切り替えだけで `sort_order` は書き換えない。**
+    /// 絞り込みと同じく**持ち越さない** —— 起動のたびに手動へ戻る。
+    /// 並びが変わったまま次に開くと、長押しドラッグが効かない理由が分からなくなる。
+    public var sortOrder: IssueSortOrder = IssueSortOrder.manual
+
     /// 3 層を見出し込みで畳んだ並び(§7.4 長押しドラッグ用)。
     public private(set) var rows: [TierRow] = []
 
@@ -62,16 +67,26 @@ import SkipSQL
         return FocusBoard.focusCapacity
     }
 
+    /// 長押しドラッグを使えるか。手動の並びのときだけ。
+    public var allowsDrag: Bool {
+        return sortOrder.allowsDrag
+    }
+
     public func load() {
         do {
             let db = try context()
             let issues = IssueRepository(db: db)
-            focus = try issues.fetch(tier: .focus, statuses: statuses, tagId: tagId,
-                                     discipline: discipline, masteryLevel: masteryLevel)
-            next = try issues.fetch(tier: .next, statuses: statuses, tagId: tagId,
-                                    discipline: discipline, masteryLevel: masteryLevel)
-            someday = try issues.fetch(tier: .someday, statuses: statuses, tagId: tagId,
-                                       discipline: discipline, masteryLevel: masteryLevel)
+            // 並べ替えは**読んだ後**に表示だけ入れ替える(§3.3)。
+            // SQL の ORDER BY を変えると、保存順と見えている順の区別が付かなくなる
+            let fetchedFocus = try issues.fetch(tier: .focus, statuses: statuses, tagId: tagId,
+                                                discipline: discipline, masteryLevel: masteryLevel)
+            let fetchedNext = try issues.fetch(tier: .next, statuses: statuses, tagId: tagId,
+                                               discipline: discipline, masteryLevel: masteryLevel)
+            let fetchedSomeday = try issues.fetch(tier: .someday, statuses: statuses, tagId: tagId,
+                                                  discipline: discipline, masteryLevel: masteryLevel)
+            focus = IssueSort.sorted(fetchedFocus, by: sortOrder)
+            next = IssueSort.sorted(fetchedNext, by: sortOrder)
+            someday = IssueSort.sorted(fetchedSomeday, by: sortOrder)
             availableTags = try TagRepository(db: db).fetchAll()
             rows = TierLayout.rows(focus: focus, next: next, someday: someday)
             unorganized = try issues.fetch(statuses: [IssueStatus.inbox])
@@ -106,6 +121,22 @@ import SkipSQL
     public func selectTag(_ value: Int64?) {
         tagId = value
         load()
+    }
+
+    /// 眺める順を変える。**課題は 1 件も書き換わらない。**
+    /// `setSortOrder` にすると Kotlin で `var sortOrder` の setter と衝突する。
+    public func selectSortOrder(_ value: IssueSortOrder) {
+        sortOrder = value
+        load()
+    }
+
+    /// 並び替えのラベル(表示用)。**手動は既定なので名前を出さない**
+    /// (絞り込みと同じ出し分け)。
+    public func selectedSortName() -> String? {
+        if sortOrder == IssueSortOrder.manual {
+            return nil
+        }
+        return sortOrder.displayName
     }
 
     /// 絞り込み中のタグ名(表示用)。

@@ -66,9 +66,16 @@ public struct IssueListView: View {
             // **並べる行があるときだけ** —— 試せない操作の説明は常設しない
             if model.hasTieredIssues {
                 Section {
-                    Text("行は長押しで並び替え、左右スワイプで層の上げ下げができます", bundle: .module)
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
+                    // 効かない操作を案内し続けない。並び替え中は長押しが止まっている
+                    if model.allowsDrag {
+                        Text("行は長押しで並び替え、左右スワイプで層の上げ下げができます", bundle: .module)
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    } else {
+                        Text("この並びでは長押しの並び替えはできません。左右スワイプの上げ下げは使えます", bundle: .module)
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
                 }
             }
 
@@ -167,10 +174,26 @@ public struct IssueListView: View {
         }
     }
 
-    /// §7.4 上部に 1 行。ショットタグ / 習熟度 / 種目。**既定はフィルタなし。**
+    /// §7.4 上部に 1 行。並び替え / 種目 / 習熟度 / ショットタグ。**既定はフィルタなし。**
+    ///
+    /// **並び替えを先頭に置く。** 課題が増えたときに最初に手が伸びるのがここで、
+    /// タグのメニューは候補が無いと消えるため、位置が動かない左端に置く。
     @ViewBuilder private var filterRow: some View {
         ScrollView(.horizontal) {
             HStack(spacing: 8) {
+                Menu {
+                    ForEach(IssueSortOrder.allCases, id: \.rawValue) { value in
+                        Button {
+                            model.selectSortOrder(value)
+                        } label: {
+                            Text(value.displayName)
+                        }
+                    }
+                } label: {
+                    filterLabel(model.selectedSortName(), placeholder: Text("並び替え", bundle: .module))
+                }
+                .accessibilityIdentifier("issues-sort")
+
                 Menu {
                     Button {
                         model.selectDiscipline(nil)
@@ -333,6 +356,9 @@ public struct IssueListView: View {
             }
         }
         .accessibilityIdentifier("issue-row-\(issue.id)")
+        // 見えている順と保存順が違うときは落とす先が読めない(§3.3)。
+        // スワイプの上げ下げは位置に依存しないので、そのまま使える
+        .moveDisabled(!model.allowsDrag)
         .swipeActions(edge: .leading) {
             if issue.tier.higher != nil {
                 Button {

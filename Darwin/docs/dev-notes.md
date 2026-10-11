@@ -296,6 +296,12 @@ find Darwin/build -name "PrivacyInfo.xcprivacy" -path "*.app/*"
   **書き戻して一致するかで確かめる**(`formatter.string(from: date) != text` なら nil)。
   ゼロ埋めしていない `2026-3-1` も同時に弾ける
 
+- **`Double` に `Int` リテラルを入れられない**(2026-10-11 に踏んだ)——
+  `let day: Double = 60 * 60 * 24` も `createdDaysAgo: Double = 0` も、
+  `Double` の引数に `3` を渡すのも、Kotlin では
+  `Initializer type mismatch: expected 'Double', actual 'Int'` で落ちる。
+  **Swift 側のビルドと `swift test --filter` では気づけない** —— フルの `swift test` で初めて出る。
+  `60.0` / `0.0` / `3.0` と小数で書く。`Date(timeIntervalSince1970:)` の引数も同じ
 - **`sorted()` / `map` / `filter` の戻り値は変更不可** — `insert` / `append` すると Android だけ
   実行時に `UnsupportedOperationException`。新しい配列に写してから触る
 - **`Int64` と `Int` リテラルの `==` / `!=` は Kotlin で通らない** — 比較演算子(`<` `>`)は通るので
