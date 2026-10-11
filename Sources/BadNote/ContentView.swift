@@ -25,6 +25,10 @@ struct ContentView: View {
                 } icon: {
                     Image("home", bundle: .module)
                 }
+                // Maestro がタブを掴むための識別子。**iOS にしか効かない** ——
+                // SkipUI は `NavigationBarItem` に独自の modifier を渡すので、
+                // Android のタブバーにはここの testTag が届かない(`dev-notes.md`)
+                .accessibilityIdentifier("tab-home")
             }
             .tag(ContentTab.home)
 
@@ -37,6 +41,10 @@ struct ContentView: View {
                 } icon: {
                     Image("fitness_center", bundle: .module)
                 }
+                // Maestro がタブを掴むための識別子。**iOS にしか効かない** ——
+                // SkipUI は `NavigationBarItem` に独自の modifier を渡すので、
+                // Android のタブバーにはここの testTag が届かない(`dev-notes.md`)
+                .accessibilityIdentifier("tab-training")
             }
             .tag(ContentTab.training)
 
@@ -49,6 +57,10 @@ struct ContentView: View {
                 } icon: {
                     Image("checklist", bundle: .module)
                 }
+                // Maestro がタブを掴むための識別子。**iOS にしか効かない** ——
+                // SkipUI は `NavigationBarItem` に独自の modifier を渡すので、
+                // Android のタブバーにはここの testTag が届かない(`dev-notes.md`)
+                .accessibilityIdentifier("tab-issues")
             }
             .tag(ContentTab.issues)
 
@@ -61,6 +73,10 @@ struct ContentView: View {
                 } icon: {
                     Image("emoji_events", bundle: .module)
                 }
+                // Maestro がタブを掴むための識別子。**iOS にしか効かない** ——
+                // SkipUI は `NavigationBarItem` に独自の modifier を渡すので、
+                // Android のタブバーにはここの testTag が届かない(`dev-notes.md`)
+                .accessibilityIdentifier("tab-competitions")
             }
             .tag(ContentTab.competitions)
         }
@@ -186,6 +202,9 @@ struct SettingsView: View {
             } label: {
                 Text(verbatim: "すべて消す")
             }
+            // 「データをすべて消す」を部分一致で拾ってしまわないよう、
+            // Maestro からは識別子で指す(iOS の照合は部分一致)
+            .accessibilityIdentifier("settings-demo-wipe-confirm")
             Button(role: .cancel) {
             } label: {
                 Text("やめる", bundle: .module)

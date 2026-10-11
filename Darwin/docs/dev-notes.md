@@ -296,6 +296,24 @@ ANR ログの `Load: 3.83 / 2.61 / 1.51` と、**先に Pixel Launcher 自身が
 find Darwin/build -name "PrivacyInfo.xcprivacy" -path "*.app/*"
 ```
 
+### Maestro のフローの置き場と約束(2026-10-11)
+
+`.maestro/` にフロー、出力は `Darwin/fastlane/screenshots/ja/`(fastlane の置き場に直接書く)。
+
+- **`back` を使わない。** iOS と Android で挙動が違う。画面を戻したいときは
+  `launchApp` で入れ直す —— タブは `@AppStorage("tab")` が覚えているので戻ってくる
+- **`clearState: true` を使わない。** `@AppStorage` を持つアプリで
+  Android が真っ白になる既知の条件に当たる。状態のリセットはアプリの中の操作でやる
+- **文字列の照合は `.*X.*` の形で書く。** iOS は部分一致、Android は完全一致の
+  正規表現なので、素の文字列だと片方で落ちる
+- **タブは識別子で掴めるのが iOS だけ。** SkipUI は `NavigationBarItem` に
+  独自の modifier を渡すので、`.tabItem` に付けた testTag が Android に届かない
+  (`Containers/TabView.swift` の `NavigationBarItem(modifier: options.itemModifier(...))`)。
+  Android で流すときは `tapOn: "課題"` のように文言で掴む
+- **識別子の付け方はこのプロジェクトの流儀に合わせる** —— kebab-case の「画面-部品」
+  (`home-record` / `tab-issues`)。スキルが例示する `button.foo` の形にはしない
+  (既存の 160 個と揃わなくなる)
+
 ### Skip の落とし穴(実際に踏んだもの)
 
 - **`DateFormatter.date(from:)` は Android だけ寛容** — `2026-13-45` を iOS は nil にするが、

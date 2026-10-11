@@ -1,0 +1,26 @@
+# 撮り終えたらデモデータを消す(§1.4)。
+#
+#   maestro --device <iOS-UDID> test .maestro/90-wipe-demo.yaml
+#
+# **消えるのはデモデータだけではない。** 設定の「データをすべて消す」を押すので、
+# その端末に入っている本物の記録も一緒に消える。
+# 撮影用のシミュレータ以外では流さないこと。
+#
+# 設定(閾値・通知・組み替え曜日)は残る —— `app_meta` は消していない。
+appId: com.tange.badnote
+---
+- launchApp
+- tapOn:
+    id: "home-settings"
+- scrollUntilVisible:
+    element:
+      id: "settings-demo-wipe"
+    direction: DOWN
+- tapOn:
+    id: "settings-demo-wipe"
+- tapOn:
+    id: "settings-demo-wipe-confirm"
+
+- launchApp
+# 使い始めの状態に戻っている。ホームの「めざす姿」が空になる
+- assertVisible: ".*まだ書かれていません.*"

@@ -1,0 +1,102 @@
+# App Store 用のスクリーンショットを 6 枚撮る(§1.4)。
+#
+# 撮る前に:
+#   1. **6.7" の iPhone シミュレータ**を起動しておく(1290×2796 が要る)。
+#      例: iPhone 16 Pro Max。画像の寸法は端末で決まるので、ここでは指定できない
+#   2. `skip app launch --ios` で Debug ビルドを入れる。
+#      **デモデータの投入は `#if DEBUG` なので Release ビルドでは撮れない**
+#   3. プロジェクトのルートから流す(`takeScreenshot` は実行場所からの相対):
+#        maestro --device <iOS-UDID> test .maestro/10-store-screenshots.yaml
+#   4. 撮り終えたら `.maestro/90-wipe-demo.yaml` でデモデータを消す
+#
+# 出力は `Darwin/fastlane/screenshots/ja/N_ja.png`(fastlane の置き場そのもの)。
+# **途中で失敗すると半端な枚数が残る**ので、失敗したら消してから撮り直す。
+#
+# Android について:
+#   - `tab-*` の識別子は **iOS にしか効かない**。SkipUI は `NavigationBarItem` に
+#     独自の modifier を渡すので、タブバーに testTag が届かない。
+#     Android で流すときは `tapOn: { id: "tab-issues" }` を
+#     `tapOn: "課題"` に置き換える(Android の文字列照合は完全一致なので誤爆しない)
+#   - `Data/DemoData.swift` も `#if DEBUG` なので Android には存在しない。
+#     Play 用に撮るときは、先にデモデータを入れる別の口が要る(`tasks.md` §7)
+#
+# `clearState: true` は使わない —— このアプリは `@AppStorage("tab")` を持っていて、
+# Android で真っ白になる既知の条件に当たる。デモの投入側が先に全消しするので要らない。
+appId: com.tange.badnote
+---
+# ── 下ごしらえ: デモデータを入れる ───────────────────────────────
+- launchApp
+- tapOn:
+    id: "home-settings"
+- scrollUntilVisible:
+    element:
+      id: "settings-demo-seed"
+    direction: DOWN
+- tapOn:
+    id: "settings-demo-seed"
+
+# 入れ直してホームの根に戻る。`back` は iOS と Android で挙動が違うので使わない
+- launchApp
+
+# ── 1 枚目: ホーム ────────────────────────────────────────────
+# めざす姿 / 目標大会までのカウントダウン / 今週の重点 3 枚。アプリの顔
+- assertVisible:
+    id: "home-record"
+- assertVisible: ".*守りから攻めに切り替える.*"
+- takeScreenshot: Darwin/fastlane/screenshots/ja/1_ja
+
+# ── 2 枚目: しばらく触れていない課題 ──────────────────────────
+# 忘れ防止の中核(§4.3)。理由を添えた 3 択をその場で出す
+- scrollUntilVisible:
+    element:
+      text: "しばらく触れていない課題"
+    direction: DOWN
+- takeScreenshot: Darwin/fastlane/screenshots/ja/2_ja
+
+# ── 3 枚目: 積み上げ ──────────────────────────────────────────
+# 続かない側の答え(§10.5)。累計時間と節目、月ごとの棒
+- scrollUntilVisible:
+    element:
+      id: "home-stats-link"
+    direction: DOWN
+- tapOn:
+    id: "home-stats-link"
+- assertVisible:
+    id: "stats-lifetime"
+- takeScreenshot: Darwin/fastlane/screenshots/ja/3_ja
+
+# 画面を戻さず入れ直す(タブは `@AppStorage` が覚えているのでホームに戻る)
+- launchApp
+
+# ── 4 枚目: 課題一覧 ──────────────────────────────────────────
+# 3 層(今週の重点 / 次にやる / いつか)が埋まった状態
+- tapOn:
+    id: "tab-issues"
+- assertVisible:
+    id: "issues-add"
+- takeScreenshot: Darwin/fastlane/screenshots/ja/4_ja
+
+# ── 5 枚目: 家トレ ────────────────────────────────────────────
+# 毎日開く画面。今日は素振りだけ付いていて、残りを押せる状態にしてある
+- tapOn:
+    id: "tab-training"
+- assertVisible: ".*素振り.*"
+- takeScreenshot: Darwin/fastlane/screenshots/ja/5_ja
+
+# ── 6 枚目: 練習ログ入力 ──────────────────────────────────────
+# 日々の記録。手応えの 3 択(できた / 近づいた / 次にやる)まで見せたいので下まで送る
+- tapOn:
+    id: "tab-home"
+- tapOn:
+    id: "home-record"
+- assertVisible:
+    id: "practice-minutes"
+- scrollUntilVisible:
+    element:
+      text: "今週の重点"
+    direction: DOWN
+- takeScreenshot: Darwin/fastlane/screenshots/ja/6_ja
+
+# 何も入れていないので確認は出ずにそのまま閉じる
+- tapOn:
+    id: "practice-close"

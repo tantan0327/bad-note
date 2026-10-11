@@ -81,14 +81,29 @@ fastlane のテキストは済み。**画像が 1 枚も無い。**
       棚卸しの誘いと再浮上の両方が出る状態になる。
       **Android には存在しない** —— skipstone は `#if DEBUG` を常に false にする。
       Play 用に撮るときは別の口が要る(§7 に記載)
-- [ ] 撮る画面を 5〜6 枚に絞る: ホーム(カウントダウン + 重点 3 枚 + 積み上げ)/ 家トレ /
-      課題一覧の 3 層 / しばらく触れていない課題の 3 択 / 積み上げの節目 / 大会のねらい
-- [ ] `Darwin/fastlane/screenshots/ja/N_ja.png`(iPhone 6.7" 1290×2796。
-      ディレクトリ自体がまだ無い。iPad 対応は宣言していないので iPhone だけでよい)
-- [ ] 手順は `skip-ui-automation` スキル(Maestro + `skip app launch`)。
-      Maestro のフローはまだ 1 本も無いので、撮影用の 1 本から書く。
-      iOS シミュレータは `simctl` で画面を叩けないので、Maestro が唯一の自動化手段
-- [ ] 撮ったあとデモデータを消す
+- [x] **撮る画面を 6 枚に決めた**(2026-10-11)—— 解決する 2 つの課題に割り当てた。
+      **忘れる**(課題一覧の 3 層 / しばらく触れていない課題の 3 択)、
+      **続かない**(ホームのカウントダウン / 積み上げ)、
+      **毎日使う**(家トレ / 練習ログの手応え)。
+      大会のねらいと棚卸しは見送った —— 2 つ目以降の特徴なので、6 枚の中では弱い
+- [ ] **フローを実際に流して 6 枚撮る** —— `brew install maestro` が要る(未インストール)。
+      **6.7" のシミュレータ**(iPhone 16 Pro Max など)で `skip app launch --ios` してから
+      `maestro --device <UDID> test .maestro/10-store-screenshots.yaml`。
+      画像の寸法は端末で決まるので、6.7" 以外で撮ると審査で弾かれる。
+      Debug ビルドで撮ること(デモの投入は `#if DEBUG`)。
+      iPad 対応は宣言していないので iPhone だけでよい
+- [x] **Maestro のフローを書いた**(2026-10-11)—— `.maestro/10-store-screenshots.yaml`
+      (撮影)と `.maestro/90-wipe-demo.yaml`(後始末)。
+      デモの投入からホーム / 再浮上の 3 択 / 積み上げ / 課題一覧 / 家トレ /
+      練習ログの 6 枚までを 1 本で通す。出力は `Darwin/fastlane/screenshots/ja/N_ja.png`
+      (fastlane の置き場そのもの。コピーの手間を無くした)。
+      **`back` を使わない** —— iOS と Android で挙動が違うので、`launchApp` で
+      画面を戻す(タブは `@AppStorage` が覚えている)。
+      `clearState: true` も使わない(`@AppStorage` を持つアプリで Android が
+      真っ白になる既知の条件)。
+      識別子 13 個と文言 5 つがコードに実在することは突き合わせ済み。
+      **ただし一度も流していない** —— Maestro がこの環境に入っていないため
+- [ ] 撮ったあと `.maestro/90-wipe-demo.yaml` でデモデータを消す
 
 ### 1.5 リリースビルドと TestFlight
 
