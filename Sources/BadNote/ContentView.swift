@@ -104,6 +104,18 @@ struct SettingsView: View {
                 }
             }
             .accessibilityIdentifier("settings-stale")
+            // ホームのカードは月 1 回しか出ず、「またにする」を押すと 30 日先になる。
+            // **自分から始められる入口がここに無いと、その間どこからも入れない**
+            NavigationLink {
+                IssueReviewView()
+            } label: {
+                Label {
+                    Text("課題の棚卸し", bundle: .module)
+                } icon: {
+                    Image("checklist", bundle: .module)
+                }
+            }
+            .accessibilityIdentifier("settings-review")
             NavigationLink {
                 ArchiveListView()
             } label: {
@@ -114,6 +126,16 @@ struct SettingsView: View {
                 }
             }
             .accessibilityIdentifier("settings-archive")
+            NavigationLink {
+                ShelvedListView()
+            } label: {
+                Label {
+                    Text("見送った課題", bundle: .module)
+                } icon: {
+                    Image("archive", bundle: .module)
+                }
+            }
+            .accessibilityIdentifier("settings-shelved")
             NavigationLink {
                 ExportView()
             } label: {

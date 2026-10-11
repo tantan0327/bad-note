@@ -25,6 +25,7 @@ public struct HomeView: View {
                 countdownSection
                 focusSection
                 staleSection
+                reviewSection
                 nextCompetitionSection
                 statsLink
                 recordButton
@@ -406,6 +407,32 @@ public struct HomeView: View {
                             .font(.caption)
                         }
                     }
+                }
+            }
+        }
+    }
+
+    // MARK: - 4.6 棚卸しの誘い(月 1 回、溜まっているときだけ)
+
+    /// **件数も警告も出さない。** 誘いの 1 行とボタンだけ置く ——
+    /// 「N 件も溜まっています」はプレッシャーで、このアプリが避けてきた形(§5.3)。
+    @ViewBuilder private var reviewSection: some View {
+        if model.isReviewDue {
+            Card {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("棚卸し", bundle: .module)
+                        .font(.headline)
+                    Text("「いつか」に置いたままの課題を見直します。残すか、見送るかを決めるだけです", bundle: .module)
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                    NavigationLink {
+                        IssueReviewView()
+                    } label: {
+                        Text("はじめる", bundle: .module)
+                            .font(.footnote)
+                    }
+                    .buttonStyle(.bordered)
+                    .accessibilityIdentifier("home-review-start")
                 }
             }
         }

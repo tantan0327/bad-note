@@ -21,6 +21,9 @@ public struct AppMetaKey {
     public static let practiceReminderMinute = "practice_reminder_minute"
     public static let notificationEveningHour = "notification_evening_hour"
     public static let notificationEveningMinute = "notification_evening_minute"
+    /// 前回の棚卸しを終えた(または「またにする」を押した)日時。
+    /// **既定の行は作らない** —— 無ければ「一度もしていない」。
+    public static let reviewLastDoneAt = "review_last_done_at"
 }
 
 public final class AppMetaRepository {
@@ -125,5 +128,23 @@ public final class AppMetaRepository {
 
     public func setStaleLastEvaluatedAt(_ date: Date) throws {
         try set(timestamps.text(from: date), forKey: AppMetaKey.staleLastEvaluatedAt)
+    }
+
+    /// 前回の棚卸し。**一度もしていなければ nil。**
+    ///
+    /// `appMetaDefaults` に行を足していないので、既存の端末でも無い状態から始まる
+    /// (キーが無ければ `string(forKey:)` が nil を返す)。移行は要らない。
+    public func reviewLastDoneAt() throws -> Date? {
+        guard let text = try string(forKey: AppMetaKey.reviewLastDoneAt) else {
+            return nil
+        }
+        if text.isEmpty {
+            return nil
+        }
+        return timestamps.date(from: text)
+    }
+
+    public func setReviewLastDoneAt(_ date: Date) throws {
+        try set(timestamps.text(from: date), forKey: AppMetaKey.reviewLastDoneAt)
     }
 }

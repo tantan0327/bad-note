@@ -92,6 +92,10 @@ import SkipSQL
     public init() {
     }
 
+    /// 棚卸しに誘ってよいか(月 1 回。`ReviewSchedule`)。
+    /// **件数は画面に出さない** —— ホームに常設の数字を置くとプレッシャーになる(§5.3)。
+    public private(set) var isReviewDue = false
+
     public func load(now: Date = Date()) {
         do {
             let db = try context()
@@ -107,6 +111,7 @@ import SkipSQL
             // §4.3 起動時のゲート。走るのは週 1 回、調整期はスキップ
             try StaleEvaluator(db: db, now: { now }).evaluateIfNeeded()
             try loadStaleItems(db: db)
+            try loadReviewDue(db: db, now: now)
             // §8 通知の予定を入れ直す。組み立ては同じ接続、登録だけ非同期
             let planned = try NotificationService(db: db).plannedNotifications(now: now)
             Task {
@@ -116,6 +121,18 @@ import SkipSQL
         } catch {
             errorText = "ホームの読み込みに失敗しました: \(error)"
         }
+    }
+
+    /// 棚卸しの誘いを出すか。**対象が溜まってから、月 1 回だけ。**
+    ///
+    /// 数えるのは「いつか」の課題 —— 溜まるのはここで、重点と次にやるは
+    /// 本人がいま選んでいる最中のもの。
+    private func loadReviewDue(db: SQLContext, now: Date) throws {
+        let someday = try IssueRepository(db: db).fetch(tier: .someday, statuses: [IssueStatus.active])
+        let lastReviewedAt = try AppMetaRepository(db: db).reviewLastDoneAt()
+        isReviewDue = ReviewSchedule.isDue(today: now,
+                                           lastReviewedAt: lastReviewedAt,
+                                           backlogCount: someday.count)
     }
 
     // MARK: - カウントダウン

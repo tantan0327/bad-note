@@ -56,11 +56,23 @@ public enum Tier: String, CaseIterable, Hashable, Sendable {
     }
 }
 
-/// 課題の状態。`inbox` は未整理、`archived` は定着済み。
+/// 課題の状態。
+///
+/// - `inbox` 未整理
+/// - `active` 一覧に並んでいる
+/// - `archived` **定着した**(克服の証。積み上げの数字に入る)
+/// - `shelved` **見送った**(もうやらないと決めた。積み上げには入らない)
+///
+/// **`archived` と `shelved` を分けてあるのが肝。** ひとつにすると、
+/// 興味を失った課題を外すたびに「定着した課題」が増えて、達成の数字が嘘になる。
+/// 嘘になるくらいならと外さなくなり、課題が減らなくなる(2026-10-11)。
+///
+/// `status` は CHECK の無い TEXT 列なので、値を足すのに移行は要らない。
 public enum IssueStatus: String, CaseIterable, Hashable, Sendable {
     case inbox
     case active
     case archived
+    case shelved
 }
 
 /// 課題(§3.1)。`issue` テーブルの 1 行に対応する。

@@ -160,6 +160,16 @@ public final class IssueRepository {
         return try decodeAll(rows)
     }
 
+    /// 見送った課題。**新しく外したものが先**(戻すなら直近のものである可能性が高い)。
+    ///
+    /// 外した日時は `archived_at` に入れる。定着と見送りで列を分けていないのは、
+    /// どちらも「一覧から外れた日」で意味が同じため。
+    public func fetchShelved() throws -> [Issue] {
+        let rows = try db.selectAll(sql: "SELECT \(IssueRepository.columns) FROM issue WHERE status = ? ORDER BY archived_at DESC, id DESC",
+                                    parameters: [.text(IssueStatus.shelved.rawValue)])
+        return try decodeAll(rows)
+    }
+
     // MARK: - Update
 
     /// 課題を更新して、保存された内容を返す。
