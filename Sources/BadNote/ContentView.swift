@@ -124,6 +124,17 @@ struct SettingsView: View {
                 }
             }
             .accessibilityIdentifier("settings-export")
+            // 聞かれたときに答えが要る。ストアに出しているものと同じ URL(§1.2)
+            if let privacyURL = URL(string: "https://tantan0327.github.io/bad-note/privacy.html") {
+                Link(destination: privacyURL) {
+                    Label {
+                        Text("プライバシーポリシー", bundle: .module)
+                    } icon: {
+                        Image("info", bundle: .module)
+                    }
+                }
+                .accessibilityIdentifier("settings-privacy")
+            }
             if let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String,
                let buildNumber = Bundle.main.infoDictionary?["CFBundleVersion"] as? String {
                 Label {

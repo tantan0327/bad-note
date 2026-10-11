@@ -47,6 +47,8 @@ public struct IssueEditView: View {
                 } label: {
                     Text("保存", bundle: .module)
                 }
+                // 画面の下にいると、最上部のエラー文は見えない。押せないことで伝える
+                .disabled(!model.canSave)
                 .accessibilityIdentifier("issue-edit-save")
             }
         }
@@ -68,7 +70,18 @@ public struct IssueEditView: View {
             }
             .textFieldStyle(.roundedBorder)
             .accessibilityIdentifier("issue-edit-words")
+            saveHint
             Text("「〜できている」の形で書くのがおすすめです。コーチに言われた言葉のままでも構いません", bundle: .module)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+    }
+
+    /// 保存が灰色のままになる理由。**必須の欄のすぐ下に置く** ——
+    /// 画面の最上部にだけ出すと、下までスクロールして押した人には見えない。
+    @ViewBuilder private var saveHint: some View {
+        if !model.canSave {
+            Text("この 1 行を入れると保存できます", bundle: .module)
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
@@ -86,6 +99,7 @@ public struct IssueEditView: View {
             }
             .textFieldStyle(.roundedBorder)
             .accessibilityIdentifier("issue-edit-words")
+            saveHint
             Text("原文はなるべくそのまま。直すのは誤字くらいに留めます", bundle: .module)
                 .font(.caption)
                 .foregroundStyle(.secondary)

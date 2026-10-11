@@ -8,7 +8,16 @@ import SwiftUI
 /// - 保存後は無言で閉じない
 public struct PracticeLogView: View {
     @State private var model = PracticeLogModel()
+    @State private var isConfirmingClose = false
     @Environment(\.dismiss) private var dismiss
+
+    // 数字キーボードには改行キーが無く、iOS には閉じる手段が無い。
+    // **Android には要らない** —— システムの戻るで閉じるのが作法。
+    // SkipUI は `.keyboard` 配置をナビゲーションバーに流してしまうので、
+    // ここは丸ごと iOS だけに出す(`design.md` のプラットフォーム差の線引き)
+    #if os(iOS)
+    @FocusState private var isMinutesFocused: Bool
+    #endif
 
     public init() {
     }
@@ -39,7 +48,12 @@ public struct PracticeLogView: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button {
-                        dismiss()
+                        // 入力があるのに黙って捨てない。保存後は捨てるものが無いのでそのまま閉じる
+                        if model.canSave && !model.isSaved {
+                            isConfirmingClose = true
+                        } else {
+                            dismiss()
+                        }
                     } label: {
                         Text("閉じる", bundle: .module)
                     }
@@ -54,10 +68,43 @@ public struct PracticeLogView: View {
                     } label: {
                         Text("保存", bundle: .module)
                     }
-                    .disabled(model.isSaved)
+                    // 何も入れていない状態で押せると、0 分の行が練習回数と積み上げに残る
+                    .disabled(model.isSaved || !model.canSave)
                     .accessibilityIdentifier("practice-save")
                 }
             }
+            // 下スワイプのひと振りで入力を失わせない(入力がある間だけ閉じ込める)
+            .interactiveDismissDisabled(model.canSave && !model.isSaved)
+            .confirmationDialog(Text("入力した内容を破棄しますか?", bundle: .module),
+                                isPresented: $isConfirmingClose,
+                                titleVisibility: .visible) {
+                Button(role: .destructive) {
+                    dismiss()
+                } label: {
+                    Text("破棄する", bundle: .module)
+                }
+                .accessibilityIdentifier("practice-close-discard")
+                Button(role: .cancel) {
+                } label: {
+                    Text("入力を続ける", bundle: .module)
+                }
+            }
+            #if os(iOS)
+            .toolbar {
+                ToolbarItemGroup(placement: .keyboard) {
+                    // 数字キーボードのときだけ出す。文字の欄は改行キーで閉じられる
+                    if isMinutesFocused {
+                        Spacer()
+                        Button {
+                            isMinutesFocused = false
+                        } label: {
+                            Text("完了", bundle: .module)
+                        }
+                        .accessibilityIdentifier("practice-minutes-done")
+                    }
+                }
+            }
+            #endif
         }
         .task {
             model.load()
@@ -249,10 +296,21 @@ public struct PracticeLogView: View {
                 #if os(iOS) || os(Android)
                 .keyboardType(.numberPad)
                 #endif
+                #if os(iOS)
+                .focused($isMinutesFocused)
+                #endif
                 .accessibilityIdentifier("practice-minutes")
                 Text("分", bundle: .module)
                     .font(.title3)
                 Spacer()
+            }
+
+            // 保存が灰色のままになる理由を、押す前に出す。
+            // いちばん上の入力欄の直下なのでスクロールせずに読める
+            if !model.canSave {
+                Text("時間・種類・手応え・追加する課題のどれか 1 つを入れると保存できます", bundle: .module)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
 
             // 足すチップとリセットは役割が違う。同じ枠のボタンで横に並べると

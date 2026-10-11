@@ -139,11 +139,20 @@ public struct CompetitionEditView: View {
                         Text("県大会 など", bundle: .module)
                     }
                     .textFieldStyle(.roundedBorder)
+                    .accessibilityIdentifier("competition-edit-name")
+                    // 保存が灰色のままになる理由。**必須の欄のすぐ下に置く** ——
+                    // 画面の最上部にだけ出すと、下までスクロールして押した人には見えない
+                    if !model.canSave {
+                        Text("大会の名前を入れると保存できます", bundle: .module)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
                 }
 
                 DatePicker(selection: $model.eventDate, displayedComponents: .date) {
                     Text("開催日", bundle: .module)
                 }
+                .accessibilityIdentifier("competition-edit-date")
 
                 VStack(alignment: .leading, spacing: 8) {
                     Text("会場(任意)", bundle: .module)
@@ -152,6 +161,7 @@ public struct CompetitionEditView: View {
                         Text("市民体育館 など", bundle: .module)
                     }
                     .textFieldStyle(.roundedBorder)
+                    .accessibilityIdentifier("competition-edit-venue")
                 }
 
                 entrySection
@@ -169,6 +179,7 @@ public struct CompetitionEditView: View {
                 } label: {
                     Text("保存", bundle: .module)
                 }
+                .disabled(!model.canSave)
                 .accessibilityIdentifier("competition-edit-save")
             }
         }
@@ -186,23 +197,27 @@ public struct CompetitionEditView: View {
             Toggle(isOn: $model.entersSingles) {
                 Text(Discipline.singles.displayName)
             }
+            .accessibilityIdentifier("competition-edit-enters-singles")
             if model.entersSingles {
                 Toggle(isOn: $model.singlesIsTarget) {
                     Text("シングルスの目標大会にする", bundle: .module)
                         .font(.footnote)
                 }
                 .padding(.leading, 16)
+                .accessibilityIdentifier("competition-edit-target-singles")
             }
 
             Toggle(isOn: $model.entersDoubles) {
                 Text(Discipline.doubles.displayName)
             }
+            .accessibilityIdentifier("competition-edit-enters-doubles")
             if model.entersDoubles {
                 Toggle(isOn: $model.doublesIsTarget) {
                     Text("ダブルスの目標大会にする", bundle: .module)
                         .font(.footnote)
                 }
                 .padding(.leading, 16)
+                .accessibilityIdentifier("competition-edit-target-doubles")
             }
 
             Text("目標大会にすると、ホームにカウントダウンが出ます", bundle: .module)

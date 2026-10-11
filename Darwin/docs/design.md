@@ -3,14 +3,14 @@
 `tasks.md` から分離(2026-10-11)。何が出来ていて、どう作るかの決めごと。
 残作業は `tasks.md`、Skip の落とし穴などの開発メモは `dev-notes.md`。
 
-最終更新: 2026-09-05(内容)/ 2026-10-11(分離)
+最終更新: 2026-10-11
 
 ---
 
 ## 現状
 
-テスト 689 本(JUnit 690)。iOS / Android(Robolectric)の両方でパス。
-両プラットフォームでビルド成功。`skip verify`(ストアのメタデータ)も通る。
+テスト 698 本(JUnit 699)。iOS / Android(Robolectric)の両方でパス(2026-10-11 確認)。
+`skip verify`(ストアのメタデータ)も通る。
 
 **データ層** — Repository は 9 つ(`Issue` / `Practice` / `PracticePlan` / `Competition` /
 `Vision` / `Tag` / `Training` / `Stats` / `Export`)。加えて `AppMeta` / `StaleFlag` / `StaleEvaluator`。
@@ -128,6 +128,15 @@
   `View/Motion.swift` から取り、duration を直書きしない
 - **`accessibilityIdentifier` の命名** —— kebab-case で「画面-部品(-id)」
   (`home-record` / `issue-row-3` / `practice-kind-whole`)。操作可能な View には必ず付ける
+- **キーボードを閉じる手段は iOS だけに置く**(2026-10-11)—— `numberPad` には改行キーが
+  無いので、iOS では `@FocusState` + `ToolbarItemGroup(placement: .keyboard)` の「完了」を出す。
+  **Android には出さない** —— システムの戻るで閉じるのが作法で、しかも **SkipUI は
+  `.keyboard` 配置を既定(= ナビゲーションバーの右)に流す**ので、出すと常設の
+  ボタンになってしまう(`Commands/Toolbar.swift` の `Evaluate` に `.keyboard` の分岐が無い)。
+  `#if os(iOS)` で `@FocusState` の宣言ごと囲む
+- **保存できない理由は必須の欄の直下に出す**(2026-10-11)—— 保存はツールバーにあり、
+  エラー文を画面最上部に置くと、下までスクロールして押した人には見えない。
+  `canSave` で保存を `.disabled` にし、理由は欄のすぐ下に `.caption` で添える
 - **プラットフォーム差の線引き**(2026-08-24 決定)——
   **アプリのアイデンティティは共通トークンで揃え、OS 標準部品の見た目は各 OS に委ねる。**
   揃える側: 色(Palette)/ 文字の段階 / 面と余白(Card・Badge ほか)/ 動き(Motion)/

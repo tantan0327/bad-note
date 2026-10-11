@@ -15,6 +15,9 @@ import SkipSQL
     /// 登録されている練習予定日の数(§5.2)。**0 なら練習前の通知は出ない**ので、
     /// その理由を画面で言うために持つ。
     public private(set) var practicePlanCount = 0
+    /// OS の許可を求めた結果。**nil はまだ聞いていない。**
+    /// `false` のときだけ「届きません」と言う —— 聞く前から警告は出さない。
+    public private(set) var isAuthorized: Bool? = nil
     public var errorText: String? = nil
 
 
@@ -42,6 +45,12 @@ import SkipSQL
     public func updateEnabled(_ enabled: Bool) {
         isEnabled = enabled
         save()
+    }
+
+    /// 許可の結果を受け取る。`setAuthorized` にすると Kotlin で `var isAuthorized` の
+    /// setter と衝突する(`Platform declaration clash`)ので `update` で始める。
+    public func updateAuthorized(_ granted: Bool) {
+        isAuthorized = granted
     }
 
     /// DatePicker(時:分)から受ける(2.5)。日付部分は捨てて時・分だけ使う。
@@ -95,12 +104,12 @@ import SkipSQL
         }
     }
 
-    /// 通知の許可を求める。
+    /// 通知の許可を求め、**許可されたかを返す**。
     ///
     /// モデル(非 Sendable)を非同期境界に渡さないよう static にしている。
     /// DB は使わない。
-    public static func requestAuthorization() async {
-        _ = await NotificationService.requestAuthorization()
+    public static func requestAuthorization() async -> Bool {
+        return await NotificationService.requestAuthorization()
     }
 
     private func context() throws -> SQLContext {
@@ -127,14 +136,32 @@ public struct NotificationSettingsView: View {
                         .foregroundStyle(.red)
                 }
 
+                // **許可は画面を開いた瞬間ではなく、オンにしたときに聞く。**
+                // 何も頼んでいないのに OS のダイアログが出ると、断られて二度と出せなくなる
                 Toggle(isOn: Binding(get: { model.isEnabled },
-                                     set: { model.updateEnabled($0) })) {
+                                     set: { enabled in
+                                         model.updateEnabled(enabled)
+                                         if enabled {
+                                             Task {
+                                                 let granted = await NotificationSettingsModel.requestAuthorization()
+                                                 model.updateAuthorized(granted)
+                                             }
+                                         }
+                                     })) {
                     Text("通知を受け取る", bundle: .module)
                 }
                 .accessibilityIdentifier("notification-enabled")
                 Text("1 日 1 通までにしています", bundle: .module)
                     .font(.caption)
                     .foregroundStyle(.secondary)
+
+                // 断られたまま設定だけオンだと、鳴らない理由がどこにも出ない
+                if model.isEnabled && model.isAuthorized == false {
+                    Text("端末側で通知が許可されていないため届きません。端末の設定アプリから BadNote の通知を許可してください", bundle: .module)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .accessibilityIdentifier("notification-denied")
+                }
 
                 if model.isEnabled {
                     practiceSection
@@ -147,7 +174,6 @@ public struct NotificationSettingsView: View {
         .navigationTitle(Text("通知", bundle: .module))
         .task {
             model.load()
-            await NotificationSettingsModel.requestAuthorization()
         }
     }
 

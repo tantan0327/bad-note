@@ -53,8 +53,9 @@ public struct VisionEditView: View {
                     }
                 } label: {
                     Text("保存", bundle: .module)
-                        .accessibilityIdentifier("vision-save")
                 }
+                // 識別子はアクセシビリティ要素である Button 側に付ける(他の保存ボタンと揃える)
+                .accessibilityIdentifier("vision-save")
             }
         }
         .onAppear {

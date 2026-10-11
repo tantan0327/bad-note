@@ -47,6 +47,17 @@ import SkipSQL
     }
 
     /// 重点の残り枠(§7.4 の「今週の重点 3/3」)。
+    /// 3 層に 1 件でもあるか。**並び替えの注記を出すかの判定**に使う ——
+    /// 並べる行が無いのに「長押しで並び替え」とだけ書いてあっても試しようがない。
+    public var hasTieredIssues: Bool {
+        return !focus.isEmpty || !next.isEmpty || !someday.isEmpty
+    }
+
+    /// 3 層にも未整理にも 1 件も無い。使い始めの状態。
+    public var isEmpty: Bool {
+        return !hasTieredIssues && unorganized.isEmpty
+    }
+
     public var focusCapacity: Int {
         return FocusBoard.focusCapacity
     }

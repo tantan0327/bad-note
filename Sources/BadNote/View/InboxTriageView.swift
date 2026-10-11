@@ -95,12 +95,15 @@ public struct InboxTriageView: View {
                 selectionButton(Text(Discipline.singles.displayName), isSelected: model.discipline == .singles) {
                     model.discipline = .singles
                 }
+                .accessibilityIdentifier("triage-discipline-singles")
                 selectionButton(Text(Discipline.doubles.displayName), isSelected: model.discipline == .doubles) {
                     model.discipline = .doubles
                 }
+                .accessibilityIdentifier("triage-discipline-doubles")
                 selectionButton(Text(Discipline.both.displayName), isSelected: model.discipline == .both) {
                     model.discipline = .both
                 }
+                .accessibilityIdentifier("triage-discipline-both")
             }
             .font(.footnote)
         }
@@ -112,8 +115,11 @@ public struct InboxTriageView: View {
                 .font(.headline)
             HStack(spacing: 8) {
                 selectionButton(Text(ScaleLabel.impact(1)), isSelected: model.impact == 1) { model.toggleImpact(1) }
+                    .accessibilityIdentifier("triage-impact-1")
                 selectionButton(Text(ScaleLabel.impact(2)), isSelected: model.impact == 2) { model.toggleImpact(2) }
+                    .accessibilityIdentifier("triage-impact-2")
                 selectionButton(Text(ScaleLabel.impact(3)), isSelected: model.impact == 3) { model.toggleImpact(3) }
+                    .accessibilityIdentifier("triage-impact-3")
             }
             Text("試合の失点に直結するか", bundle: .module)
                 .font(.caption)
@@ -127,8 +133,11 @@ public struct InboxTriageView: View {
                 .font(.headline)
             HStack(spacing: 8) {
                 selectionButton(Text(ScaleLabel.cost(1)), isSelected: model.cost == 1) { model.toggleCost(1) }
+                    .accessibilityIdentifier("triage-cost-1")
                 selectionButton(Text(ScaleLabel.cost(2)), isSelected: model.cost == 2) { model.toggleCost(2) }
+                    .accessibilityIdentifier("triage-cost-2")
                 selectionButton(Text(ScaleLabel.cost(3)), isSelected: model.cost == 3) { model.toggleCost(3) }
+                    .accessibilityIdentifier("triage-cost-3")
             }
             Text("直るまでの時間", bundle: .module)
                 .font(.caption)
@@ -158,12 +167,14 @@ public struct InboxTriageView: View {
                     Text("ショット種別など", bundle: .module)
                 }
                 .textFieldStyle(.roundedBorder)
+                .accessibilityIdentifier("triage-tag-field")
                 Button {
                     model.addTag()
                 } label: {
                     Text("追加", bundle: .module)
                 }
                 .buttonStyle(.bordered)
+                .accessibilityIdentifier("triage-tag-add")
             }
         }
     }

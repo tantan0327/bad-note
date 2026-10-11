@@ -8,6 +8,12 @@ public struct TrainingView: View {
     @State private var model = TrainingModel()
     @State private var isEditingMinutes = false
 
+    // 数字キーボードを閉じる手段(iOS のみ)。Android はシステムの戻るで閉じる。
+    // SkipUI は `.keyboard` 配置をナビゲーションバーに流すので、iOS だけに出す
+    #if os(iOS)
+    @FocusState private var isMinutesFocused: Bool
+    #endif
+
     public init() {
     }
 
@@ -216,6 +222,9 @@ public struct TrainingView: View {
                         #if os(iOS) || os(Android)
                         .keyboardType(.numberPad)
                         #endif
+                        #if os(iOS)
+                        .focused($isMinutesFocused)
+                        #endif
                         .accessibilityIdentifier("training-minutes-field")
                         Text("分", bundle: .module)
                             .font(.title3)
@@ -273,6 +282,21 @@ public struct TrainingView: View {
                     .accessibilityIdentifier("training-minutes-save")
                 }
             }
+            #if os(iOS)
+            .toolbar {
+                ToolbarItemGroup(placement: .keyboard) {
+                    if isMinutesFocused {
+                        Spacer()
+                        Button {
+                            isMinutesFocused = false
+                        } label: {
+                            Text("完了", bundle: .module)
+                        }
+                        .accessibilityIdentifier("training-minutes-done")
+                    }
+                }
+            }
+            #endif
         }
         .presentationDetents([.medium])
     }

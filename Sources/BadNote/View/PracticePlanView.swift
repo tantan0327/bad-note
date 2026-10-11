@@ -312,6 +312,11 @@ public struct PracticePlanView: View {
                 .frame(maxWidth: .infinity)
                 .accessibilityIdentifier("practice-plan-day-\(week)-\(weekday)")
                 .accessibilityLabel(Text(DateText.dayWithWeekday(cell.date)))
+                // 予定日かどうかは塗りにしか出ていない。残り練習回数の根拠になる画面なので、
+                // 読み上げでも「登録済みか」が分かるようにする
+                .accessibilityValue(model.isPlanned(cell)
+                                    ? Text("登録済み", bundle: .module)
+                                    : Text("未登録", bundle: .module))
             } else {
                 // **押せないセルは Button にしない。** disabled にすると
                 // VoiceOver が 42 個中 15 個を空振りの操作対象として読み上げる

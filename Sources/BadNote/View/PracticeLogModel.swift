@@ -85,6 +85,26 @@ import SkipSQL
         return Int(minutesText) ?? 0
     }
 
+    /// 何か 1 つでも入力があるか。
+    ///
+    /// **必須項目は増やさない**(「入力項目は原則すべて任意」)。ここで止めるのは
+    /// **すべて空のまま保存**したときだけ —— 練習ログは後から直す画面が無いので、
+    /// 0 分・種類なし・手応えなしの行が練習回数と積み上げに残り続ける。
+    public var canSave: Bool {
+        if minutes > 0 {
+            return true
+        }
+        if kind != nil {
+            return true
+        }
+        for input in focusInputs {
+            if input.result != nil {
+                return true
+            }
+        }
+        return !pendingCoachWords().isEmpty
+    }
+
     // MARK: - 読み込み
 
     /// 今週の重点を読み込む。
@@ -170,6 +190,11 @@ import SkipSQL
     ///
     /// 保存後は無言で閉じず、記録内容と今月の累計を出す(§7.2)。
     public func save() {
+        // 画面は保存ボタンを無効にしているが、空の行を作らない約束はここでも守る
+        if !canSave {
+            errorText = "記録する内容がありません"
+            return
+        }
         do {
             let db = try context()
             let practices = PracticeRepository(db: db)

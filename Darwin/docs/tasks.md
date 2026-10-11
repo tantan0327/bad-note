@@ -105,48 +105,46 @@ fastlane のテキストは済み。**画像が 1 枚も無い。**
 ---
 ## 2. UI/UX —— リリース前に直す(週 1)
 
-2026-10-11 に View 全 21 ファイルを `design.md` の決めごとと照らして洗い直した結果。
-**決めごとどおりの箇所と、§4 で見送ると決めたものは除いてある。**
-どれも半日以内で、ロジックの変更を伴わない(テストは `canSave` の分だけ足す)。
-**直したら iOS だけでなく Android のビルドも通す**(両 OS で動くのがこのアプリの前提)。
+2026-10-11 に View 全 21 ファイルを `design.md` の決めごとと照らして洗い直し、
+**11 件すべて実装した**(§4 で見送ると決めたものは除いてある)。
 
-- [ ] **空の練習ログが保存できてしまう** —— `View/PracticeLogModel.swift` に `canSave` が無く、
-      0 分・種類なし・手応えなしでも保存が通る。しかも練習ログは**後から直せない**
-      (`PracticeRepository.delete` を呼ぶ View がゼロ)ので、0 分の行が積み上げと回数に残る。
-      → 他の Model と同じ `canSave`(分数 0 かつ種類なしなら無効)。テストを 1 本足す
-- [ ] **練習ログのシートを下スワイプで閉じると入力が無言で消える** —— `View/HomeView.swift:50`。
-      時間・手応え 3 件・追加課題を入れた後のワンジェスチャで全部失う。
-      → 入力があるときだけ `.interactiveDismissDisabled(true)`、✕ に確認ダイアログ
-- [ ] **課題タブの初回が「まだありません」だけで次の 1 手が無い** —— `View/IssueListView.swift:239`。
-      ホーム・大会・家トレは `EmptyStateView` + ボタンを出しているのにここだけ無く、
-      並べる行が無いのに「長押しで並び替え…」の注記だけ常設で出る。
-      → `EmptyStateView(icon: "checklist")` +「課題を書く」。注記は行があるときだけ
-- [ ] **数字入力のキーボードを閉じる手段が無い** —— `View/PracticeLogView.swift:249`、
-      `View/TrainingView.swift:216`、`View/TrainingMenuFormView.swift:33`。`numberPad` には改行が無く、
-      `FocusState` / `onSubmit` がリポジトリ全体でゼロ。+15 分チップがキーボードの裏に隠れる。
-      → `ToolbarItemGroup(placement: .keyboard)` に「完了」(SkipUI の対応を先に確認。
-      不可なら `FocusState` で背景タップで閉じる)
-- [ ] **保存できない理由が押した場所から見えない** —— 課題の登録(`View/IssueEditView.swift:18`)と
-      大会の登録(`View/CompetitionListView.swift:129`)は、エラー文が画面最上部にだけ出る。
-      下までスクロールしてツールバーの保存を押すと**何も起きなかったように見える**。
-      → `canSave` で保存を `.disabled` にし、理由は該当欄の直下に出す(家トレのメニュー編集は
-      すでに `.disabled` だが理由が出ない。`View/TrainingMenuFormView.swift:49` にも footer を 1 行)
-- [ ] **カレンダーの「登録済みの日」が VoiceOver に伝わらない** —— `View/PracticePlanView.swift:313`。
-      ラベルは日付だけで、予定日かどうかは塗りにしか無い。残り回数の根拠になる画面。
-      → `.accessibilityValue` に「登録済み / 未登録」
-- [ ] **大会の登録フォームに `accessibilityIdentifier` が無い** —— `View/CompetitionListView.swift:138`
-      以降の大会名・開催日・会場・Toggle 4 つ(保存だけ付いている)。インボックス整理の
-      種目・影響度・コスト・タグ(`View/InboxTriageView.swift:94` 以降)も同じ。
-      スクショ撮影の Maestro フロー(§1.4)が通れない。
-      → `competition-edit-name` / `triage-discipline-*` のように命名規則どおり付与
-- [ ] **めざす姿の保存の identifier が Button ではなく Text に付いている** ——
-      `View/VisionEditView.swift:56`。他の保存ボタンと非対称で Maestro から掴めない。→ Button 側へ移す
-- [ ] **通知画面を開いた瞬間に OS の許可ダイアログが出る** ——
-      `View/NotificationSettingsView.swift:150`(トグルを入れる前に要求)。拒否してもトグルは入り、
-      「許可されていないので届きません」が出ない。審査でも「文脈の無い許可要求」は指摘されやすい。
-      → トグルを ON にしたときに要求し、拒否状態を 1 行で出す
-- [ ] **設定にプライバシーポリシーの行を足す** —— `ContentView.swift:127` はバージョン表示だけ。
-      §1.2 で公開した URL への `Link` を 1 行(審査の要件ではないが、聞かれたとき答えが要る)
+- [x] **空の練習ログが保存できてしまう** —— `PracticeLogModel.canSave` を足し、
+      保存ボタンを `.disabled` にした。**必須項目は作っていない** ——
+      時間 / 種類 / 手応え / 追加する課題の**どれか 1 つ**があれば保存できる。
+      止めるのは全部空のときだけ(練習ログは後から直す画面が無い)。
+      `PracticeLogModelTests` 9 件。わざと壊して 4 件落ちることも確かめた
+- [x] **練習ログのシートを下スワイプで閉じると入力が無言で消える** ——
+      入力がある間だけ `.interactiveDismissDisabled`、✕ に破棄の確認を付けた。
+      **判定は `PracticeLogView` 側に置いた**(入力の有無を知っているのはこちら。
+      ホームから開いても他から開いても効く)
+- [x] **課題タブの初回が「まだありません」だけ** —— `EmptyStateView` +「課題を書く」を出し、
+      絞り込み行と 3 層の行は 1 件も無いとき出さないようにした。
+      並び替えの注記は**並べる行があるときだけ**(`IssueListModel.isEmpty` / `hasTieredIssues`)
+- [x] **数字入力のキーボードを閉じる手段が無い** —— 練習ログ / 家トレの分数 /
+      メニューの目安時間に「完了」を足した。**iOS だけ** ——
+      SkipUI は `.keyboard` 配置をナビゲーションバーに流してしまい、Android には
+      システムの戻るという作法がある(`design.md` のプラットフォーム差の線引き)
+- [x] **保存できない理由が押した場所から見えない** —— 課題 / 大会 / 家トレのメニューで
+      保存を `.disabled` にし、**理由を必須の欄の直下**に出した(最上部のエラー文は、
+      下までスクロールして押した人には見えない)
+- [x] **カレンダーの「登録済みの日」が VoiceOver に伝わらない** ——
+      `.accessibilityValue` に「登録済み / 未登録」
+- [x] **大会の登録フォームとインボックス整理に `accessibilityIdentifier` が無い** ——
+      `competition-edit-*` 7 つと `triage-*` 11 を命名規則どおり付与
+- [x] **めざす姿の保存の identifier が Text に付いていた** —— `Button` 側へ移した
+- [x] **通知画面を開いた瞬間に OS の許可ダイアログが出る** ——
+      **トグルを ON にしたときに聞く**ようにし、断られたら「届きません」を 1 行出す。
+      `NotificationSettingsModel.requestAuthorization` は結果の `Bool` を返すようにした
+- [x] **設定にプライバシーポリシーの行が無い** —— §1.2 で公開した URL への `Link` を追加
+- [x] `AndroidManifest.xml` の `INTERNET` 権限 —— Play 配信を後回しにしたので §6 へ移動
+
+**残っている確認**(コードの変更は済み)
+
+- [ ] **実機 / エミュレータで触って確かめる** —— `swift test` は Kotlin のコンパイルまでしか
+      見ていない。特に次の 3 つ:
+      キーボードの「完了」(iOS)、Android の戻るで数字キーボードが閉じること、
+      シートの下スワイプが止まること(iOS / Android とも)
+- [ ] 文字列を足したので `python3 Scripts/sync-localizable.py` は実行済み(242 → 250 キー)
 
 ## 3. UI/UX —— リリース後でよい
 

@@ -17,34 +17,59 @@ public struct IssueListView: View {
                     .font(.footnote)
                     .foregroundStyle(.red)
             }
-            Section {
-                filterRow
-            }
-            // §7.4 層をまたぐドラッグのため、3 層を 1 つの ForEach に畳んでいる
-            ForEach(model.rows) { row in
-                if row.isHeader {
-                    headerRow(row.tier)
-                } else if row.isPlaceholder {
-                    emptyRow
-                } else if row.isSlot {
-                    slotRow
-                } else if let issue = row.issue {
-                    self.row(issue)
+            // 使い始めは 3 層の見出しと空行だけが並ぶ。絞り込む相手も並べる行も無いので、
+            // ホーム・大会・家トレと同じく**次の 1 手だけ**を出す
+            if model.isEmpty {
+                Section {
+                    EmptyStateView(icon: "checklist",
+                                   message: Text("まだ課題がありません。コーチに言われたことや、試合で気づいたことを 1 行で書きます", bundle: .module)) {
+                        NavigationLink {
+                            IssueEditView()
+                        } label: {
+                            Text("課題を書く", bundle: .module)
+                                .font(.footnote)
+                        }
+                        // 家トレの空状態と同じ強さ。タブを開いて最初に押す 1 つ
+                        .buttonStyle(.borderedProminent)
+                        .accessibilityIdentifier("issues-empty-add")
+                    }
                 }
             }
-            .onMove { offsets, toOffset in
-                // 層の移動はゆっくり(5.1)。どこへ動いたか目で追えるように
-                withAnimation(Motion.move) {
-                    model.moveRows(from: Array(offsets), to: toOffset)
+            if !model.isEmpty {
+                Section {
+                    filterRow
+                }
+            }
+            // §7.4 層をまたぐドラッグのため、3 層を 1 つの ForEach に畳んでいる
+            if !model.isEmpty {
+                ForEach(model.rows) { row in
+                    if row.isHeader {
+                        headerRow(row.tier)
+                    } else if row.isPlaceholder {
+                        emptyRow
+                    } else if row.isSlot {
+                        slotRow
+                    } else if let issue = row.issue {
+                        self.row(issue)
+                    }
+                }
+                .onMove { offsets, toOffset in
+                    // 層の移動はゆっくり(5.1)。どこへ動いたか目で追えるように
+                    withAnimation(Motion.move) {
+                        model.moveRows(from: Array(offsets), to: toOffset)
+                    }
                 }
             }
             // 4.3 スワイプとドラッグは画面から見えない操作なので、言葉で常設しておく
             // (初回だけのヒントは忘れた頃に効かず、グリップはドラッグの開始点と誤解させる)。
-            // **説明する行の後ろに置く**(1.10。絞り込みの直下は一等地なので明け渡した)
-            Section {
-                Text("行は長押しで並び替え、左右スワイプで層の上げ下げができます", bundle: .module)
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
+            // **説明する行の後ろに置く**(1.10。絞り込みの直下は一等地なので明け渡した)。
+            // **並べる行があるときだけ** —— 試せない操作の説明は常設しない
+            if model.hasTieredIssues {
+                Section {
+                    Text("行は長押しで並び替え、左右スワイプで層の上げ下げができます", bundle: .module)
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
             }
 
             // 4.2 練習ログで書いた 1 行(inbox)の置き場。「書いたのに見つからない」を無くす。

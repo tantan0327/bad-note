@@ -7,6 +7,11 @@ struct TrainingMenuFormView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var model: TrainingMenuFormModel
 
+    // 数字キーボードを閉じる手段(iOS のみ)。Android はシステムの戻るで閉じる
+    #if os(iOS)
+    @FocusState private var isMinutesFocused: Bool
+    #endif
+
     init(menuID: Int64?) {
         _model = State(initialValue: TrainingMenuFormModel(menuID: menuID))
     }
@@ -33,21 +38,31 @@ struct TrainingMenuFormView: View {
                 #if os(iOS) || os(Android)
                 .keyboardType(.numberPad)
                 #endif
+                #if os(iOS)
+                .focused($isMinutesFocused)
+                #endif
                 .accessibilityIdentifier("training-menu-minutes")
             } header: {
                 Text("目安の時間", bundle: .module)
             } footer: {
                 Text("チェックしたとき、この分数が練習時間の積み上げに入ります", bundle: .module)
             }
-            Button {
-                if model.save() {
-                    dismiss()
+            Section {
+                Button {
+                    if model.save() {
+                        dismiss()
+                    }
+                } label: {
+                    Text("保存", bundle: .module)
                 }
-            } label: {
-                Text("保存", bundle: .module)
+                .disabled(!model.canSave)
+                .accessibilityIdentifier("training-menu-save")
+            } footer: {
+                // 灰色の保存を見ても、何が足りないのかは分からない
+                if !model.canSave {
+                    Text("メニュー名を入れると保存できます", bundle: .module)
+                }
             }
-            .disabled(!model.canSave)
-            .accessibilityIdentifier("training-menu-save")
             if !model.isNew {
                 Section {
                     Button {
@@ -64,6 +79,21 @@ struct TrainingMenuFormView: View {
             }
         }
         .navigationTitle(model.isNew ? Text("メニューを追加", bundle: .module) : Text("メニューを編集", bundle: .module))
+        #if os(iOS)
+        .toolbar {
+            ToolbarItemGroup(placement: .keyboard) {
+                if isMinutesFocused {
+                    Spacer()
+                    Button {
+                        isMinutesFocused = false
+                    } label: {
+                        Text("完了", bundle: .module)
+                    }
+                    .accessibilityIdentifier("training-menu-minutes-done")
+                }
+            }
+        }
+        #endif
         .onAppear {
             model.load()
         }
