@@ -1,4 +1,5 @@
 import SwiftUI
+import SkipSQL
 
 enum ContentTab: String, Hashable {
     case home, training, issues, competitions
@@ -70,6 +71,12 @@ struct ContentView: View {
 ///
 /// 日常操作ではないので、ホームのツールバーから開く。
 struct SettingsView: View {
+    // ストアのスクリーンショット用。**リリースビルドには入らない**(`Data/DemoData.swift`)
+    #if DEBUG
+    @State private var isShowingDemoWipeConfirmation = false
+    @State private var demoErrorText: String? = nil
+    #endif
+
     var body: some View {
         Form {
             // 上から「設定するもの」→「眺めるもの」の順(2.6)。
@@ -157,6 +164,9 @@ struct SettingsView: View {
                 }
                 .accessibilityIdentifier("settings-privacy")
             }
+            #if DEBUG
+            demoSection
+            #endif
             if let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String,
                let buildNumber = Bundle.main.infoDictionary?["CFBundleVersion"] as? String {
                 Label {
@@ -167,5 +177,65 @@ struct SettingsView: View {
             }
         }
         .navigationTitle(Text("設定", bundle: .module))
+        #if DEBUG
+        .confirmationDialog(Text(verbatim: "デモデータを消しますか?"),
+                            isPresented: $isShowingDemoWipeConfirmation,
+                            titleVisibility: .visible) {
+            Button(role: .destructive) {
+                runDemo { try DemoData.wipe(db: $0) }
+            } label: {
+                Text(verbatim: "すべて消す")
+            }
+            Button(role: .cancel) {
+            } label: {
+                Text("やめる", bundle: .module)
+            }
+        }
+        #endif
     }
+
+    #if DEBUG
+    /// ストアのスクリーンショット用(§1.4)。**開発ビルドにしか出ない。**
+    ///
+    /// 文言は `Text(verbatim:)` で書く —— `Scripts/sync-localizable.py` は
+    /// `#if` を見ないので、`bundle: .module` にすると**開発用の文言が
+    /// リリースの文字列カタログに残る**(画面には出ないが、入っているのは嘘)。
+    ///
+    /// 実データのままでは見映えのする画面が撮れないので、1 タップで入れて
+    /// 1 タップで消す。消す側は**本物のデータも消える**ので確認を挟む。
+    @ViewBuilder private var demoSection: some View {
+        Section {
+            Button {
+                runDemo { try DemoData.seed(db: $0) }
+            } label: {
+                Text(verbatim: "デモデータを入れる")
+            }
+            .accessibilityIdentifier("settings-demo-seed")
+            Button(role: .destructive) {
+                isShowingDemoWipeConfirmation = true
+            } label: {
+                Text(verbatim: "データをすべて消す")
+            }
+            .accessibilityIdentifier("settings-demo-wipe")
+            if let demoErrorText = demoErrorText {
+                Text(demoErrorText)
+                    .font(.footnote)
+                    .foregroundStyle(.red)
+            }
+        } header: {
+            Text(verbatim: "開発用")
+        } footer: {
+            Text(verbatim: "スクリーンショットを撮るための仕掛けです。リリースビルドには入りません")
+        }
+    }
+
+    private func runDemo(_ work: (SQLContext) throws -> Void) {
+        do {
+            try work(try AppDatabase.shared())
+            demoErrorText = nil
+        } catch {
+            demoErrorText = "失敗しました: \(error)"
+        }
+    }
+    #endif
 }

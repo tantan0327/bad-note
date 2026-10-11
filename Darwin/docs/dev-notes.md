@@ -303,6 +303,12 @@ find Darwin/build -name "PrivacyInfo.xcprivacy" -path "*.app/*"
   **書き戻して一致するかで確かめる**(`formatter.string(from: date) != text` なら nil)。
   ゼロ埋めしていない `2026-3-1` も同時に弾ける
 
+- **`#if DEBUG` は Android では常に false**(2026-10-11 に確認)—— skipstone は
+  `#else` の側だけを Kotlin に出す。**Debug ビルドでも false。**
+  つまり `#if DEBUG` で囲んだコードは **iOS にしか存在しない**。
+  デモデータの投入のような開発用の仕掛けを Android でも使いたいときは、
+  別の口(フラグの受け渡しか、書き出した JSON の読み込み)が要る。
+  リリースビルドに入れたくないものを囲む用途としては、iOS 側では正しく効く
 - **`Double` に `Int` リテラルを入れられない**(2026-10-11 に踏んだ)——
   `let day: Double = 60 * 60 * 24` も `createdDaysAgo: Double = 0` も、
   `Double` の引数に `3` を渡すのも、Kotlin では
