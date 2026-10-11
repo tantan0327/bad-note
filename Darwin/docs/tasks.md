@@ -36,13 +36,9 @@ Android のビルドとテストは引き続き通し続ける(両 OS で動く�
 
 ### 1.1 置き場(週 1 の最初に)
 
-- [ ] **GitHub にリポジトリを作って push する** —— 今は `git remote` が無い。
-      ストアのメタデータが `https://github.com/tantan0327/bad-note`(サポート URL)と
-      `https://tantan0327.github.io/bad-note/`(プライバシー / マーケティング URL)を指しているので、
-      **リポジトリ名は `bad-note` で公開**(Pages が要るので public。非公開にするなら
-      Pages 用の別リポジトリを作り、`support_url.txt` を issues 以外へ向け直す)
-- [ ] **`record` ブランチを `main` に取り込む** —— `main` は 49 コミット遅れている。
-      リリースは `main` から切る
+- [x] GitHub に `tantan0327/bad-note`(public)を作って push 済み(2026-10-11)。
+      リモートは HTTPS + `gh` の認証(SSH 鍵は未登録)。`record` は `main` に取り込み済みで、
+      **リリースは `main` から切る**。以後の作業は `main` で進めてよい
 
 ### 1.2 プライバシーポリシーの公開
 
