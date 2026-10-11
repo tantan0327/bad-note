@@ -17,9 +17,14 @@ public struct IssueListView: View {
                     .font(.footnote)
                     .foregroundStyle(.red)
             }
+            // 探しているときは 3 層をほどいて 1 本にする。
+            // どの層にいるか思い出せないから探しているので、層に分けても助けにならない
+            if model.isSearching {
+                searchSection
+            }
             // 使い始めは 3 層の見出しと空行だけが並ぶ。絞り込む相手も並べる行も無いので、
             // ホーム・大会・家トレと同じく**次の 1 手だけ**を出す
-            if model.isEmpty {
+            if !model.isSearching && model.isEmpty {
                 Section {
                     EmptyStateView(icon: "checklist",
                                    message: Text("まだ課題がありません。コーチに言われたことや、試合で気づいたことを 1 行で書きます", bundle: .module)) {
@@ -35,13 +40,13 @@ public struct IssueListView: View {
                     }
                 }
             }
-            if !model.isEmpty {
+            if !model.isSearching && !model.isEmpty {
                 Section {
                     filterRow
                 }
             }
             // §7.4 層をまたぐドラッグのため、3 層を 1 つの ForEach に畳んでいる
-            if !model.isEmpty {
+            if !model.isSearching && !model.isEmpty {
                 ForEach(model.rows) { row in
                     if row.isHeader {
                         headerRow(row.tier)
@@ -64,7 +69,7 @@ public struct IssueListView: View {
             // (初回だけのヒントは忘れた頃に効かず、グリップはドラッグの開始点と誤解させる)。
             // **説明する行の後ろに置く**(1.10。絞り込みの直下は一等地なので明け渡した)。
             // **並べる行があるときだけ** —— 試せない操作の説明は常設しない
-            if model.hasTieredIssues {
+            if !model.isSearching && model.hasTieredIssues {
                 Section {
                     // 効かない操作を案内し続けない。並び替え中は長押しが止まっている
                     if model.allowsDrag {
@@ -82,7 +87,7 @@ public struct IssueListView: View {
             // 4.2 練習ログで書いた 1 行(inbox)の置き場。「書いたのに見つからない」を無くす。
             // 件数は層見出しと同じ出し方(タブのバッジにはしない §5.3)。
             // ドラッグの 1 本の ForEach には混ぜない(構造を崩すとドラッグが壊れる)
-            if !model.unorganized.isEmpty {
+            if !model.isSearching && !model.unorganized.isEmpty {
                 Section {
                     ForEach(model.unorganized) { issue in
                         NavigationLink {
@@ -115,8 +120,8 @@ public struct IssueListView: View {
             }
             // 重点も候補も無いと、組み替え画面は「まだ選んでいません」+「候補がありません」の
             // 空の画面になる。**行っても何もできない導線は出さない**(1.9)
-            if FocusBoard.canReshuffle(focusCount: model.focus.count,
-                                       candidateCount: model.next.count + model.someday.count) {
+            if !model.isSearching && FocusBoard.canReshuffle(focusCount: model.focus.count,
+                                                             candidateCount: model.next.count + model.someday.count) {
                 Section {
                     NavigationLink {
                         FocusReshuffleView()
@@ -129,6 +134,10 @@ public struct IssueListView: View {
             }
         }
         .navigationTitle(Text("課題", bundle: .module))
+        // 課題が増えると、種目 / 習熟度 / タグの絞り込みだけでは 1 件に辿り着けない。
+        // **言葉から引く**入口を足す(§7.4)
+        .searchable(text: $model.searchText,
+                    prompt: Text("課題を探す", bundle: .module))
         // 5.2 層の移動(スワイプ・ドラッグ)の触覚。トリガーは操作回数(読み込みでは鳴らない)
         .sensoryFeedback(SensoryFeedback.impact, trigger: model.moveCount)
         .toolbar {
@@ -172,6 +181,50 @@ public struct IssueListView: View {
         .onAppear {
             model.load()
         }
+    }
+
+    /// 検索の結果。**層をほどいて 1 本**にし、行ごとに居場所のバッジを添える。
+    ///
+    /// **ここでは動かさない。** 探す場所と動かす場所を分ける ——
+    /// スワイプもドラッグも持たせず、タップして詳細で決める。
+    @ViewBuilder private var searchSection: some View {
+        if model.searchResults.isEmpty {
+            Section {
+                EmptyStateView(message: Text("見つかりませんでした", bundle: .module)) {
+                    EmptyView()
+                }
+            }
+        } else {
+            Section {
+                ForEach(model.searchResults) { issue in
+                    NavigationLink {
+                        IssueDetailView(issueID: issue.id)
+                    } label: {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(issue.displayTitle)
+                                .font(.body)
+                            HStack(spacing: 8) {
+                                Badge(label: Text(placeName(issue)))
+                                MasteryIndicator(level: issue.masteryLevel)
+                            }
+                        }
+                    }
+                    .accessibilityIdentifier("issue-search-row-\(issue.id)")
+                }
+            } header: {
+                Text(verbatim: "\(model.searchResults.count)件")
+            }
+        }
+    }
+
+    /// 検索結果の行に添える居場所。
+    /// **未整理は層ではなく「未整理」と出す** —— まだ層を決めていないので、
+    /// 既定値の「いつか」を見せると決めたことになってしまう。
+    private func placeName(_ issue: Issue) -> String {
+        if issue.status == IssueStatus.inbox {
+            return "未整理"
+        }
+        return tierName(issue.tier)
     }
 
     /// §7.4 上部に 1 行。並び替え / 種目 / 習熟度 / ショットタグ。**既定はフィルタなし。**

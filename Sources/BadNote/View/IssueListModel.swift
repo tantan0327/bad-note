@@ -22,6 +22,10 @@ import SkipSQL
     /// 絞り込みに出すタグの候補
     public private(set) var availableTags: [Tag] = []
 
+    /// §7.4 検索語。**読み込み済みの一覧から絞る** —— 1 文字ごとに DB を引かない。
+    /// 絞り込みや並び替えと同じく持ち越さない。
+    public var searchText = ""
+
     /// §3.3 眺める順。**表示の切り替えだけで `sort_order` は書き換えない。**
     /// 絞り込みと同じく**持ち越さない** —— 起動のたびに手動へ戻る。
     /// 並びが変わったまま次に開くと、長押しドラッグが効かない理由が分からなくなる。
@@ -67,9 +71,31 @@ import SkipSQL
         return FocusBoard.focusCapacity
     }
 
-    /// 長押しドラッグを使えるか。手動の並びのときだけ。
+    /// 長押しドラッグを使えるか。手動の並びで、かつ検索していないときだけ。
+    ///
+    /// 検索中は 3 層を畳んだ 1 本の並びが画面に出ていないので、
+    /// 落とす先を逆算できない。
     public var allowsDrag: Bool {
-        return sortOrder.allowsDrag
+        return sortOrder.allowsDrag && !isSearching
+    }
+
+    /// 検索語が効いているか。
+    public var isSearching: Bool {
+        return IssueSearch.isActive(searchText)
+    }
+
+    /// 検索の結果。**3 層 + 未整理をまとめて**、読み込み済みの一覧から絞る。
+    ///
+    /// 層をまたいで 1 本に並べるのは、探しているときに「どの層にいるか」を
+    /// 先に思い出せないため。代わりに行へ居場所のバッジを添える。
+    /// アーカイブ(定着した課題)は一覧に載っていないので対象外(別画面)。
+    public var searchResults: [Issue] {
+        var all: [Issue] = []
+        all.append(contentsOf: focus)
+        all.append(contentsOf: next)
+        all.append(contentsOf: someday)
+        all.append(contentsOf: unorganized)
+        return IssueSearch.filtered(all, query: searchText)
     }
 
     public func load() {
