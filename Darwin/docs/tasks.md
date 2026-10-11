@@ -42,12 +42,10 @@ Android のビルドとテストは引き続き通し続ける(両 OS で動く�
 
 ### 1.2 プライバシーポリシーの公開
 
-- [ ] `docs/privacy.md` を GitHub Pages で `https://tantan0327.github.io/bad-note/privacy.html` に出す
-      (リポジトリの Settings → Pages → `main` / `docs`。`privacy.md` は Jekyll が HTML にする。
-      `permalink: /privacy.html` を front matter に足すと URL が固定できる)
-- [ ] `Darwin/fastlane/metadata/{ja,en-US}/privacy_url.txt` の URL が実際に開くことを確認
-      (ブラウザで 200 が返るまで `skip meta index` へ進まない)
-- [ ] 最終更新日を公開日に直す(今は 2026 年 8 月 25 日)
+- [x] GitHub Pages(`main` / `docs`)で公開済み(2026-10-11)。
+      `https://tantan0327.github.io/bad-note/privacy.html` とルートの両方が 200 で開く。
+      HTTPS 強制も有効。`docs/` の Markdown は front matter が無いと変換されない(`index.md` / `_config.yml` も追加済み)
+- [ ] 最終更新日を公開日に直す(今は 2026 年 8 月 25 日)。本文を変えたら push するだけで反映される
 
 ### 1.3 iOS 側の申告
 
