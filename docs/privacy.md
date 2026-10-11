@@ -1,3 +1,8 @@
+---
+title: BadNote プライバシーポリシー
+permalink: /privacy.html
+---
+
 # BadNote プライバシーポリシー
 
 最終更新日: 2026 年 8 月 25 日
