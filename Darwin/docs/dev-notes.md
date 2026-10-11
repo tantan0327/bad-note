@@ -25,20 +25,27 @@ JAVA_HOME=... xcodebuild -workspace Project.xcworkspace -scheme "BadNote App" \
   -destination "generic/platform=iOS Simulator" -configuration Debug build
 ```
 
-### `xcodebuild` は最後に APK を**インストール**しようとする
+### 「Run skip gradle」はエミュレータが無ければ assemble に落ちる(2026-10-11 に直した)
 
-「Run skip gradle」フェーズが走らせるのは `gradle -p ../Android launchDebug` で、
-**エミュレータが無いと `installDebug` で落ちる**(`No connected devices!`)。
+元の Skip テンプレートは常に `gradle -p ../Android launchDebug` を走らせるので、
+**Android の実機もエミュレータも無いと `installDebug` で必ず落ちていた**
+(`No connected devices!`)。iOS だけ触っているときに `** BUILD FAILED **` と出て、
+コードを疑って時間を使うことになる。
 
-```
-> Task :app:packageDebug          ← ここまで成功していれば両 OS ともコンパイルは通っている
-> Task :app:installDebug FAILED
-```
+`Darwin/BadNote.xcodeproj` のビルドフェーズに **`adb devices` を見る分岐**を足した。
 
-**`** BUILD FAILED **` でも、iOS の `.app` と Android の APK は出来ている。**
-`:app:packageDebug` まで成功しているかをログで見てから、コードを疑うこと。
-iOS 側の成果物だけ確かめたいときは、エミュレータを起動せずにビルドして
-`DerivedData/.../Build/Products/Debug-iphonesimulator/BadNote.app` を直接見る。
+- つながっていれば従来どおり `launch`(ビルド → インストール → 起動)
+- 無ければ `assemble`(APK を作るところまで)。**ビルドは成功で終わる**
+- `offline` の端末は「無い」扱い(インストールに失敗するため)
+
+判定は `adb devices` の 2 行目以降に `device` の行があるか。`adb` は
+`$ANDROID_HOME/platform-tools/adb`、無ければ `PATH` から探す。
+
+**両 OS のコンパイルはエミュレータなしで確認できる**(APK まで作るので)。
+実機の挙動を見たいときだけエミュレータを起動する。
+
+`SKIP_ACTION` でも制御できる(テンプレート由来)—— `none` で gradle を丸ごと飛ばす、
+`assemble` で明示的にビルドのみ。
 
 ### Android エミュレータの起動
 
