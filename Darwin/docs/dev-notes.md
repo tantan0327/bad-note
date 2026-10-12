@@ -25,6 +25,90 @@ JAVA_HOME=... xcodebuild -workspace Project.xcworkspace -scheme "BadNote App" \
   -destination "generic/platform=iOS Simulator" -configuration Debug build
 ```
 
+### `skip app launch` が何も出さずに固まったら DerivedData を消す(2026-10-12 に踏んだ)
+
+**症状** —— `skip app launch --ios` が 5 分経っても 10 分経っても何も出さない。
+`xcodebuild` のプロセスは生きているのに CPU は 0%、`swift-frontend` も `clang` も
+走っておらず、`.build` のどこにもファイルが書かれない。
+
+**原因** —— `.build/Darwin/DerivedData/SourcePackages` が**依存の解決の途中で
+壊れたまま残っていた**。前の実行を強制終了したのが発端で、以後の実行はそれを読んで
+同じ地点で止まり続ける。**放っておいても解けない。**
+
+**見分け方(推測せずこれで判定する)**
+
+```
+# 1. 進んでいるか —— ファイルが増えていなければ止まっている
+find .build/Darwin/DerivedData -type f | wc -l   # 30 秒あけて 2 回
+# 2. 最後に書かれた時刻 —— ずっと前なら、いまの実行は何もしていない
+find .build/Darwin/DerivedData -type f -newermt "-2 minutes"
+# 3. コンパイラが動いているか
+pgrep -fl "swift-frontend|clang|XCBBuildService"
+```
+
+**ゾンビが残っていないかも見る。** 強制終了した `xcodebuild` が親を失って
+`launchd`(ppid 1)にぶら下がったまま何日も生き残ることがある。
+
+```
+ps -eo pid,ppid,lstart,etime,args | grep xcodebuild
+```
+
+**復旧**
+
+```
+pkill -f "skip app launch"; pkill -f "xcodebuild -workspace"
+rm -rf .build/Darwin/DerivedData          # ビルドキャッシュだけ。checkouts は消さない
+# 先に解決だけ通して切り分ける(全体ビルドより早く結果が出る)
+xcodebuild -workspace Project.xcworkspace -scheme "BadNote App" \
+  -derivedDataPath .build/Darwin/DerivedData -resolvePackageDependencies
+skip app launch --ios
+```
+
+`Conflicting identity for skip / skip-foundation / skip-unit` の警告は
+**この固まりとは関係ない**(`source.skip.tools` と `github.com` の両方から
+同じパッケージが来ているだけ)。解決自体は成功する。
+
+### `gradle` は別途インストールが要る(2026-10-12 に踏んだ)
+
+**症状** —— ビルドの最後の「Run skip gradle」フェーズだけが落ちる。
+
+```
+Error: An executable tool named 'gradle' could not be found in the PATH
+```
+
+`Android/gradle/wrapper/` にラッパーの設定はあるが、**Skip の `skip gradle` は
+PATH の `gradle` を使う**ので、ラッパーだけでは足りない。
+
+**確かめ方**
+
+```
+which gradle                 # 無ければこれ
+ls /opt/homebrew/Cellar/gradle   # 無ければ本体ごと消えている(リンク切れではない)
+brew list --versions gradle
+```
+
+**直し方** —— `brew install gradle`。
+
+**`brew install maestro` は別物が入る**(2026-10-12 に踏んだ)—— homebrew の `maestro` は
+**AI エージェントのデスクトップアプリ**(runmaestro.ai、820MB)で、UI テストの Maestro ではない。
+UI テストのほうは公式タップから入れる。
+
+```
+brew tap mobile-dev-inc/tap
+brew install mobile-dev-inc/tap/maestro
+```
+
+**実体の無いデーモンが残ることがある。** gradle を消しても `GradleDaemon` の
+java プロセスは生き続ける(`/opt/homebrew/Cellar/gradle/<消えた版>/...` を指したまま)。
+入れ直す前に落としておく。
+
+```
+pgrep -f GradleDaemon | xargs kill
+```
+
+**iOS だけ見たいときは飛ばせる** —— `SKIP_ACTION=none skip app launch --ios`。
+ただし両 OS で動くのがこのアプリの前提なので、常用しない。
+
 ### 「Run skip gradle」はエミュレータが無ければ assemble に落ちる(2026-10-11 に直した)
 
 元の Skip テンプレートは常に `gradle -p ../Android launchDebug` を走らせるので、
