@@ -13,6 +13,14 @@
 #   4. 撮り終えたら `.maestro/90-wipe-demo.yaml` でデモデータを消す
 #
 # 出力は `Darwin/fastlane/screenshots/ja/N_ja.png`(fastlane の置き場そのもの)。
+# **Maestro 2.11 は実行フォルダの下に書く。** `COMPLETED` と出ても
+# プロジェクトには残らない(2026-10-12 に踏んだ)。流したあと取り出す:
+#
+#   mkdir -p Darwin/fastlane/screenshots/ja
+#   D=$(ls -dt ~/.maestro/tests/* | head -1)
+#   cp "$D"/10-store-screenshots/takeScreenshot/Darwin/fastlane/screenshots/ja/*.png \
+#      Darwin/fastlane/screenshots/ja/
+#
 # **途中で失敗すると半端な枚数が残る**ので、失敗したら消してから撮り直す。
 #
 # Android について:
@@ -43,9 +51,11 @@ appId: com.tange.badnote
 
 # ── 1 枚目: ホーム ────────────────────────────────────────────
 # めざす姿 / 目標大会までのカウントダウン / 今週の重点 3 枚。アプリの顔
-- assertVisible:
-    id: "home-record"
+#
+# **`home-record` を見てはいけない。** デモデータが入るとホームが長くなり、
+# 「練習を記録する」は画面外に出る。`assertVisible` は画面に出ているものしか見ない
 - assertVisible: ".*守りから攻めに切り替える.*"
+- assertVisible: ".*今週の重点.*"
 - takeScreenshot: Darwin/fastlane/screenshots/ja/1_ja
 
 # ── 2 枚目: しばらく触れていない課題 ──────────────────────────
@@ -90,6 +100,11 @@ appId: com.tange.badnote
 # 日々の記録。手応えの 3 択(できた / 近づいた / 次にやる)まで見せたいので下まで送る
 - tapOn:
     id: "tab-home"
+# ホームは長いので「練習を記録する」は画面外にある。送ってから押す
+- scrollUntilVisible:
+    element:
+      id: "home-record"
+    direction: DOWN
 - tapOn:
     id: "home-record"
 - assertVisible:
