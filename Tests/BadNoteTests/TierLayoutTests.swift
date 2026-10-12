@@ -222,4 +222,75 @@ final class TierLayoutTests: XCTestCase {
 
         XCTAssertNil(TierLayout.target(movingFrom: 2, toOffset: 0, rows: rows))
     }
+
+    // MARK: - 層を畳む(2026-10-12)
+
+    /// 畳んだ層の課題は並びから消える。**件数は見出しが持つので、数は分かる。**
+    func testCollapsedTierHidesItsIssues() {
+        let rows = TierLayout.rows(focus: [issue(1, .focus)],
+                                   next: [issue(2, .next)],
+                                   someday: [issue(3, .someday),
+                                             issue(4, .someday)],
+                                   collapsed: [Tier.someday])
+
+        var somedayIssueRows = 0
+        for row in rows {
+            if row.tier == Tier.someday && row.kind == TierRowKind.issue {
+                somedayIssueRows += 1
+            }
+        }
+        XCTAssertEqual(0, somedayIssueRows)
+    }
+
+    /// **畳んでも落下先は残す。** 無いとドラッグで運び込めなくなる
+    /// (空の層で同じ失敗を踏んでいる)。
+    func testCollapsedTierKeepsADropTarget() {
+        let rows = TierLayout.rows(focus: [Issue](),
+                                   next: [Issue](),
+                                   someday: [issue(1, .someday),
+                                             issue(2, .someday)],
+                                   collapsed: [Tier.someday])
+
+        var hasPlaceholder = false
+        for row in rows {
+            if row.tier == Tier.someday && row.kind == TierRowKind.placeholder {
+                hasPlaceholder = true
+            }
+        }
+        XCTAssertTrue(hasPlaceholder)
+    }
+
+    /// 畳んでいない層はこれまでどおり並ぶ。
+    func testOtherTiersAreUnaffected() {
+        let rows = TierLayout.rows(focus: [issue(1, .focus)],
+                                   next: [issue(2, .next)],
+                                   someday: [issue(3, .someday)],
+                                   collapsed: [Tier.someday])
+
+        var nextIssueRows = 0
+        for row in rows {
+            if row.tier == Tier.next && row.kind == TierRowKind.issue {
+                nextIssueRows += 1
+            }
+        }
+        XCTAssertEqual(1, nextIssueRows)
+    }
+
+    /// 既定で畳むのは「いつか」が溜まっているときだけ。
+    func testInitialCollapseOnlyWhenSomedayIsLarge() {
+        XCTAssertEqual([Tier](), TierLayout.initiallyCollapsed(somedayCount: 8))
+        XCTAssertEqual([Tier.someday], TierLayout.initiallyCollapsed(somedayCount: 9))
+    }
+
+    /// 何も畳まないときは、これまでの並びと同じ。
+    func testNoCollapseMatchesThePreviousLayout() {
+        let focus = [issue(1, .focus)]
+        let next = [issue(2, .next)]
+        let someday = [issue(3, .someday)]
+
+        let before = TierLayout.rows(focus: focus, next: next, someday: someday)
+        let after = TierLayout.rows(focus: focus, next: next, someday: someday, collapsed: [Tier]())
+
+        XCTAssertEqual(before.count, after.count)
+    }
 }

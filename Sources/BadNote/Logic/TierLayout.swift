@@ -73,6 +73,23 @@ public struct TierLayout {
     /// 層の並び順(上から)。
     public static let tiers = [Tier.focus, Tier.next, Tier.someday]
 
+    /// 畳むことを勧める件数(2026-10-12)。
+    ///
+    /// これを超えた層は**既定で畳む**。40 件の「いつか」が開いたまま並ぶと、
+    /// 一覧が 1 本の長いリストになって、上の 2 層が視界から消える。
+    /// 小さい層まで畳むと、ただ隠されただけになるので閾値を置く。
+    public static let collapseThreshold = 8
+
+    /// 既定で畳んでおく層。**「いつか」が溜まっているときだけ。**
+    ///
+    /// 重点は 3 件まで、次にやるは本人がいま選んでいる最中のものなので畳まない。
+    public static func initiallyCollapsed(somedayCount: Int) -> [Tier] {
+        if somedayCount > TierLayout.collapseThreshold {
+            return [Tier.someday]
+        }
+        return [Tier]()
+    }
+
     /// 見出し込みの 1 本の並びを作る。
     ///
     /// **空の層には落下先の行を 1 つ置く。** 見出しは動かせないので、
@@ -83,31 +100,50 @@ public struct TierLayout {
     ///
     /// ただし **3 層すべて空のときは空き枠を出さない** —— 課題が 1 つも無い人に
     /// 空き枠だけ 3 つ見せても意味が無い(初回の案内はホームが持つ。4.1)。
-    public static func rows(focus: [Issue], next: [Issue], someday: [Issue]) -> [TierRow] {
+    ///
+    /// **畳んだ層は見出しと落下先だけにする**(2026-10-12)。中身は消えない。
+    public static func rows(focus: [Issue], next: [Issue], someday: [Issue],
+                            collapsed: [Tier] = [Tier]()) -> [TierRow] {
         let isEmptyBoard = focus.isEmpty && next.isEmpty && someday.isEmpty
         var rows: [TierRow] = []
         if isEmptyBoard {
             // 盤面が空のときは従来どおり「まだありません」の落下先だけ
-            TierLayout.append(tier: Tier.focus, issues: focus, to: &rows)
+            TierLayout.append(tier: Tier.focus, issues: focus, collapsed: collapsed, to: &rows)
         } else {
             rows.append(TierRow.header(Tier.focus))
-            for issue in focus {
-                rows.append(TierRow.item(issue))
-            }
-            // 空き枠が落下先を兼ねるので、重点には placeholder を置かない
-            let slots = FocusBoard.remainingSlots(focusCount: focus.count)
-            for index in 0..<slots {
-                rows.append(TierRow.slot(Tier.focus, index: index))
+            if !TierLayout.isCollapsed(Tier.focus, in: collapsed) {
+                for issue in focus {
+                    rows.append(TierRow.item(issue))
+                }
+                // 空き枠が落下先を兼ねるので、重点には placeholder を置かない
+                let slots = FocusBoard.remainingSlots(focusCount: focus.count)
+                for index in 0..<slots {
+                    rows.append(TierRow.slot(Tier.focus, index: index))
+                }
+            } else {
+                // **畳んだ層にも落下先を 1 つ残す。** 無いとドラッグで運び込めなくなる
+                rows.append(TierRow.placeholder(Tier.focus))
             }
         }
-        TierLayout.append(tier: Tier.next, issues: next, to: &rows)
-        TierLayout.append(tier: Tier.someday, issues: someday, to: &rows)
+        TierLayout.append(tier: Tier.next, issues: next, collapsed: collapsed, to: &rows)
+        TierLayout.append(tier: Tier.someday, issues: someday, collapsed: collapsed, to: &rows)
         return rows
     }
 
-    private static func append(tier: Tier, issues: [Issue], to rows: inout [TierRow]) {
+    /// `[Tier]` の `contains` は書かずに自前で回す(`PracticePlan` と同じ理由)。
+    static func isCollapsed(_ tier: Tier, in collapsed: [Tier]) -> Bool {
+        for candidate in collapsed {
+            if candidate == tier {
+                return true
+            }
+        }
+        return false
+    }
+
+    private static func append(tier: Tier, issues: [Issue], collapsed: [Tier], to rows: inout [TierRow]) {
         rows.append(TierRow.header(tier))
-        if issues.isEmpty {
+        // 畳んだ層も空の層も、落下先の行を 1 つだけ置く
+        if issues.isEmpty || TierLayout.isCollapsed(tier, in: collapsed) {
             rows.append(TierRow.placeholder(tier))
             return
         }

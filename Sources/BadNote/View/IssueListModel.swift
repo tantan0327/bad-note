@@ -71,6 +71,13 @@ import SkipSQL
         return FocusBoard.focusCapacity
     }
 
+    /// 畳んでいる層(2026-10-12)。**見えている件数を減らすため**で、
+    /// 中身は消えない。畳んだ層にもドラッグの落下先は残る。
+    public private(set) var collapsedTiers: [Tier] = [Tier]()
+    /// 既定の畳み方を一度だけ決めたか。読み直すたびに畳み直すと、
+    /// 本人が開いた層が勝手に閉じる。
+    private var hasAppliedInitialCollapse = false
+
     /// 長押しドラッグを使えるか。手動の並びで、かつ検索していないときだけ。
     ///
     /// 検索中は 3 層を畳んだ 1 本の並びが画面に出ていないので、
@@ -114,7 +121,13 @@ import SkipSQL
             next = IssueSort.sorted(fetchedNext, by: sortOrder)
             someday = IssueSort.sorted(fetchedSomeday, by: sortOrder)
             availableTags = try TagRepository(db: db).fetchAll()
-            rows = TierLayout.rows(focus: focus, next: next, someday: someday)
+            // 溜まっている「いつか」は最初から畳んでおく(1 度だけ判断する)
+            if !hasAppliedInitialCollapse {
+                collapsedTiers = TierLayout.initiallyCollapsed(somedayCount: someday.count)
+                hasAppliedInitialCollapse = true
+            }
+            rows = TierLayout.rows(focus: focus, next: next, someday: someday,
+                                   collapsed: collapsedTiers)
             unorganized = try issues.fetch(statuses: [IssueStatus.inbox])
             errorText = nil
         } catch {
@@ -146,6 +159,51 @@ import SkipSQL
 
     public func selectTag(_ value: Int64?) {
         tagId = value
+        load()
+    }
+
+    /// 層を畳む / 開く。
+    public func toggleCollapse(_ tier: Tier) {
+        var remaining: [Tier] = []
+        var wasCollapsed = false
+        for candidate in collapsedTiers {
+            if candidate == tier {
+                wasCollapsed = true
+            } else {
+                remaining.append(candidate)
+            }
+        }
+        if !wasCollapsed {
+            remaining.append(tier)
+        }
+        collapsedTiers = remaining
+        rows = TierLayout.rows(focus: focus, next: next, someday: someday,
+                               collapsed: collapsedTiers)
+    }
+
+    public func isCollapsed(_ tier: Tier) -> Bool {
+        return TierLayout.isCollapsed(tier, in: collapsedTiers)
+    }
+
+    /// **いま見えている並びを保存順にする**(2026-10-12)。
+    ///
+    /// 押したあとは手動の並びに戻る —— そこから先はドラッグで微調整できる。
+    /// これを置くまで、優先順に「見る」ことはできても「整理する」ことはできなかった。
+    public func commitDisplayedOrder() {
+        do {
+            let issues = IssueRepository(db: try context())
+            var changed: [Issue] = []
+            changed.append(contentsOf: IssueOrderCommit.renumbered(focus))
+            changed.append(contentsOf: IssueOrderCommit.renumbered(next))
+            changed.append(contentsOf: IssueOrderCommit.renumbered(someday))
+            for issue in changed {
+                _ = try issues.update(issue)
+            }
+            sortOrder = IssueSortOrder.manual
+            errorText = nil
+        } catch {
+            errorText = "並びの保存に失敗しました: \(error)"
+        }
         load()
     }
 

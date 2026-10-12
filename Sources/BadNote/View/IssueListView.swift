@@ -77,7 +77,7 @@ public struct IssueListView: View {
                             .font(.footnote)
                             .foregroundStyle(.secondary)
                     } else {
-                        Text("この並びでは長押しの並び替えはできません。左右スワイプの上げ下げは使えます", bundle: .module)
+                        Text("この並びでは長押しの並び替えはできません。「この並びで整理」を押すと、いまの順番を保存して並べ替えられるようになります", bundle: .module)
                             .font(.footnote)
                             .foregroundStyle(.secondary)
                     }
@@ -247,6 +247,21 @@ public struct IssueListView: View {
                 }
                 .accessibilityIdentifier("issues-sort")
 
+                // **見えている順を保存順にする。** これが無いと、優先順に「見る」ことは
+                // できても「整理する」ことができない(並び替え中はドラッグが止まるため)
+                if !model.allowsDrag && !model.isSearching {
+                    Button {
+                        withAnimation(Motion.move) {
+                            model.commitDisplayedOrder()
+                        }
+                    } label: {
+                        Text("この並びで整理", bundle: .module)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .font(.footnote)
+                    .accessibilityIdentifier("issues-commit-order")
+                }
+
                 Menu {
                     Button {
                         model.selectDiscipline(nil)
@@ -366,19 +381,38 @@ public struct IssueListView: View {
     }
 
     /// 層の見出し。ドラッグの落下位置を決める区切りでもあるので、行として並べる。
+    ///
+    /// **押すと畳める**(2026-10-12)。溜まった「いつか」が開いたまま並ぶと、
+    /// 一覧が 1 本の長いリストになって上の 2 層が視界から消える。
+    /// 件数は畳んでいても出すので、隠れた数は分かる。
     @ViewBuilder private func headerRow(_ tier: Tier) -> some View {
-        HStack {
-            Text(tierName(tier))
-                .font(.headline)
-            Spacer()
-            Text(verbatim: tier == Tier.focus
-                 ? "\(model.count(of: tier))/\(model.focusCapacity)"
-                 : "\(model.count(of: tier))件")
-                .font(.footnote)
-                .foregroundStyle(.secondary)
+        Button {
+            withAnimation(Motion.move) {
+                model.toggleCollapse(tier)
+            }
+        } label: {
+            HStack {
+                Text(tierName(tier))
+                    .font(.headline)
+                    .foregroundStyle(.primary)
+                Spacer()
+                Text(verbatim: tier == Tier.focus
+                     ? "\(model.count(of: tier))/\(model.focusCapacity)"
+                     : "\(model.count(of: tier))件")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                Text(verbatim: model.isCollapsed(tier) ? "＋" : "−")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
         }
+        .buttonStyle(.plain)
         .padding(.top, 8)
         .moveDisabled(true)
+        .accessibilityIdentifier("issues-tier-\(tier.rawValue)")
+        .accessibilityValue(model.isCollapsed(tier)
+                            ? Text("畳んでいます", bundle: .module)
+                            : Text("開いています", bundle: .module))
     }
 
     private func tierName(_ tier: Tier) -> String {
@@ -404,6 +438,15 @@ public struct IssueListView: View {
                     // 影響度 × コストの目印(§3.4)。付くのは影響度が大きい課題だけ
                     if let hint = PriorityHint.forIssue(impact: issue.impact, cost: issue.cost, tier: issue.tier) {
                         Badge(label: Text(hint.displayName), tint: hint.tint)
+                    }
+                    // **並び替えの基準は行にも出す**(2026-10-12)。
+                    // 放置が長い順で眺めているのに、どれくらい放置したのかが
+                    // 行から読めないと、並びを信じるしかなくなる。
+                    // 常設しないのは、他の並びでは判断材料にならないため
+                    if model.sortOrder == IssueSortOrder.idle {
+                        Text(DateText.day(issue.lastFocusedAt ?? issue.createdAt))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
                     }
                 }
             }
