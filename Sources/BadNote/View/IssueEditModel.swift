@@ -15,9 +15,15 @@ import SkipSQL
 
     // MARK: - 入力
 
-    /// もとの言葉(原文)。**編集しない**ので、既存の課題では読み取り専用にする。
+    /// 画面に出る**ただ 1 つの行**(2026-10-12)。
+    ///
+    /// 新規ならこれが書き留めた言葉になり、編集なら言い換えに入る
+    /// (`IssueTitleEdit`)。**どちらの画面でも欄は 1 つ。**
+    public var title = ""
+
+    /// 書き留めた言葉(原文)。編集画面の折りたたみの中にだけ出す。
+    /// 誤入力は直せる(2026-08-24 決定)ので読み取り専用にはしない。
     public var coachWords = ""
-    public var doneForm = ""
     public var coachName = ""
     public var discipline: Discipline = .both
     public var masteryLevel: MasteryLevel = .solo
@@ -40,9 +46,9 @@ import SkipSQL
         return issueID == nil
     }
 
-    /// 原文が空だと何も残らないので、そこだけは要る。
+    /// 1 行が空だと何も残らないので、そこだけは要る。
     public var canSave: Bool {
-        return !coachWords.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines).isEmpty
+        return !title.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines).isEmpty
     }
 
     // MARK: - 読み込み
@@ -58,8 +64,9 @@ import SkipSQL
                 errorText = "課題が見つかりません"
                 return
             }
+            // 画面に出すのは 1 行だけ。言い換えがあればそれ、無ければ書き留めた言葉
+            title = IssueTitleEdit.title(of: issue)
             coachWords = issue.coachWords
-            doneForm = issue.doneForm ?? ""
             coachName = issue.coachName ?? ""
             discipline = issue.discipline
             masteryLevel = issue.masteryLevel
@@ -129,6 +136,10 @@ import SkipSQL
             errorText = "課題を 1 行入れてください"
             return
         }
+        // 編集では `coachWords` を空にできない(折りたたみの中で消された場合に備える)
+        if !isNew && coachWords.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines).isEmpty {
+            coachWords = title
+        }
         do {
             let db = try context()
             let issues = IssueRepository(db: db)
@@ -141,7 +152,8 @@ import SkipSQL
                 }
                 // 原文は基本そのまま残すが、誤入力は直せる(2026-08-24 決定)
                 issue.coachWords = coachWords.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines)
-                issue.doneForm = optionalText(doneForm)
+                // **直した 1 行は言い換えに入る。書き留めた言葉は残る**(2026-10-12)
+                issue = IssueTitleEdit.applied(to: issue, title: title)
                 issue.coachName = optionalText(coachName)
                 issue.discipline = discipline
                 issue.masteryLevel = masteryLevel
@@ -150,8 +162,9 @@ import SkipSQL
                 _ = try issues.update(issue)
                 savedID = issueID
             } else {
-                let created = try issues.create(coachWords: coachWords.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines),
-                                                doneForm: optionalText(doneForm),
+                // 新規はその 1 行が書き留めた言葉そのもの。言い換えは持たせない
+                let created = try issues.create(coachWords: title.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines),
+                                                doneForm: nil,
                                                 coachName: optionalText(coachName),
                                                 discipline: discipline,
                                                 masteryLevel: masteryLevel,

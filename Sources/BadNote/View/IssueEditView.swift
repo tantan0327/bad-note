@@ -5,6 +5,7 @@ import SwiftUI
 /// 新規で必須なのは原文の 1 行だけ。他はすべて任意で、後から編集できる。
 public struct IssueEditView: View {
     @State private var model: IssueEditModel
+    @State private var isShowingDetails = false
     @Environment(\.dismiss) private var dismiss
 
     /// - Parameter issueID: nil なら新規登録。
@@ -20,19 +21,28 @@ public struct IssueEditView: View {
                         .font(.footnote)
                         .foregroundStyle(.red)
                 }
-                if model.isNew {
-                    // 新規は 1 欄だけ。完了形で書けばそのまま主表示になる
-                    // (displayTitle のフォールバック)ので、言い換え欄は要らない
-                    newWordsSection
-                } else {
-                    coachWordsSection
-                    doneFormSection
+                // **欄は 1 つだけ**(2026-10-12)。追加でも編集でも同じ姿にする ——
+                // 追加が 1 欄で編集が 2 欄だと「さっき書いたのにまだ書く欄がある」と見える
+                titleSection
+                // 残りはすべて任意で、既定値があり、後から変えられる。
+                // 同じ重さで並べると記入必須のフォームに見えるので畳んでおく
+                DisclosureGroup(isExpanded: $isShowingDetails) {
+                    VStack(alignment: .leading, spacing: 24) {
+                        if !model.isNew {
+                            originalWordsSection
+                        }
+                        disciplineSection
+                        masterySection
+                        impactSection
+                        costSection
+                        tagSection
+                    }
+                    .padding(.top, 12)
+                } label: {
+                    Text("くわしく決める(任意)", bundle: .module)
+                        .font(.headline)
                 }
-                disciplineSection
-                masterySection
-                impactSection
-                costSection
-                tagSection
+                .accessibilityIdentifier("issue-edit-details")
             }
             .padding()
         }
@@ -57,21 +67,23 @@ public struct IssueEditView: View {
         }
     }
 
-    // MARK: - 課題(新規は 1 欄だけ)
+    // MARK: - 課題(画面に出るただ 1 つの欄)
 
-    /// 最初から完了形で書くよう促す(二度手間の解消。2026-08-24)。
-    /// ここで書いた課題は整理済み(active)で保存され、未整理には入らない。
-    @ViewBuilder private var newWordsSection: some View {
+    /// **追加でも編集でも同じ 1 欄。**
+    ///
+    /// 新規ならここに書いた文が書き留めた言葉になり、編集なら言い換えに入る
+    /// (`IssueTitleEdit`)。書き留めた言葉は残るので、原文を失うことはない。
+    @ViewBuilder private var titleSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("課題を 1 行で", bundle: .module)
+            Text("課題", bundle: .module)
                 .font(.headline)
-            TextField(text: $model.coachWords) {
+            TextField(text: $model.title) {
                 Text("例: レシーブでラケット面を立てて構えられている", bundle: .module)
             }
             .textFieldStyle(.roundedBorder)
             .accessibilityIdentifier("issue-edit-words")
             saveHint
-            Text("「〜できている」の形で書くのがおすすめです。コーチに言われた言葉のままでも構いません", bundle: .module)
+            Text("「〜できている」の形で書くのがおすすめです。言われた言葉のままでも構いません", bundle: .module)
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
@@ -87,20 +99,20 @@ public struct IssueEditView: View {
         }
     }
 
-    // MARK: - もとの言葉(原文)
+    // MARK: - もとの言葉(折りたたみの中。言い換える前に何と言われたか)
 
-    @ViewBuilder private var coachWordsSection: some View {
+    /// **上の 1 行を直しても、ここは変わらない。**
+    /// 言われたとおりの言葉を残すのがこの欄の役目(§3.1)。誤字だけは直せる。
+    @ViewBuilder private var originalWordsSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("もとの言葉", bundle: .module)
                 .font(.headline)
-            // 原文は基本そのまま。ただし誤入力は直せるようにする(2026-08-24 決定)
             TextField(text: $model.coachWords) {
                 Text("気づいたことを 1 行で", bundle: .module)
             }
             .textFieldStyle(.roundedBorder)
-            .accessibilityIdentifier("issue-edit-words")
-            saveHint
-            Text("原文はなるべくそのまま。直すのは誤字くらいに留めます", bundle: .module)
+            .accessibilityIdentifier("issue-edit-original")
+            Text("最初に書き留めた言葉です。直すのは誤字くらいに留めます", bundle: .module)
                 .font(.caption)
                 .foregroundStyle(.secondary)
             TextField(text: $model.coachName) {
@@ -108,23 +120,6 @@ public struct IssueEditView: View {
             }
             .textFieldStyle(.roundedBorder)
             .accessibilityIdentifier("issue-edit-coach")
-        }
-    }
-
-    // MARK: - できている状態
-
-    @ViewBuilder private var doneFormSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("できている状態(任意)", bundle: .module)
-                .font(.headline)
-            TextField(text: $model.doneForm) {
-                Text("完了形で言い換える", bundle: .module)
-            }
-            .textFieldStyle(.roundedBorder)
-            .accessibilityIdentifier("issue-edit-doneform")
-            Text("後から整理するときに書けば十分です", bundle: .module)
-                .font(.caption)
-                .foregroundStyle(.secondary)
         }
     }
 

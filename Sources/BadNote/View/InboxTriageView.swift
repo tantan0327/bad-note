@@ -6,6 +6,7 @@ import SwiftUI
 /// 整理して `active` にする / 今は決めずに送る / もう不要なので消す。
 public struct InboxTriageView: View {
     @State private var model = InboxTriageModel()
+    @State private var isShowingDetails = false
     @Environment(\.dismiss) private var dismiss
 
     public init() {
@@ -22,11 +23,24 @@ public struct InboxTriageView: View {
                 if let issue = model.current {
                     remainingLabel
                     coachWordsCard(issue)
-                    doneFormSection
-                    disciplineSection
-                    impactSection
-                    costSection
-                    tagSection
+                    // **読んで決めるだけで次へ行ける**(2026-10-12)。
+                    // 言い換えも属性もすべて任意で、後から課題詳細で変えられる。
+                    // 1 件ごとに 6 ブロック並べると、練習中に書いた 1 行が
+                    // 後で記入必須のフォームになって現れることになる
+                    DisclosureGroup(isExpanded: $isShowingDetails) {
+                        VStack(alignment: .leading, spacing: 24) {
+                            doneFormSection
+                            disciplineSection
+                            impactSection
+                            costSection
+                            tagSection
+                        }
+                        .padding(.top, 12)
+                    } label: {
+                        Text("くわしく決める(任意)", bundle: .module)
+                            .font(.headline)
+                    }
+                    .accessibilityIdentifier("triage-details")
                     actionSection
                 } else {
                     finishedSection
