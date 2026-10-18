@@ -25,6 +25,12 @@ import SkipSQL
     /// Lv.4 未満で「克服した」を押したときの理由(§7.3)
     public var overcomeRejection: String? = nil
 
+    /// 重点が埋まっているときに保留している昇格先(§7.4)。
+    private var pendingPromotion: Issue? = nil
+    /// 「どれと入れ替えますか?」の候補(現在の重点 3 件)
+    public private(set) var swapCandidates: [Issue] = []
+    public var isShowingSwap = false
+
 
     public init(issueID: Int64) {
         self.issueID = issueID
@@ -100,6 +106,81 @@ import SkipSQL
         } catch {
             errorText = "レベルの更新に失敗しました: \(error)"
         }
+    }
+
+    // MARK: - 優先度の層(§3.3 / §7.4)
+
+    /// 層を変える。**一覧と同じ `FocusBoard` を通す**(2026-10-18)。
+    ///
+    /// それまで層は一覧の長押しドラッグとスワイプ、ホームの 3 択からしか変えられず、
+    /// 詳細では「種目や優先度を見る」に**読むだけ**で出ていた。
+    /// 1 件を見て決める画面なのに、そこで決められなかった。
+    ///
+    /// **素通しで `tier` を書き換えない。** 重点は 3 枠なので、埋まっていれば
+    /// `FocusBoard.move` が `.needsSwap` を返す。編集画面にピッカーを足す案を
+    /// 採らなかったのはこのため —— あの画面は保存までこの判定を通せない。
+    public func move(to tier: Tier) {
+        guard let current = issue else {
+            return
+        }
+        if current.tier == tier {
+            return
+        }
+        do {
+            let board = try IssueRepository(db: try context()).fetch(statuses: [IssueStatus.inbox, IssueStatus.active])
+            // 末尾に置く。範囲外の位置は FocusBoard 側で丸められる
+            let result = FocusBoard.move(current, to: tier, at: Int.max, in: board)
+            if let candidates = result.swapCandidates {
+                pendingPromotion = current
+                swapCandidates = candidates
+                isShowingSwap = true
+                return
+            }
+            if let updated = result.updatedIssues {
+                try apply(updated)
+            }
+            load()
+        } catch {
+            errorText = "優先度の変更に失敗しました: \(error)"
+        }
+    }
+
+    /// 「どれと入れ替えますか?」で選ばれた 1 件を next に降ろし、この課題を重点に入れる。
+    public func confirmSwap(with demoting: Issue) {
+        guard let promoting = pendingPromotion else {
+            cancelSwap()
+            return
+        }
+        do {
+            let board = try IssueRepository(db: try context()).fetch(statuses: [IssueStatus.inbox, IssueStatus.active])
+            try apply(FocusBoard.swap(promoting: promoting, demoting: demoting, in: board))
+            cancelSwap()
+            load()
+        } catch {
+            errorText = "入れ替えに失敗しました: \(error)"
+        }
+    }
+
+    public func cancelSwap() {
+        pendingPromotion = nil
+        swapCandidates = []
+        isShowingSwap = false
+    }
+
+    /// **未整理のまま重点に上げたら `active` にする。**
+    /// ホームの 3 択と同じ —— 重点にする判断そのものが整理なので、
+    /// `inbox` のままだと一覧にもホームにも出ず行き場を失う。
+    /// 再浮上の回数はここでは数えない(ホームの 3 択だけが再浮上)。
+    private func apply(_ updated: [Issue]) throws {
+        let issues = IssueRepository(db: try context())
+        for issue in updated {
+            var target = issue
+            if target.tier == Tier.focus && target.status == IssueStatus.inbox {
+                target.status = IssueStatus.active
+            }
+            _ = try issues.update(target)
+        }
+        errorText = nil
     }
 
     /// 克服した(定着確認へ)。**Lv.4 のときだけ通す**(§7.3)。

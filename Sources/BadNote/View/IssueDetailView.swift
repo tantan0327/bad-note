@@ -2,7 +2,7 @@ import SwiftUI
 
 /// 課題詳細(§7.3)。
 ///
-/// 上から できている状態 / 習熟度 / もとの言葉 / 記録 / 進み方 / アクション / 属性。
+/// 上から できている状態 / 習熟度 / 優先度 / もとの言葉 / 記録 / 進み方 / アクション / 属性。
 /// 属性は日常で使わないのでいちばん下(「克服した」を折り返しの外に沈めない。2.2)。
 ///
 /// **編集は右上。** 属性の折りたたみの中に置いていたが、見つからなかった(2026-10-18)。
@@ -25,6 +25,7 @@ public struct IssueDetailView: View {
                 if let issue = model.issue {
                     doneFormSection(issue)
                     masterySection(issue)
+                    tierSection(issue)
                     coachWordsSection(issue)
                     recordSection(issue)
                     progressSection
@@ -56,6 +57,23 @@ public struct IssueDetailView: View {
                 }
             }
         }
+        // 重点が 3 枠埋まっているとき。一覧・ホームと同じ問いにする(§7.4)
+        .confirmationDialog(Text("どれと入れ替えますか?", bundle: .module),
+                            isPresented: $model.isShowingSwap,
+                            titleVisibility: .visible) {
+            ForEach(model.swapCandidates) { candidate in
+                Button {
+                    model.confirmSwap(with: candidate)
+                } label: {
+                    Text(candidate.displayTitle)
+                }
+            }
+            Button(role: .cancel) {
+                model.cancelSwap()
+            } label: {
+                Text("やめる", bundle: .module)
+            }
+        }
         .onAppear {
             model.load()
         }
@@ -70,7 +88,7 @@ public struct IssueDetailView: View {
             HStack(spacing: 8) {
                 // 今どこにいるか。**重点のときだけ出す**(1.5)——「次にやる」「いつか」まで
                 // 出すと全部の課題にバッジが付いて、目印としての意味が無くなる。
-                // 層そのものは「種目や優先度を見る」の中にある
+                // 層を変える 3 つのボタンは習熟度の下にある
                 if issue.tier == Tier.focus {
                     Badge(label: Text("今週の重点", bundle: .module), tint: Palette.accent)
                 }
@@ -143,6 +161,60 @@ public struct IssueDetailView: View {
                     .accessibilityIdentifier("issue-detail-lower")
                 }
             }
+        }
+    }
+
+    // MARK: - 2.5 優先度の層(2026-10-18 に足した)
+
+    /// どの層に置くかを、この画面で決められるようにする。
+    ///
+    /// それまで層は一覧の長押しドラッグとスワイプ、ホームの 3 択からしか変えられず、
+    /// 詳細では折りたたみの中に**読むだけ**で出ていた。
+    /// 1 件を開いて「今週やるか」を決める画面なので、ここに無いのはおかしい。
+    ///
+    /// 見た目は練習ログの「種類」と同じ —— 今の層が塗りつぶし、残りは枠線。
+    /// **アーカイブ済みのときは出さない**(層を持たない)。
+    @ViewBuilder private func tierSection(_ issue: Issue) -> some View {
+        if !model.isArchived {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("優先度", bundle: .module)
+                    .font(.headline)
+                HStack(spacing: 8) {
+                    tierButton(Tier.focus, current: issue.tier)
+                    tierButton(Tier.next, current: issue.tier)
+                    tierButton(Tier.someday, current: issue.tier)
+                }
+                // §5.3 枠の残りは数えない。**埋まっていれば押したときに聞く**ので、
+                // ここに「あと N 枠」を出すと押す前から数を数えさせることになる
+                Text("今週の重点は 3 件までです", bundle: .module)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    @ViewBuilder private func tierButton(_ tier: Tier, current: Tier) -> some View {
+        if tier == current {
+            Button {
+            } label: {
+                Text(verbatim: tierName(tier))
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.borderedProminent)
+            .font(.footnote)
+            .accessibilityIdentifier("issue-detail-tier-\(tier.rawValue)")
+        } else {
+            Button {
+                withAnimation(Motion.select) {
+                    model.move(to: tier)
+                }
+            } label: {
+                Text(verbatim: tierName(tier))
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.bordered)
+            .font(.footnote)
+            .accessibilityIdentifier("issue-detail-tier-\(tier.rawValue)")
         }
     }
 
@@ -297,7 +369,10 @@ public struct IssueDetailView: View {
             Button {
                 isShowingAttributes = !isShowingAttributes
             } label: {
-                Text(isShowingAttributes ? "閉じる" : "種目や優先度を見る", bundle: .module)
+                // 優先度を上に出したので「種目や優先度を見る」から改名した(2026-10-18)。
+                // 中身は種目と、入っていれば影響度・習得コスト・タグ。
+                // 何が入るかは課題によって変わるので、並べ上げずに「くわしく」にした
+                Text(isShowingAttributes ? "閉じる" : "くわしく見る", bundle: .module)
                     .font(.footnote)
             }
             .buttonStyle(.bordered)
@@ -306,7 +381,7 @@ public struct IssueDetailView: View {
                 Card {
                     VStack(alignment: .leading, spacing: 8) {
                         attribute(Text("種目", bundle: .module), value: issue.discipline.displayName)
-                        attribute(Text("優先度", bundle: .module), value: tierName(issue.tier))
+                        // 優先度はここに出さない(2026-10-18 に上へ出して押せるようにした)
                         if let impact = issue.impact {
                             attribute(Text("影響度", bundle: .module), value: ScaleLabel.impact(impact))
                         }

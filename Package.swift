@@ -4,7 +4,7 @@ import PackageDescription
 
 let package = Package(
     name: "bad-note",
-    defaultLocalization: "en",
+    defaultLocalization: "ja",
     platforms: [.iOS(.v17), .macOS(.v14)],
     products: [
         .library(name: "BadNote", type: .dynamic, targets: ["BadNote"]),
