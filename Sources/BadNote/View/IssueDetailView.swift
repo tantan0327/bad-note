@@ -9,6 +9,8 @@ import SwiftUI
 public struct IssueDetailView: View {
     @State private var model: IssueDetailModel
     @State private var isShowingAttributes = false
+    @State private var isShowingDeleteConfirmation = false
+    @Environment(\.dismiss) private var dismiss
 
     public init(issueID: Int64) {
         _model = State(initialValue: IssueDetailModel(issueID: issueID))
@@ -55,7 +57,44 @@ public struct IssueDetailView: View {
                     }
                     .accessibilityIdentifier("issue-detail-edit")
                 }
+                // 削除はメニューの奥に置く。気軽に消せる場所に置かない(§7.5。大会詳細と同じ)。
+                // **編集はメニューに入れない** —— 奥に置いていて見つからなかったのが
+                // そもそもの発端なので、1 タップのまま残す(2026-10-18)
+                ToolbarItem(placement: .primaryAction) {
+                    Menu {
+                        Button(role: .destructive) {
+                            isShowingDeleteConfirmation = true
+                        } label: {
+                            Text("この課題を削除", bundle: .module)
+                        }
+                        .accessibilityIdentifier("issue-detail-delete")
+                    } label: {
+                        Text(verbatim: "⋯")
+                    }
+                    // 記号だけのボタンなので読み上げ用の名前を付ける(6.1)
+                    .accessibilityLabel(Text("その他の操作", bundle: .module))
+                    .accessibilityIdentifier("issue-detail-menu")
+                }
             }
+        }
+        // **何が消えるかを押す前に書く。** 黙って利用者のデータを消さない。
+        // 練習ログそのものは残るので、そこも書いておく(消えたと誤解させない)
+        .confirmationDialog(Text("この課題を削除しますか?", bundle: .module),
+                            isPresented: $isShowingDeleteConfirmation,
+                            titleVisibility: .visible) {
+            Button(role: .destructive) {
+                model.delete()
+                dismiss()
+            } label: {
+                Text("削除する", bundle: .module)
+            }
+            .accessibilityIdentifier("issue-detail-delete-confirm")
+            Button(role: .cancel) {
+            } label: {
+                Text("やめる", bundle: .module)
+            }
+        } message: {
+            Text("この課題の手応えの記録も一緒に消えます。練習の記録は残ります。戻せません", bundle: .module)
         }
         // 重点が 3 枠埋まっているとき。一覧・ホームと同じ問いにする(§7.4)
         .confirmationDialog(Text("どれと入れ替えますか?", bundle: .module),
