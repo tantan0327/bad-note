@@ -48,13 +48,30 @@ import SkipSQL
         return issue?.status == IssueStatus.archived
     }
 
+    /// 読み込んだのに課題が無い。**編集画面で削除されたあと戻ってきた状態。**
+    /// 画面はここに留まらず閉じる(2026-10-19)。
+    public private(set) var isMissing = false
+
     public func load() {
         do {
             let db = try context()
             let issues = IssueRepository(db: db)
             guard let loaded = try issues.fetch(id: issueID) else {
-                errorText = "課題が見つかりません"
+                // **中身も捨てる。** 残すと「削除しました」の下に
+                // 消したはずの課題がそのまま並ぶ(2026-10-19 に実機で見た)
+                issue = nil
+                tags = []
+                progress = []
+                standing = nil
+                errorText = nil
+                isMissing = true
                 return
+            }
+            // **値が変わるときだけ書く。** `@Observable` は同じ値を入れ直しても
+            // 変更を通知するので、毎回書くと読み込み → 再描画 → 読み込みで回り続け、
+            // 画面を開いた瞬間にメインスレッドが止まる(2026-10-19 に踏んだ)
+            if isMissing {
+                isMissing = false
             }
             issue = loaded
             tags = try TagRepository(db: db).fetchTags(issueId: issueID)
@@ -181,25 +198,6 @@ import SkipSQL
             _ = try issues.update(target)
         }
         errorText = nil
-    }
-
-    /// 課題を消す(2026-10-18)。
-    ///
-    /// **「克服した」とは別物。** 克服はアーカイブで、あとで再浮上させられる。
-    /// こちらは誤って書いた課題や、そもそも要らなかった課題のための出口で、戻せない。
-    ///
-    /// `issue` を消すと、手応え(`focus_record`)・重点の期間(`focus_span`)・
-    /// タグの紐付け・大会の紐付け・しばらく触れていない印が
-    /// **すべて `ON DELETE CASCADE` で一緒に消える。**
-    /// 練習ログそのものは残る(時間は練習に紐づくので失われない)。
-    /// 押す前に何が消えるか伝えるのは画面側の仕事(§7.5 と同じく確認を挟む)。
-    public func delete() {
-        do {
-            try IssueRepository(db: try context()).delete(id: issueID)
-            errorText = nil
-        } catch {
-            errorText = "削除に失敗しました: \(error)"
-        }
     }
 
     /// 克服した(定着確認へ)。**Lv.4 のときだけ通す**(§7.3)。

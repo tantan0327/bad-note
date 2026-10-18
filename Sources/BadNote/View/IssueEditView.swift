@@ -6,6 +6,7 @@ import SwiftUI
 public struct IssueEditView: View {
     @State private var model: IssueEditModel
     @State private var isShowingDetails = false
+    @State private var isShowingDeleteConfirmation = false
     @Environment(\.dismiss) private var dismiss
 
     /// - Parameter issueID: nil なら新規登録。
@@ -43,8 +44,28 @@ public struct IssueEditView: View {
                         .font(.headline)
                 }
                 .accessibilityIdentifier("issue-edit-details")
+                deleteSection
             }
             .padding()
+        }
+        // **何が消えるかを押す前に書く。** 黙って利用者のデータを消さない。
+        // 練習ログそのものは残るので、そこも書く(消えたと誤解させない)
+        .confirmationDialog(Text("この課題を削除しますか?", bundle: .module),
+                            isPresented: $isShowingDeleteConfirmation,
+                            titleVisibility: .visible) {
+            Button(role: .destructive) {
+                model.delete()
+                dismiss()
+            } label: {
+                Text("削除する", bundle: .module)
+            }
+            .accessibilityIdentifier("issue-edit-delete-confirm")
+            Button(role: .cancel) {
+            } label: {
+                Text("やめる", bundle: .module)
+            }
+        } message: {
+            Text("この課題の手応えの記録も一緒に消えます。練習の記録は残ります。戻せません", bundle: .module)
         }
         .navigationTitle(model.isNew ? Text("課題を追加", bundle: .module) : Text("課題を編集", bundle: .module))
         .toolbar {
@@ -73,6 +94,42 @@ public struct IssueEditView: View {
     ///
     /// 新規ならここに書いた文が書き留めた言葉になり、編集なら言い換えに入る
     /// (`IssueTitleEdit`)。書き留めた言葉は残るので、原文を失うことはない。
+    // MARK: - 削除(いちばん下)
+
+    /// 課題を消す道(2026-10-18)。
+    ///
+    /// **課題詳細の右上から移した。** そこでは「編集」の隣に「⋯」が並び、
+    /// 文字のボタンと記号のボタンがくっついて 1 つのボタンに見えていた。
+    ///
+    /// 編集画面の末尾は、連絡先やカレンダーが削除を置く場所でもある。
+    /// 一覧 → 詳細 → 編集 と 2 つ入った先なので、§7.5 の
+    /// 「気軽に消せる場所に置かない」も満たしている。
+    ///
+    /// **新規では出さない** —— まだ保存されていないので消すものが無い。
+    @ViewBuilder private var deleteSection: some View {
+        if !model.isNew {
+            VStack(alignment: .leading, spacing: 8) {
+                // **`Divider()` は置かない**(2026-10-19 に踏んだ)——
+                // ここに入れると編集画面を開いた瞬間にメインスレッドが止まり、
+                // 画面が遷移しないまま固まった(Maestro が「main thread busy 30s」と出した)
+                Button(role: .destructive) {
+                    isShowingDeleteConfirmation = true
+                } label: {
+                    Text("この課題を削除", bundle: .module)
+                        .font(.footnote)
+                }
+                .buttonStyle(.bordered)
+                .accessibilityIdentifier("issue-edit-delete")
+                // 「克服した」と間違えさせない。**どちらも課題を一覧から消す**ので、
+                // 違いは戻せるかどうかだと先に書いておく
+                Text("もう使わない課題を消します。克服した課題は、課題の画面から「克服した」を選んでください", bundle: .module)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            .padding(.top, 16)
+        }
+    }
+
     @ViewBuilder private var titleSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("課題", bundle: .module)

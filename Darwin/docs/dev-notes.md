@@ -200,6 +200,37 @@ return AnyView(TabView(selection: $tab) { ... })
 を入れてビルドし、`xcrun simctl io <UDID> screenshot` を撮ってから元に戻す。
 **戻したあと `git diff` が空になることを必ず確認する。**
 
+### 画面が固まったら `@Environment(\.dismiss)` を疑う(2026-10-19 に踏んだ)
+
+**症状** —— 課題詳細から編集画面へ進もうとすると、押しても遷移せず、
+ナビゲーションバーの文字が灰色のまま固まる。Maestro は
+`Unable to perform work on main run loop, process main thread busy for 30.0s` と出す。
+
+**原因** —— `IssueDetailView`(`NavigationLink` の行き先として押し込まれた画面)に
+`@Environment(\.dismiss)` を宣言していた。**宣言しただけで起きる** ——
+`dismiss()` を呼んでいなくても、`onAppear` でも `onChange` でも同じだった。
+
+**直し方** —— 押し込まれた画面では使わない。自動で閉じたい場面があっても、
+**本人が押して戻る形にする**。同じ結果をもっと確実に出せる。
+
+**見つけ方** —— 1 コミットずつビルドして実機で開き直すのが速い。
+`git revert --no-commit <疑うコミット>` → ビルド → Maestro、を繰り返す。
+この件は「削除を足したコミット」を打ち消して初めて切り分けられた。
+
+### `ForEach(0..<count)` は件数が減ると落ちる(2026-10-19 に踏んだ)
+
+範囲をそのまま `ForEach` に渡すと、SwiftUI は**件数が変わらない前提**で保持する。
+件数が減ると古い番号で配列を引き、`Array._checkSubscript` で落ちる。
+
+```swift
+ForEach(0..<model.progress.count, id: \.self) { ... }        // 落ちる
+ForEach(Array(0..<model.progress.count), id: \.self) { ... }  // 配列にすれば動く
+```
+
+課題を削除して手応えの配列を空にしたときに踏んだ。**件数が動く配列では必ず `Array(...)` にする。**
+クラッシュログは `~/Library/Logs/DiagnosticReports/BadNote-*.ips`。
+`faultingThread` のフレームを見ると、どの View のどの `ForEach` かまで分かる。
+
 ### 文字列を足したらカタログを同期する(2026-08-24)
 
 UI 文字列(`Text("…", bundle: .module)`)を追加・変更したら、次を実行して

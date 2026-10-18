@@ -189,6 +189,30 @@ import SkipSQL
         }
     }
 
+    /// 課題を消す(2026-10-18 に課題詳細から移した)。
+    ///
+    /// **「克服した」とは別物。** 克服はアーカイブで、あとで再浮上させられる。
+    /// こちらは誤って書いた課題や、そもそも要らなかった課題のための出口で、戻せない。
+    ///
+    /// `issue` を消すと、手応え(`focus_record`)・重点の期間(`focus_span`)・
+    /// タグの紐付け・大会の紐付け・しばらく触れていない印が
+    /// **すべて `ON DELETE CASCADE` で一緒に消える。**
+    /// 練習ログそのものは残る(時間は練習に紐づくので失われない)。
+    /// 押す前に何が消えるか伝えるのは画面側の仕事(§7.5 と同じく確認を挟む)。
+    ///
+    /// **新規では呼ばない**(まだ何も保存されていない)。
+    public func delete() {
+        guard let issueID = issueID else {
+            return
+        }
+        do {
+            try IssueRepository(db: try context()).delete(id: issueID)
+            errorText = nil
+        } catch {
+            errorText = "削除に失敗しました: \(error)"
+        }
+    }
+
     private func optionalText(_ text: String) -> String? {
         let trimmed = text.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines)
         return trimmed.isEmpty ? nil : trimmed

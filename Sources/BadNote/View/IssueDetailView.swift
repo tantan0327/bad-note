@@ -9,8 +9,6 @@ import SwiftUI
 public struct IssueDetailView: View {
     @State private var model: IssueDetailModel
     @State private var isShowingAttributes = false
-    @State private var isShowingDeleteConfirmation = false
-    @Environment(\.dismiss) private var dismiss
 
     public init(issueID: Int64) {
         _model = State(initialValue: IssueDetailModel(issueID: issueID))
@@ -19,7 +17,9 @@ public struct IssueDetailView: View {
     public var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
-                if let errorText = model.errorText {
+                if model.isMissing {
+                    deletedNotice
+                } else if let errorText = model.errorText {
                     Text(errorText)
                         .font(.footnote)
                         .foregroundStyle(.red)
@@ -57,44 +57,7 @@ public struct IssueDetailView: View {
                     }
                     .accessibilityIdentifier("issue-detail-edit")
                 }
-                // 削除はメニューの奥に置く。気軽に消せる場所に置かない(§7.5。大会詳細と同じ)。
-                // **編集はメニューに入れない** —— 奥に置いていて見つからなかったのが
-                // そもそもの発端なので、1 タップのまま残す(2026-10-18)
-                ToolbarItem(placement: .primaryAction) {
-                    Menu {
-                        Button(role: .destructive) {
-                            isShowingDeleteConfirmation = true
-                        } label: {
-                            Text("この課題を削除", bundle: .module)
-                        }
-                        .accessibilityIdentifier("issue-detail-delete")
-                    } label: {
-                        Text(verbatim: "⋯")
-                    }
-                    // 記号だけのボタンなので読み上げ用の名前を付ける(6.1)
-                    .accessibilityLabel(Text("その他の操作", bundle: .module))
-                    .accessibilityIdentifier("issue-detail-menu")
-                }
             }
-        }
-        // **何が消えるかを押す前に書く。** 黙って利用者のデータを消さない。
-        // 練習ログそのものは残るので、そこも書いておく(消えたと誤解させない)
-        .confirmationDialog(Text("この課題を削除しますか?", bundle: .module),
-                            isPresented: $isShowingDeleteConfirmation,
-                            titleVisibility: .visible) {
-            Button(role: .destructive) {
-                model.delete()
-                dismiss()
-            } label: {
-                Text("削除する", bundle: .module)
-            }
-            .accessibilityIdentifier("issue-detail-delete-confirm")
-            Button(role: .cancel) {
-            } label: {
-                Text("やめる", bundle: .module)
-            }
-        } message: {
-            Text("この課題の手応えの記録も一緒に消えます。練習の記録は残ります。戻せません", bundle: .module)
         }
         // 重点が 3 枠埋まっているとき。一覧・ホームと同じ問いにする(§7.4)
         .confirmationDialog(Text("どれと入れ替えますか?", bundle: .module),
@@ -116,6 +79,25 @@ public struct IssueDetailView: View {
         .onAppear {
             model.load()
         }
+    }
+
+    // MARK: - 削除したあと(2026-10-19)
+
+    /// 編集画面で削除すると、ここへ戻ってくる。中身はもう無い。
+    ///
+    /// **自動では閉じない。** `onAppear` でも `onChange` でも `dismiss()` を呼ぶと
+    /// 画面を開いた瞬間にメインスレッドが止まった(2026-10-19 に 3 度踏んだ)。
+    /// 本人が押して戻る形にすれば、同じ結果をもっと確実に出せる。
+    @ViewBuilder private var deletedNotice: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("この課題は削除しました", bundle: .module)
+                .font(.headline)
+            Text("左上の「課題」から一覧に戻れます", bundle: .module)
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+                .accessibilityIdentifier("issue-detail-back-to-list")
+        }
+        .padding(.top, 24)
     }
 
     // MARK: - 1. できている状態(最上部に大きく)
@@ -335,7 +317,11 @@ public struct IssueDetailView: View {
             } else {
                 ScrollView(.horizontal) {
                     HStack(spacing: 8) {
-                        ForEach(0..<model.progress.count, id: \.self) { index in
+                        // **`ForEach(0..<count)` にしない**(2026-10-19 に落ちた)。
+                        // 範囲をそのまま渡すと SwiftUI は件数が変わらない前提で持ち、
+                        // 件数が減った瞬間に古い番号で配列を引いて落ちる。
+                        // 課題を削除して記録を空にしたときに踏んだ
+                        ForEach(Array(0..<model.progress.count), id: \.self) { index in
                             progressMark(model.progress[index])
                         }
                     }
