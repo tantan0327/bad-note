@@ -45,6 +45,24 @@ public struct IssueListView: View {
                     filterRow
                 }
             }
+            // **絞り込んで 0 件。** 初回の案内に化けさせない ——
+            // 化けると絞り込み行ごと消えて、解除する手段が無くなる(2026-10-18)
+            if !model.isSearching && model.isFilteredToNothing {
+                Section {
+                    EmptyStateView(message: Text("絞り込みに一致する課題はありません", bundle: .module)) {
+                        Button {
+                            withAnimation(Motion.move) {
+                                model.clearFilters()
+                            }
+                        } label: {
+                            Text("絞り込みを解除", bundle: .module)
+                                .font(.footnote)
+                        }
+                        .buttonStyle(.bordered)
+                        .accessibilityIdentifier("issues-filter-clear-empty")
+                    }
+                }
+            }
             // §7.4 層をまたぐドラッグのため、3 層を 1 つの ForEach に畳んでいる
             if !model.isSearching && !model.isEmpty {
                 ForEach(model.rows) { row in
@@ -52,6 +70,8 @@ public struct IssueListView: View {
                         headerRow(row.tier)
                     } else if row.isPlaceholder {
                         emptyRow
+                    } else if row.isFolded {
+                        foldedRow(row.tier)
                     } else if row.isSlot {
                         slotRow
                     } else if let issue = row.issue {
@@ -249,7 +269,7 @@ public struct IssueListView: View {
 
                 // **見えている順を保存順にする。** これが無いと、優先順に「見る」ことは
                 // できても「整理する」ことができない(並び替え中はドラッグが止まるため)
-                if !model.allowsDrag && !model.isSearching {
+                if !model.allowsDrag && !model.isSearching && !model.isFiltering {
                     Button {
                         withAnimation(Motion.move) {
                             model.commitDisplayedOrder()
@@ -355,6 +375,23 @@ public struct IssueListView: View {
         Text("まだありません", bundle: .module)
             .font(.footnote)
             .foregroundStyle(.secondary)
+    }
+
+    /// 畳んだ層の行(2026-10-18)。**空の層と同じ文を出さない** ——
+    /// 「いつか 12件」の真下に「まだありません」と並ぶと矛盾して見える。
+    /// ここもドラッグの落とし先なので `moveDisabled` は付けない。
+    @ViewBuilder private func foldedRow(_ tier: Tier) -> some View {
+        Button {
+            withAnimation(Motion.move) {
+                model.toggleCollapse(tier)
+            }
+        } label: {
+            Text(verbatim: "\(model.count(of: tier))件を畳んでいます")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("issues-folded-\(tier.rawValue)")
     }
 
     /// 重点の空き枠(1.10)。**ホームと同じ言葉・同じ導線**にして、

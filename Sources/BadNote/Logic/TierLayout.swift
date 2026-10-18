@@ -6,6 +6,9 @@ public enum TierRowKind: Hashable, Sendable {
     case header
     /// 空の層の落下先。動かせないが、**ドラッグの落とし先にはなる**
     case placeholder
+    /// 畳んだ層の落下先。`placeholder` と分けているのは**表示が違う**ため
+    /// (空の層は「まだありません」、畳んだ層は畳んでいる件数)
+    case folded
     /// 重点の空き枠(1.10)。ホームと同じ「空き枠 / 選ぶ」を一覧にも出す。
     /// `placeholder` と分けているのは**表示が違う**ため
     /// (空の層は「まだありません」、空き枠は「空き枠」+ 選ぶ導線)
@@ -29,6 +32,10 @@ public struct TierRow: Identifiable, Hashable, Sendable {
         return kind == TierRowKind.placeholder
     }
 
+    public var isFolded: Bool {
+        return kind == TierRowKind.folded
+    }
+
     public var isSlot: Bool {
         return kind == TierRowKind.slot
     }
@@ -40,6 +47,13 @@ public struct TierRow: Identifiable, Hashable, Sendable {
     /// 空の層に置く落下先。**これが無いと空の層にドラッグできない。**
     public static func placeholder(_ tier: Tier) -> TierRow {
         return TierRow(id: "empty-" + tier.rawValue, tier: tier, kind: .placeholder, issue: nil)
+    }
+
+    /// 畳んだ層の落下先(2026-10-18)。**空の層とは別物。**
+    /// 同じ行を使うと「いつか 12件」の真下に「まだありません」と出て、
+    /// 畳んだ本人にも矛盾して見える。
+    public static func folded(_ tier: Tier) -> TierRow {
+        return TierRow(id: "folded-" + tier.rawValue, tier: tier, kind: .folded, issue: nil)
     }
 
     public static func item(_ issue: Issue) -> TierRow {
@@ -122,7 +136,7 @@ public struct TierLayout {
                 }
             } else {
                 // **畳んだ層にも落下先を 1 つ残す。** 無いとドラッグで運び込めなくなる
-                rows.append(TierRow.placeholder(Tier.focus))
+                rows.append(TierRow.folded(Tier.focus))
             }
         }
         TierLayout.append(tier: Tier.next, issues: next, collapsed: collapsed, to: &rows)
@@ -142,8 +156,12 @@ public struct TierLayout {
 
     private static func append(tier: Tier, issues: [Issue], collapsed: [Tier], to rows: inout [TierRow]) {
         rows.append(TierRow.header(tier))
-        // 畳んだ層も空の層も、落下先の行を 1 つだけ置く
-        if issues.isEmpty || TierLayout.isCollapsed(tier, in: collapsed) {
+        // 落下先の行を 1 つだけ置く。**畳んだ層と空の層は別の行**(表示が違う)
+        if TierLayout.isCollapsed(tier, in: collapsed) {
+            rows.append(TierRow.folded(tier))
+            return
+        }
+        if issues.isEmpty {
             rows.append(TierRow.placeholder(tier))
             return
         }

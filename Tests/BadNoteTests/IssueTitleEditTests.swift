@@ -38,7 +38,7 @@ final class IssueTitleEditTests: XCTestCase {
     func testEditingNeverTouchesTheOriginalWords() {
         let given = issue(coachWords: "面が寝ている")
 
-        let edited = IssueTitleEdit.applied(to: given, title: "ラケット面を立てて構えられている")
+        let edited = IssueTitleEdit.applied(to: given, title: "ラケット面を立てて構えられている", originalTitle: IssueTitleEdit.title(of: given))
 
         XCTAssertEqual("面が寝ている", edited.coachWords)
         XCTAssertEqual("ラケット面を立てて構えられている", edited.doneForm)
@@ -48,7 +48,7 @@ final class IssueTitleEditTests: XCTestCase {
     func testEditingReplacesTheExistingRephrase() {
         let given = issue(coachWords: "面が寝ている", doneForm: "面を立てられている")
 
-        let edited = IssueTitleEdit.applied(to: given, title: "ラケット面を立てて構えられている")
+        let edited = IssueTitleEdit.applied(to: given, title: "ラケット面を立てて構えられている", originalTitle: IssueTitleEdit.title(of: given))
 
         XCTAssertEqual("面が寝ている", edited.coachWords)
         XCTAssertEqual("ラケット面を立てて構えられている", edited.doneForm)
@@ -59,7 +59,7 @@ final class IssueTitleEditTests: XCTestCase {
     func testEditingBackToTheOriginalDropsTheRephrase() {
         let given = issue(coachWords: "面が寝ている", doneForm: "面を立てられている")
 
-        let edited = IssueTitleEdit.applied(to: given, title: "面が寝ている")
+        let edited = IssueTitleEdit.applied(to: given, title: "面が寝ている", originalTitle: IssueTitleEdit.title(of: given))
 
         XCTAssertEqual("面が寝ている", edited.coachWords)
         XCTAssertNil(edited.doneForm)
@@ -69,7 +69,7 @@ final class IssueTitleEditTests: XCTestCase {
     func testWhitespaceAroundTheTitleIsIgnored() {
         let given = issue(coachWords: "面が寝ている")
 
-        let edited = IssueTitleEdit.applied(to: given, title: "  面が寝ている  ")
+        let edited = IssueTitleEdit.applied(to: given, title: "  面が寝ている  ", originalTitle: IssueTitleEdit.title(of: given))
 
         XCTAssertNil(edited.doneForm)
     }
@@ -77,7 +77,7 @@ final class IssueTitleEditTests: XCTestCase {
     func testTrimsTheSavedRephrase() {
         let given = issue(coachWords: "面が寝ている")
 
-        let edited = IssueTitleEdit.applied(to: given, title: "  面を立てられている  ")
+        let edited = IssueTitleEdit.applied(to: given, title: "  面を立てられている  ", originalTitle: IssueTitleEdit.title(of: given))
 
         XCTAssertEqual("面を立てられている", edited.doneForm)
     }
@@ -86,7 +86,7 @@ final class IssueTitleEditTests: XCTestCase {
     func testClearingTheTitleFallsBackToTheOriginal() {
         let given = issue(coachWords: "面が寝ている", doneForm: "面を立てられている")
 
-        let edited = IssueTitleEdit.applied(to: given, title: "   ")
+        let edited = IssueTitleEdit.applied(to: given, title: "   ", originalTitle: IssueTitleEdit.title(of: given))
 
         XCTAssertEqual("面が寝ている", edited.coachWords)
         XCTAssertNil(edited.doneForm)
@@ -99,7 +99,7 @@ final class IssueTitleEditTests: XCTestCase {
     func testTheEditedTitleIsWhatTheListShows() {
         let given = issue(coachWords: "面が寝ている")
 
-        let edited = IssueTitleEdit.applied(to: given, title: "ラケット面を立てて構えられている")
+        let edited = IssueTitleEdit.applied(to: given, title: "ラケット面を立てて構えられている", originalTitle: IssueTitleEdit.title(of: given))
 
         XCTAssertEqual("ラケット面を立てて構えられている", edited.displayTitle)
         XCTAssertTrue(edited.hasDoneForm)
@@ -109,8 +109,62 @@ final class IssueTitleEditTests: XCTestCase {
     func testIssueWithoutRephraseDoesNotQuoteItself() {
         let given = issue(coachWords: "面が寝ている")
 
-        let edited = IssueTitleEdit.applied(to: given, title: "面が寝ている")
+        let edited = IssueTitleEdit.applied(to: given, title: "面が寝ている", originalTitle: IssueTitleEdit.title(of: given))
 
         XCTAssertFalse(edited.hasDoneForm)
+    }
+
+    // MARK: - 誤字修正(2026-10-18 に踏んだバグ)
+
+    /// **もとの言葉の誤字だけ直したとき、1 行は巻き添えにしない。**
+    ///
+    /// 以前は新しい `coachWords` と比べていたため、**直す前の文(誤字)が
+    /// 言い換えに入り**、一覧の行は誤字のまま固定されていた。
+    /// 誤字修正はこの欄の唯一の用途なので、使えば必ず踏む。
+    func testFixingATypoInTheOriginalDoesNotCreateARephrase() {
+        // 「ハイクリア」を「ハイクリヤ」と書き間違えた課題。言い換えは持っていない
+        let stored = issue(coachWords: "ハイクリヤが浅い")
+        let titleOnScreen = IssueTitleEdit.title(of: stored)
+
+        // 折りたたみを開いて、もとの言葉だけ直す(1 行は触らない)
+        var fixed = stored
+        fixed.coachWords = "ハイクリアが浅い"
+
+        let edited = IssueTitleEdit.applied(to: fixed, title: titleOnScreen, originalTitle: titleOnScreen)
+
+        XCTAssertEqual("ハイクリアが浅い", edited.coachWords)
+        XCTAssertNil(edited.doneForm)
+        // **一覧の行も直った文になる**(誤字のまま固定されない)
+        XCTAssertEqual("ハイクリアが浅い", edited.displayTitle)
+    }
+
+    /// 言い換えを持っている課題でも、もとの言葉だけ直したなら言い換えは変わらない。
+    func testFixingTheOriginalKeepsAnExistingRephrase() {
+        let stored = issue(coachWords: "面が寝てる", doneForm: "ラケット面を立てて構えられている")
+        let titleOnScreen = IssueTitleEdit.title(of: stored)
+
+        var fixed = stored
+        fixed.coachWords = "面が寝ている"
+
+        let edited = IssueTitleEdit.applied(to: fixed, title: titleOnScreen, originalTitle: titleOnScreen)
+
+        XCTAssertEqual("面が寝ている", edited.coachWords)
+        XCTAssertEqual("ラケット面を立てて構えられている", edited.doneForm)
+    }
+
+    /// 1 行ともとの言葉を同時に直した場合は、1 行のほうが言い換えになる。
+    func testEditingBothKeepsTheTitleAsTheRephrase() {
+        let stored = issue(coachWords: "面が寝てる")
+        let titleOnScreen = IssueTitleEdit.title(of: stored)
+
+        var fixed = stored
+        fixed.coachWords = "面が寝ている"
+
+        let edited = IssueTitleEdit.applied(to: fixed,
+                                            title: "ラケット面を立てて構えられている",
+                                            originalTitle: titleOnScreen)
+
+        XCTAssertEqual("面が寝ている", edited.coachWords)
+        XCTAssertEqual("ラケット面を立てて構えられている", edited.doneForm)
     }
 }

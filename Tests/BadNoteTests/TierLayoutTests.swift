@@ -251,9 +251,39 @@ final class TierLayoutTests: XCTestCase {
                                              issue(2, .someday)],
                                    collapsed: [Tier.someday])
 
+        var hasDropTarget = false
+        for row in rows {
+            if row.tier == Tier.someday && row.kind == TierRowKind.folded {
+                hasDropTarget = true
+            }
+        }
+        XCTAssertTrue(hasDropTarget)
+    }
+
+    /// **畳んだ層に「まだありません」を出さない**(2026-10-18 に踏んだ)。
+    /// 「いつか 12件」の真下に並ぶと矛盾して見える。空の層とは別の行にする。
+    func testCollapsedTierDoesNotUseTheEmptyRow() {
+        let rows = TierLayout.rows(focus: [Issue](),
+                                   next: [Issue](),
+                                   someday: [issue(1, .someday)],
+                                   collapsed: [Tier.someday])
+
+        for row in rows {
+            if row.tier == Tier.someday {
+                XCTAssertNotEqual(TierRowKind.placeholder, row.kind)
+            }
+        }
+    }
+
+    /// 本当に空の層は、これまでどおり「まだありません」の行。
+    func testEmptyTierStillUsesThePlaceholderRow() {
+        let rows = TierLayout.rows(focus: [issue(1, .focus)],
+                                   next: [Issue](),
+                                   someday: [issue(2, .someday)])
+
         var hasPlaceholder = false
         for row in rows {
-            if row.tier == Tier.someday && row.kind == TierRowKind.placeholder {
+            if row.tier == Tier.next && row.kind == TierRowKind.placeholder {
                 hasPlaceholder = true
             }
         }

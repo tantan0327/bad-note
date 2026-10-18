@@ -24,6 +24,11 @@ import SkipSQL
     /// 書き留めた言葉(原文)。編集画面の折りたたみの中にだけ出す。
     /// 誤入力は直せる(2026-08-24 決定)ので読み取り専用にはしない。
     public var coachWords = ""
+
+    /// 画面を開いた時点の 1 行。**触ったかどうかの判定にだけ使う**(2026-10-18)。
+    /// これが無いと、もとの言葉の誤字を直したときに
+    /// 直す前の文が言い換えとして保存される。
+    private var loadedTitle = ""
     public var coachName = ""
     public var discipline: Discipline = .both
     public var masteryLevel: MasteryLevel = .solo
@@ -66,6 +71,7 @@ import SkipSQL
             }
             // 画面に出すのは 1 行だけ。言い換えがあればそれ、無ければ書き留めた言葉
             title = IssueTitleEdit.title(of: issue)
+            loadedTitle = title
             coachWords = issue.coachWords
             coachName = issue.coachName ?? ""
             discipline = issue.discipline
@@ -153,7 +159,7 @@ import SkipSQL
                 // 原文は基本そのまま残すが、誤入力は直せる(2026-08-24 決定)
                 issue.coachWords = coachWords.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines)
                 // **直した 1 行は言い換えに入る。書き留めた言葉は残る**(2026-10-12)
-                issue = IssueTitleEdit.applied(to: issue, title: title)
+                issue = IssueTitleEdit.applied(to: issue, title: title, originalTitle: loadedTitle)
                 issue.coachName = optionalText(coachName)
                 issue.discipline = discipline
                 issue.masteryLevel = masteryLevel

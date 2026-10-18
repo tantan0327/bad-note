@@ -62,9 +62,23 @@ import SkipSQL
         return !focus.isEmpty || !next.isEmpty || !someday.isEmpty
     }
 
-    /// 3 層にも未整理にも 1 件も無い。使い始めの状態。
-    public var isEmpty: Bool {
+    /// 3 層にも未整理にも 1 件も無い。
+    ///
+    /// **絞り込み中はこれを「使い始め」と呼んではいけない**(2026-10-18)。
+    /// 絞り込みは SQL 側で効くので、該当 0 件でも中身が空になる。
+    /// 初回の案内に化けると**絞り込み行ごと消えて解除できなくなる**。
+    private var hasNothingLoaded: Bool {
         return !hasTieredIssues && unorganized.isEmpty
+    }
+
+    /// 使い始めの状態(課題が 1 件も無い)。絞り込んで 0 件になった場合は含めない。
+    public var isEmpty: Bool {
+        return hasNothingLoaded && !isFiltering
+    }
+
+    /// 絞り込んだ結果 0 件。**解除の導線を残したまま**こちらを出す。
+    public var isFilteredToNothing: Bool {
+        return hasNothingLoaded && isFiltering
     }
 
     public var focusCapacity: Int {
@@ -77,6 +91,12 @@ import SkipSQL
     /// 既定の畳み方を一度だけ決めたか。読み直すたびに畳み直すと、
     /// 本人が開いた層が勝手に閉じる。
     private var hasAppliedInitialCollapse = false
+
+    /// 前回読んだときの層ごとの件数。**-1 は「まだ一度も読んでいない」。**
+    /// 畳んだ層に課題が増えたかどうかの判定に使う(2026-10-18)。
+    private var lastFocusCount = -1
+    private var lastNextCount = -1
+    private var lastSomedayCount = -1
 
     /// 長押しドラッグを使えるか。手動の並びで、かつ検索していないときだけ。
     ///
@@ -126,6 +146,11 @@ import SkipSQL
                 collapsedTiers = TierLayout.initiallyCollapsed(somedayCount: someday.count)
                 hasAppliedInitialCollapse = true
             }
+            // **増えた層は開く**(2026-10-18)。課題を追加すると「いつか」に入るので、
+            // 畳んだままだと件数が 1 増えるだけで行がどこにも出ない。
+            // 「書いたのに見つからない」は未整理セクションを作ってまで潰した失敗。
+            // ドラッグで畳んだ層に運び込んだときも同じ理由で開く
+            expandTiersThatGrew()
             rows = TierLayout.rows(focus: focus, next: next, someday: someday,
                                    collapsed: collapsedTiers)
             unorganized = try issues.fetch(statuses: [IssueStatus.inbox])
@@ -162,6 +187,38 @@ import SkipSQL
         load()
     }
 
+    /// 前回より増えた層を開く。**初回の読み込みでは何もしない**
+    /// (前回が無いので全層が「増えた」ことになり、既定の畳み方が無駄になる)。
+    private func expandTiersThatGrew() {
+        if lastFocusCount >= 0 {
+            if focus.count > lastFocusCount {
+                expand(Tier.focus)
+            }
+            if next.count > lastNextCount {
+                expand(Tier.next)
+            }
+            if someday.count > lastSomedayCount {
+                expand(Tier.someday)
+            }
+        }
+        lastFocusCount = focus.count
+        lastNextCount = next.count
+        lastSomedayCount = someday.count
+    }
+
+    /// その層を開く。**保存した課題が畳まれた層に入って消えるのを防ぐ**(2026-10-18)。
+    public func expand(_ tier: Tier) {
+        var remaining: [Tier] = []
+        for candidate in collapsedTiers {
+            if candidate != tier {
+                remaining.append(candidate)
+            }
+        }
+        collapsedTiers = remaining
+        rows = TierLayout.rows(focus: focus, next: next, someday: someday,
+                               collapsed: collapsedTiers)
+    }
+
     /// 層を畳む / 開く。
     public func toggleCollapse(_ tier: Tier) {
         var remaining: [Tier] = []
@@ -190,6 +247,13 @@ import SkipSQL
     /// 押したあとは手動の並びに戻る —— そこから先はドラッグで微調整できる。
     /// これを置くまで、優先順に「見る」ことはできても「整理する」ことはできなかった。
     public func commitDisplayedOrder() {
+        // **絞り込み中は焼き付けない**(2026-10-18)。見えている課題にだけ
+        // 0,1,2… を振ると、隠れている課題の並びと衝突する。
+        // 解除した瞬間、本人が一度も見ていない順番になり、取り消せない
+        if isFiltering {
+            errorText = "絞り込みを解除してから並びを保存してください"
+            return
+        }
         do {
             let issues = IssueRepository(db: try context())
             var changed: [Issue] = []

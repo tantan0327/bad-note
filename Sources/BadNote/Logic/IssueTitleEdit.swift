@@ -13,13 +13,24 @@ public enum IssueTitleEdit {
 
     /// 1 行を直した結果を返す。**`coachWords` は触らない。**
     ///
+    /// - 直した文が**画面を開いた時点の 1 行**と同じなら、言い換えは変えない。
+    ///   触っていない欄を書き換えないため(2026-10-18)
     /// - 直した文が書き留めた言葉と同じなら、言い換えは持たせない(nil)。
     ///   同じ文を 2 つ持つと、課題詳細が同じ行を 2 度出すことになる
     ///   (`Issue.hasDoneForm` が引用を出すかの判定に使っている)
     /// - 空白だけになったら、やはり言い換えは持たせない。
     ///   書き留めた言葉に戻るので、課題が無題になることはない
-    public static func applied(to issue: Issue, title: String) -> Issue {
+    ///
+    /// - Parameter originalTitle: 画面を開いた時点の 1 行(`title(of:)` の値)。
+    ///   **これが無いと誤字修正で壊れる** —— もとの言葉だけ直したとき、
+    ///   新しい `coachWords` と比べてしまい、**直す前の文(誤字)が言い換えに入る**。
+    ///   一覧の行は誤字のまま、詳細の引用だけ直った文になっていた。
+    public static func applied(to issue: Issue, title: String, originalTitle: String) -> Issue {
         var edited = issue
+        // 1 行を触っていないなら、言い換えには手を付けない
+        if IssueTitleEdit.trimmed(title) == IssueTitleEdit.trimmed(originalTitle) {
+            return edited
+        }
         edited.doneForm = IssueTitleEdit.doneForm(forTitle: title, coachWords: issue.coachWords)
         return edited
     }
@@ -30,13 +41,17 @@ public enum IssueTitleEdit {
     }
 
     static func doneForm(forTitle title: String, coachWords: String) -> String? {
-        let trimmed = title.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines)
-        if trimmed.isEmpty {
+        let text = IssueTitleEdit.trimmed(title)
+        if text.isEmpty {
             return nil
         }
-        if trimmed == coachWords.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines) {
+        if text == IssueTitleEdit.trimmed(coachWords) {
             return nil
         }
-        return trimmed
+        return text
+    }
+
+    static func trimmed(_ text: String) -> String {
+        return text.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines)
     }
 }
