@@ -63,8 +63,9 @@ public struct IssueListView: View {
                     }
                 }
             }
-            // §7.4 層をまたぐドラッグのため、3 層を 1 つの ForEach に畳んでいる
-            if !model.isSearching && !model.isEmpty {
+            // §7.4 層をまたぐドラッグのため、3 層を 1 つの ForEach に畳んでいる。
+            // **絞り込んで 0 件のときは出さない** —— 空の見出しが 3 つ並ぶだけになる
+            if !model.isSearching && !model.isEmpty && !model.isFilteredToNothing {
                 ForEach(model.rows) { row in
                     if row.isHeader {
                         headerRow(row.tier)
@@ -386,9 +387,12 @@ public struct IssueListView: View {
                 model.toggleCollapse(tier)
             }
         } label: {
+            // 見出しと同じ理由で面を敷く(文字だけだと当たり判定が狭い)
             Text(verbatim: "\(model.count(of: tier))件を畳んでいます")
                 .font(.footnote)
                 .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(Palette.surface)
         }
         .buttonStyle(.plain)
         .accessibilityIdentifier("issues-folded-\(tier.rawValue)")
@@ -442,6 +446,13 @@ public struct IssueListView: View {
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             }
+            // **行の全幅を押せるようにする**(2026-10-18 に実機で踏んだ)。
+            // `Spacer` は何も描かないので、間の空白を押しても反応しない ——
+            // 文字の上を正確に狙わないと開かなかった。
+            // `contentShape` は SkipUI で使えない(`@available(*, unavailable)`)ので、
+            // 面を 1 枚敷いて当たり判定を作る
+            .frame(maxWidth: .infinity)
+            .background(Palette.surface)
         }
         .buttonStyle(.plain)
         .padding(.top, 8)

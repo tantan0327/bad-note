@@ -76,9 +76,13 @@ import SkipSQL
         return hasNothingLoaded && !isFiltering
     }
 
-    /// 絞り込んだ結果 0 件。**解除の導線を残したまま**こちらを出す。
+    /// 絞り込んだ結果、3 層が 0 件。**解除の導線を残したまま**こちらを出す。
+    ///
+    /// **未整理は数に入れない**(2026-10-18 に実機で気づいた)——
+    /// 未整理は絞り込みの対象外(属性がまだ付いていない)なので、
+    /// 2 件あるだけでこの判定が働かず、空の層が 3 つ並ぶだけの画面になっていた。
     public var isFilteredToNothing: Bool {
-        return hasNothingLoaded && isFiltering
+        return !hasTieredIssues && isFiltering
     }
 
     public var focusCapacity: Int {

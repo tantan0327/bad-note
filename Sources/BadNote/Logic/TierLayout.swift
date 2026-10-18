@@ -156,13 +156,14 @@ public struct TierLayout {
 
     private static func append(tier: Tier, issues: [Issue], collapsed: [Tier], to rows: inout [TierRow]) {
         rows.append(TierRow.header(tier))
-        // 落下先の行を 1 つだけ置く。**畳んだ層と空の層は別の行**(表示が違う)
-        if TierLayout.isCollapsed(tier, in: collapsed) {
-            rows.append(TierRow.folded(tier))
-            return
-        }
+        // 落下先の行を 1 つだけ置く。**畳んだ層と空の層は別の行**(表示が違う)。
+        // **空のほうが優先** —— 畳んでいても 0 件なら「0件を畳んでいます」になってしまう
         if issues.isEmpty {
             rows.append(TierRow.placeholder(tier))
+            return
+        }
+        if TierLayout.isCollapsed(tier, in: collapsed) {
+            rows.append(TierRow.folded(tier))
             return
         }
         for issue in issues {
