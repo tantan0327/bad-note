@@ -97,6 +97,11 @@ public struct HomeView: View {
                         .foregroundStyle(.primary)
                 }
             }
+            // **`.foregroundStyle(.primary)` だけでは青が残る**(2026-10-18 に実機で確認)。
+            // iOS 18 では `NavigationLink` のラベルに乗る色が勝ち、
+            // 同じ課題名が一覧では黒・ホームでは青になっていた。
+            // `.plain` にして初めて本文の色になる
+            .buttonStyle(.plain)
             .accessibilityIdentifier("home-vision")
             if model.isPromptingVision {
                 visionPrompt
@@ -325,6 +330,8 @@ public struct HomeView: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .foregroundStyle(.primary)
                     }
+                    // めざす姿と同じ理由。`.primary` だけではリンク色が勝つ
+                    .buttonStyle(.plain)
                     .accessibilityIdentifier("home-focus-card-\(card.id)")
                 }
             }

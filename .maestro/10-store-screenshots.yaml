@@ -49,21 +49,26 @@ appId: com.tange.badnote
 # 入れ直してホームの根に戻る。`back` は iOS と Android で挙動が違うので使わない
 - launchApp
 
+# **タブは文字で押す。** `tab-*` の識別子はタップが通らないことがある
+# (2026-10-18 に確認)。タブバーの文字は画面に 1 つしか無いので誤爆しない
+- tapOn: "ホーム"
+
 # ── 1 枚目: ホーム ────────────────────────────────────────────
 # めざす姿 / 目標大会までのカウントダウン / 今週の重点 3 枚。アプリの顔
-#
-# **`home-record` を見てはいけない。** デモデータが入るとホームが長くなり、
-# 「練習を記録する」は画面外に出る。`assertVisible` は画面に出ているものしか見ない
 - assertVisible: ".*守りから攻めに切り替える.*"
-- assertVisible: ".*今週の重点.*"
 - takeScreenshot: Darwin/fastlane/screenshots/ja/1_ja
 
 # ── 2 枚目: しばらく触れていない課題 ──────────────────────────
-# 忘れ防止の中核(§4.3)。理由を添えた 3 択をその場で出す
-- scrollUntilVisible:
-    element:
-      text: "しばらく触れていない課題"
-    direction: DOWN
+# 忘れ防止の中核(§4.3)。理由を添えた 3 択をその場で出す。
+#
+# **`scrollUntilVisible` を使わない。** 見出しは 1 枚目の時点で画面の下端に
+# 見えているので、スクロールせずに同じ画面を撮ってしまう
+# (2026-10-12 の撮影で 1 枚目と 2 枚目が同一ファイルになった)
+- swipe:
+    direction: UP
+- swipe:
+    direction: UP
+- assertVisible: ".*今週の重点にする.*"
 - takeScreenshot: Darwin/fastlane/screenshots/ja/2_ja
 
 # ── 3 枚目: 積み上げ ──────────────────────────────────────────
@@ -78,29 +83,25 @@ appId: com.tange.badnote
     id: "stats-lifetime"
 - takeScreenshot: Darwin/fastlane/screenshots/ja/3_ja
 
-# 画面を戻さず入れ直す(タブは `@AppStorage` が覚えているのでホームに戻る)
+# 画面を戻さず入れ直す
 - launchApp
 
 # ── 4 枚目: 課題一覧 ──────────────────────────────────────────
-# 3 層(今週の重点 / 次にやる / いつか)が埋まった状態
-- tapOn:
-    id: "tab-issues"
+# 3 層(今週の重点 / 次にやる / いつか)。「いつか」は畳まれた状態
+- tapOn: "課題"
 - assertVisible:
     id: "issues-add"
 - takeScreenshot: Darwin/fastlane/screenshots/ja/4_ja
 
 # ── 5 枚目: 家トレ ────────────────────────────────────────────
 # 毎日開く画面。今日は素振りだけ付いていて、残りを押せる状態にしてある
-- tapOn:
-    id: "tab-training"
+- tapOn: "家トレ"
 - assertVisible: ".*素振り.*"
 - takeScreenshot: Darwin/fastlane/screenshots/ja/5_ja
 
 # ── 6 枚目: 練習ログ入力 ──────────────────────────────────────
 # 日々の記録。手応えの 3 択(できた / 近づいた / 次にやる)まで見せたいので下まで送る
-- tapOn:
-    id: "tab-home"
-# ホームは長いので「練習を記録する」は画面外にある。送ってから押す
+- tapOn: "ホーム"
 - scrollUntilVisible:
     element:
       id: "home-record"
@@ -109,10 +110,16 @@ appId: com.tange.badnote
     id: "home-record"
 - assertVisible:
     id: "practice-minutes"
-- scrollUntilVisible:
-    element:
-      text: "今週の重点"
-    direction: DOWN
+# **入力した状態で撮る。** 空のままだと「どれか 1 つを入れると保存できます」の
+# 注記が出て、保存も灰色のままになる(使っている画面に見えない)
+- tapOn: "+60分"
+- tapOn:
+    id: "practice-kind-whole"
+- swipe:
+    direction: UP
+- swipe:
+    direction: UP
+- assertVisible: ".*できた.*"
 - takeScreenshot: Darwin/fastlane/screenshots/ja/6_ja
 
 # 何も入れていないので確認は出ずにそのまま閉じる
