@@ -4,6 +4,8 @@ import SwiftUI
 ///
 /// 上から できている状態 / 習熟度 / もとの言葉 / 記録 / 進み方 / アクション / 属性。
 /// 属性は日常で使わないのでいちばん下(「克服した」を折り返しの外に沈めない。2.2)。
+///
+/// **編集は右上。** 属性の折りたたみの中に置いていたが、見つからなかった(2026-10-18)。
 public struct IssueDetailView: View {
     @State private var model: IssueDetailModel
     @State private var isShowingAttributes = false
@@ -38,6 +40,22 @@ public struct IssueDetailView: View {
         #if os(iOS) || os(Android)
         .navigationBarTitleDisplayMode(.inline)
         #endif
+        // **編集はここに置く**(2026-10-18)。それまでは画面のいちばん下、
+        // 「種目や優先度を見る」を開いた中にだけあった —— 畳まれていて、
+        // ラベルからは編集できると読めず、**どこにあるか分からない**状態だった。
+        // 大会詳細も右上から編集に入る。詳細画面の編集は右上で揃える
+        .toolbar {
+            if let issue = model.issue {
+                ToolbarItem(placement: .primaryAction) {
+                    NavigationLink {
+                        IssueEditView(issueID: issue.id)
+                    } label: {
+                        Text("編集", bundle: .module)
+                    }
+                    .accessibilityIdentifier("issue-detail-edit")
+                }
+            }
+        }
         .onAppear {
             model.load()
         }
@@ -298,13 +316,8 @@ public struct IssueDetailView: View {
                         if !model.tags.isEmpty {
                             attribute(Text("タグ", bundle: .module), value: tagText())
                         }
-                        NavigationLink {
-                            IssueEditView(issueID: issue.id)
-                        } label: {
-                            Text("編集する", bundle: .module)
-                                .font(.footnote)
-                        }
-                        .accessibilityIdentifier("issue-detail-edit")
+                        // 編集の導線はここに置かない(2026-10-18 に右上へ移した)。
+                        // 裸の青リンクで、しかも畳まれた中にあり、見つからなかった(2.2)
                     }
                     .font(.footnote)
                 }
