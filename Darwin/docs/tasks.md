@@ -25,7 +25,7 @@
 
 ### 1.5 リリースビルドと TestFlight
 
-- [ ] TestFlight の内部テストで実機に入れる。触る中身は §2
+- [ ] TestFlight の内部テストで実機に入れる。触る中身は §3
 
 ### 1.6 App Store Connect の登録と提出
 
