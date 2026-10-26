@@ -107,8 +107,11 @@ fastlane のテキストは済み。**画像が 1 枚も無い。**
 ### 1.5 リリースビルドと TestFlight
 
 - [x] `swift test`(771 本)と `skip verify`(1.9.4、成功)は通した(2026-10-26)
-- [ ] 残り: `skip meta index` → `skip export -c release`
-      (`skip meta index` は `APPLE_APP_STORE_ID` が要る。App Store Connect の「App 情報」にある 10 桁)
+- [x] `skip meta index` も通した(2026-10-26)。`APPLE_APP_STORE_ID = 6827156090` を `Skip.env` に記入済み
+- [x] **`skip export` は iOS では使わない**(2026-10-26 に判明)——
+      `-c` という引数は Skip 1.9.4 に無く、`skip export` 自体が
+      **Gradle プロジェクトと `.aar` / `.apk` / `.aab` を書き出す Android 用**のコマンド。
+      iOS の出荷物は Xcode の Archive で作る。§7 の Play 配信に着手するときに使う
 - [x] **`.app` の中に空の `.lproj` は残っていない**(2026-10-26 に Release ビルドで確認)——
       `Release-iphonesimulator/BadNote.app` を消してから建て直し、`find -name "*.lproj"` が 0 件。
       `bad-note_BadNote.bundle` の中にも無い。**10-11 に見たものは古いビルドの残骸だった。**
