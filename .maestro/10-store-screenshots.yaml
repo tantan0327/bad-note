@@ -37,6 +37,9 @@ appId: com.tange.badnote
 ---
 # ── 下ごしらえ: デモデータを入れる ───────────────────────────────
 - launchApp
+# **最後に開いたタブが復元される**(`@AppStorage("tab")`)ので、
+# ホームに移ってからでないと設定の歯車が無い(2026-10-27 に踏んだ)
+- tapOn: "ホーム"
 - tapOn:
     id: "home-settings"
 - scrollUntilVisible:
