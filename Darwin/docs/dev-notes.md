@@ -552,9 +552,14 @@ find Darwin/build -name "PrivacyInfo.xcprivacy" -path "*.app/*"
 - **1024 の書き出しにアルファが残る。** `sips -g hasAlpha` が `yes`。
   **App Store はアルファ付きのアプリアイコンを弾く**
 
-そこで `Scripts/make-app-icon.py` で 1024 を自前で描いている(外部ライブラリ無し。
-走査線で塗って zlib で PNG にする)。そのあと
-`skip icon --no-darwin <その PNG>` で Android の各サイズだけ展開する。
+`Scripts/make-app-icon.py` は 1024 を自前で描く手段として残してある(外部ライブラリ無し。
+走査線で塗って zlib で PNG にする)。**出荷しているのはこの絵ではない** ——
+2026-10-27 に本人が用意した絵に差し替えた。
+
+**どの絵を使う場合も、1024 は PNG・アルファ無しにする。**
+JPEG で受け取ったら `sips -s format png <元> --out <先>` で変換し、
+`sips -g hasAlpha` が `no` であることを確かめてから入れる。
+Android の各サイズは `skip icon --no-darwin <その PNG>` で展開する。
 
 **Xcode でアセットカタログにドラッグすると App Icon セットが Image セットに化ける。**
 そうなると `None of the input catalogs contained a matching app icon set named "AppIcon"`

@@ -60,14 +60,18 @@
 
 ### 2.3 ストアの第一印象 —— 済み(2026-10-27)
 
-- [x] **アプリアイコンを作り直した** —— ブランド色のインディゴ(`#5C6BC0`)の単色面に、
-      白いシャトル 1 つ。文字なし。60px でも「羽根が開いたシャトル」と読める。
-      **`skip icon` は使えなかった** —— `--shadow 0` を渡しても影が消えず、
-      1024 の書き出しにアルファが残る。**App Store はアルファ付きのアイコンを弾く。**
-      `Scripts/make-app-icon.py`(外部ライブラリ無しで走査線で塗る)で描き、
-      Android 側だけ `skip icon --no-darwin` で各サイズに展開した。
-      元の形は `Scripts/app-icon-shuttle.svg`
+- [x] **アプリアイコンを差し替えた** —— 本人が Gemini で生成した絵を採用。
+      `Darwin/Assets.xcassets/AppIcon.appiconset/AppIcon.png`(1024・アルファ無し・PNG)。
+      元は `AppIcon2.imageset` に置かれた JPEG で、`sips` で PNG に変換して入れ替えた。
+      **Image セットのままではビルドが落ちる**(`None of the input catalogs contained
+      a matching app icon set named "AppIcon"`)。App Icon セットに入れること。
+      Android の各サイズは `skip icon --no-darwin` で同じ絵から展開した
 - [x] テンプレートのログ文言を消した。Release バイナリに残っていないことを `strings` で確認
+
+**残っている気がかり**(出すのは止めない)—— 絵の中に角丸の枠が描かれているが、
+iOS はアイコンを角丸で切り抜くので**枠の中に枠**が見える。
+60〜120px ではペン・チェックマーク・棒グラフが潰れて読み取れない。
+作り直すなら `Scripts/make-app-icon.py` が使える(単色面に白いシャトル 1 つ)。
 
 ### 2.4 見送ると決めたもの
 
