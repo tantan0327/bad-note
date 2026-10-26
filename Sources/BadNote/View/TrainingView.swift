@@ -18,6 +18,58 @@ public struct TrainingView: View {
     }
 
     public var body: some View {
+        // **メニューが 1 つも無いときは `List` を使わない**(2026-10-26)。
+        // `List` の中では `NavigationLink` が必ず行になり `.buttonStyle` が効かない。
+        // **日付の切り替えも出さない** —— 記録するものが無い日を選べても意味がない
+        if model.menus.isEmpty {
+            emptyState
+        } else {
+            dayList
+        }
+    }
+
+    @ViewBuilder private var emptyState: some View {
+        VStack(alignment: .leading, spacing: 24) {
+            if let errorText = model.errorText {
+                Text(errorText)
+                    .font(.footnote)
+                    .foregroundStyle(.red)
+            }
+            Card {
+                // 最初の 1 個への道は 1 タップ(3.4)。空の一覧を経由せず直接フォームへ
+                EmptyStateView(icon: "fitness_center",
+                               message: Text("メニューはまだありません。素振り 50 回、体幹 10 分のように、毎日やる形で決めておきます", bundle: .module)) {
+                    NavigationLink {
+                        TrainingMenuFormView(menuID: nil)
+                    } label: {
+                        Text("メニューを作る", bundle: .module)
+                            .font(.footnote)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .accessibilityIdentifier("training-create-menu")
+                }
+            }
+            Spacer()
+        }
+        .padding()
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .navigationTitle(Text("家トレ", bundle: .module))
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                NavigationLink {
+                    TrainingMenuFormView(menuID: nil)
+                } label: {
+                    Text("メニューを作る", bundle: .module)
+                }
+                .accessibilityIdentifier("training-menu-button")
+            }
+        }
+        .onAppear {
+            model.load()
+        }
+    }
+
+    @ViewBuilder private var dayList: some View {
         List {
             dateSection
             if let errorText = model.errorText {
@@ -25,11 +77,7 @@ public struct TrainingView: View {
                     .font(.footnote)
                     .foregroundStyle(.red)
             }
-            if model.menus.isEmpty {
-                emptySection
-            } else {
-                menuSection
-            }
+            menuSection
         }
         .navigationTitle(Text("家トレ", bundle: .module))
         .toolbar {
@@ -311,22 +359,4 @@ public struct TrainingView: View {
         .chipLabelFit()
     }
 
-    // MARK: - 空の状態
-
-    @ViewBuilder private var emptySection: some View {
-        Section {
-            // 最初の 1 個への道は 1 タップ(3.4)。空の一覧を経由せず直接フォームへ
-            EmptyStateView(icon: "fitness_center",
-                           message: Text("メニューはまだありません。素振り 50 回、体幹 10 分のように、毎日やる形で決めておきます", bundle: .module)) {
-                NavigationLink {
-                    TrainingMenuFormView(menuID: nil)
-                } label: {
-                    Text("メニューを作る", bundle: .module)
-                        .font(.footnote)
-                }
-                .buttonStyle(.borderedProminent)
-                .accessibilityIdentifier("training-create-menu")
-            }
-        }
-    }
 }

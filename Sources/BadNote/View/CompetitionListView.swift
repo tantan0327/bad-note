@@ -11,14 +11,24 @@ public struct CompetitionListView: View {
     }
 
     public var body: some View {
-        // 同じ形の行を選ぶだけの画面なので List(区切り線の決めごと。2.3 でカードから寄せた)
-        List {
+        // **1 件も無いときは `List` を使わない**(2026-10-26)。
+        // `List` の中では `NavigationLink` が必ず行になり `.buttonStyle` が効かない。
+        // 課題・家トレと見た目を揃える
+        if model.upcoming.isEmpty && model.finished.isEmpty {
+            emptyState
+        } else {
+            competitionList
+        }
+    }
+
+    @ViewBuilder private var emptyState: some View {
+        VStack(alignment: .leading, spacing: 24) {
             if let errorText = model.errorText {
                 Text(errorText)
                     .font(.footnote)
                     .foregroundStyle(.red)
             }
-            if model.upcoming.isEmpty && model.finished.isEmpty {
+            Card {
                 // 大会なしでもアプリは成立させる(§7.1)。次の 1 手は登録(2.4)
                 EmptyStateView(icon: "emoji_events",
                                message: Text("大会はまだ登録されていません", bundle: .module)) {
@@ -31,7 +41,36 @@ public struct CompetitionListView: View {
                     .buttonStyle(.borderedProminent)
                     .accessibilityIdentifier("competition-empty-action")
                 }
-            } else if model.upcoming.isEmpty {
+            }
+            Spacer()
+        }
+        .padding()
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .navigationTitle(Text("大会", bundle: .module))
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                NavigationLink {
+                    CompetitionEditView()
+                } label: {
+                    Text("大会を登録する", bundle: .module)
+                }
+                .accessibilityIdentifier("competitions-add")
+            }
+        }
+        .onAppear {
+            model.load()
+        }
+    }
+
+    @ViewBuilder private var competitionList: some View {
+        // 同じ形の行を選ぶだけの画面なので List(区切り線の決めごと。2.3 でカードから寄せた)
+        List {
+            if let errorText = model.errorText {
+                Text(errorText)
+                    .font(.footnote)
+                    .foregroundStyle(.red)
+            }
+            if model.upcoming.isEmpty {
                 // **終わった大会だけが残っている状態**(いちばん起きやすい)。
                 // それまでは「終了した大会」の一覧が出るだけで、次に何をすればいいか
                 // 分からなかった(1.7。ホームのカウントダウン欄と同じ穴)
@@ -59,10 +98,11 @@ public struct CompetitionListView: View {
         .navigationTitle(Text("大会", bundle: .module))
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
+                // カードの中と同じ言葉にする(2026-10-26)
                 NavigationLink {
                     CompetitionEditView()
                 } label: {
-                    Text("追加", bundle: .module)
+                    Text("大会を登録する", bundle: .module)
                 }
                 .accessibilityIdentifier("competitions-add")
             }

@@ -211,6 +211,18 @@ public struct HomeView: View {
                     }
                     .buttonStyle(.borderedProminent)
                     .accessibilityIdentifier("home-set-target")
+                } else if model.isJustStarting {
+                    // **ほんとうの初回は目立たせない**(2026-10-26)。
+                    // 塗りつぶしが 3 つ並ぶと、どこから始めるのか決まらなかった。
+                    // このアプリの入口は「気づいたことを 1 行書く」なので、そちらに譲る
+                    NavigationLink {
+                        CompetitionEditView()
+                    } label: {
+                        Text("大会を登録する", bundle: .module)
+                            .font(.footnote)
+                    }
+                    .buttonStyle(.bordered)
+                    .accessibilityIdentifier("home-add-competition")
                 } else {
                     NavigationLink {
                         CompetitionEditView()
@@ -526,17 +538,37 @@ public struct HomeView: View {
 
     // MARK: - 6. 練習を記録するボタン(末尾に大きく)
 
+    /// **ほんとうの初回だけ枠線に落とす**(2026-10-26)。
+    ///
+    /// 課題も練習ログも無い状態で塗りつぶしが 3 つ並ぶと、
+    /// どれも同じ重さに見えてどこから始めるのか決まらなかった。
+    /// 初回の 1 手は「課題を書く」。練習から始める道は
+    /// その案内文の中で示してあるので、ここは枠線で足りる。
+    /// 1 件でも記録できたら、以降は毎日の主操作なので塗りつぶしに戻す。
     @ViewBuilder private var recordButton: some View {
-        Button {
-            isShowingPracticeLog = true
-        } label: {
-            Text("練習を記録する", bundle: .module)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 8)
+        if model.isJustStarting {
+            Button {
+                isShowingPracticeLog = true
+            } label: {
+                Text("練習を記録する", bundle: .module)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 8)
+            }
+            .buttonStyle(.bordered)
+            .padding(.top, 8)
+            .accessibilityIdentifier("home-record")
+        } else {
+            Button {
+                isShowingPracticeLog = true
+            } label: {
+                Text("練習を記録する", bundle: .module)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 8)
+            }
+            .buttonStyle(.borderedProminent)
+            .padding(.top, 8)
+            .accessibilityIdentifier("home-record")
         }
-        .buttonStyle(.borderedProminent)
-        .padding(.top, 8)
-        .accessibilityIdentifier("home-record")
     }
 
 }

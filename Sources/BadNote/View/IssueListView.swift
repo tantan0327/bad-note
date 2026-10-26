@@ -11,6 +11,60 @@ public struct IssueListView: View {
     }
 
     public var body: some View {
+        // **1 件も無いときは `List` を使わない**(2026-10-26)。
+        // `List` の中では `NavigationLink` が必ず行(シェブロン付き)になり、
+        // `.buttonStyle(.borderedProminent)` が効かない。
+        // ホーム・大会・家トレと見た目を揃えるため、空のときだけ素の `VStack` で出す。
+        // ついでに**検索バーも出さない** —— 探す相手がいない
+        if model.isEmpty {
+            emptyState
+        } else {
+            tieredList
+        }
+    }
+
+    /// 使い始めの画面。**次の 1 手だけ**を出す。
+    @ViewBuilder private var emptyState: some View {
+        VStack(alignment: .leading, spacing: 24) {
+            if let errorText = model.errorText {
+                Text(errorText)
+                    .font(.footnote)
+                    .foregroundStyle(.red)
+            }
+            Card {
+                EmptyStateView(icon: "checklist",
+                               message: Text("まだ課題がありません。コーチに言われたことや、試合で気づいたことを 1 行で書きます", bundle: .module)) {
+                    NavigationLink {
+                        IssueEditView()
+                    } label: {
+                        Text("課題を書く", bundle: .module)
+                            .font(.footnote)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .accessibilityIdentifier("issues-empty-add")
+                }
+            }
+            Spacer()
+        }
+        .padding()
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .navigationTitle(Text("課題", bundle: .module))
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                NavigationLink {
+                    IssueEditView()
+                } label: {
+                    Text("課題を書く", bundle: .module)
+                }
+                .accessibilityIdentifier("issues-add")
+            }
+        }
+        .onAppear {
+            model.load()
+        }
+    }
+
+    @ViewBuilder private var tieredList: some View {
         List {
             if let errorText = model.errorText {
                 Text(errorText)
@@ -21,24 +75,6 @@ public struct IssueListView: View {
             // どの層にいるか思い出せないから探しているので、層に分けても助けにならない
             if model.isSearching {
                 searchSection
-            }
-            // 使い始めは 3 層の見出しと空行だけが並ぶ。絞り込む相手も並べる行も無いので、
-            // ホーム・大会・家トレと同じく**次の 1 手だけ**を出す
-            if !model.isSearching && model.isEmpty {
-                Section {
-                    EmptyStateView(icon: "checklist",
-                                   message: Text("まだ課題がありません。コーチに言われたことや、試合で気づいたことを 1 行で書きます", bundle: .module)) {
-                        NavigationLink {
-                            IssueEditView()
-                        } label: {
-                            Text("課題を書く", bundle: .module)
-                                .font(.footnote)
-                        }
-                        // 家トレの空状態と同じ強さ。タブを開いて最初に押す 1 つ
-                        .buttonStyle(.borderedProminent)
-                        .accessibilityIdentifier("issues-empty-add")
-                    }
-                }
             }
             if !model.isSearching && !model.isEmpty {
                 Section {
@@ -163,10 +199,12 @@ public struct IssueListView: View {
         .sensoryFeedback(SensoryFeedback.impact, trigger: model.moveCount)
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
+                // **カードの中と同じ言葉にする**(2026-10-26)。
+                // 「追加」だけだと、画面から目を離したときに何を追加するのか読めない
                 NavigationLink {
                     IssueEditView()
                 } label: {
-                    Text("追加", bundle: .module)
+                    Text("課題を書く", bundle: .module)
                 }
                 .accessibilityIdentifier("issues-add")
             }
