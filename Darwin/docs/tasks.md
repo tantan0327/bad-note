@@ -45,7 +45,7 @@ Android のビルドとテストは引き続き通し続ける(両 OS で動く�
 - [x] GitHub Pages(`main` / `docs`)で公開済み(2026-10-11)。
       `https://tantan0327.github.io/bad-note/privacy.html` とルートの両方が 200 で開く。
       HTTPS 強制も有効。`docs/` の Markdown は front matter が無いと変換されない(`index.md` / `_config.yml` も追加済み)
-- [ ] 最終更新日を公開日に直す(今は 2026 年 8 月 25 日)。本文を変えたら push するだけで反映される
+- [x] 最終更新日を 2026 年 10 月 26 日にした(2026-10-26)。本文を変えたら push するだけで反映される
 
 ### 1.3 iOS 側の申告
 
@@ -60,8 +60,8 @@ Android のビルドとテストは引き続き通し続ける(両 OS で動く�
       iOS のバイナリには入らない(確認済み)。`FileManager.createDirectory` は申告対象外。
       **追加する API が増えたらここも直す**(アップロード後に ITMS-91053 の
       メールが来たら、そこに書かれたカテゴリを足す)
-- [ ] App Store Connect のプライバシー質問は「データを収集しない」で回答
-- [ ] 年齢レーティングの質問票(すべて「なし」で 4+)
+- [x] App Store Connect のプライバシー質問は「データを収集しない」で回答済み(2026-10-26)
+- [x] 年齢レーティングの質問票は済み(すべて「なし」で 4+。2026-10-26)
 - [ ] `ITSAppUsesNonExemptEncryption = false` は `Info.plist` に済み(確認のみ)
 
 ### 1.4 デモデータとストアのスクリーンショット
@@ -106,17 +106,15 @@ fastlane のテキストは済み。**画像が 1 枚も無い。**
 
 ### 1.5 リリースビルドと TestFlight
 
-- [ ] 出荷前の順序を通す: `swift test` → `skip verify` → `skip meta index` → `skip export -c release`
-      (`skip meta index` は `APPLE_APP_STORE_ID` が要るので §1.6 の登録を先に)
-- [ ] **`.app` の中に空の `.lproj` が残っていないか見る**(2026-10-11 に気づいた)——
-      Debug ビルドの `BadNote.app` 直下と `bad-note_BadNote.bundle` の中に
-      `ja` / `es` / `fr` / `zh-Hans` の `.lproj` が**中身ゼロで**できていた。
-      文字列カタログの翻訳は 0 件(キーがそのまま日本語)なので中身が無いのは当然だが、
-      **App Store は `.lproj` の有無で「対応言語」を決める** ので、
-      このままだとスペイン語・フランス語・中国語に対応していると表示される。
-      `project.pbxproj` の `knownRegions` は `en / Base / es / ja / zh-Hans`(`fr` は別口)。
-      まず `rm -rf` した DerivedData できれいにビルドして**再現するか確かめる**
-      (古いビルドの残骸かもしれない)。再現するなら `knownRegions` を `en / Base / ja` に絞る
+- [x] `swift test`(771 本)と `skip verify`(1.9.4、成功)は通した(2026-10-26)
+- [ ] 残り: `skip meta index` → `skip export -c release`
+      (`skip meta index` は `APPLE_APP_STORE_ID` が要る。App Store Connect の「App 情報」にある 10 桁)
+- [x] **`.app` の中に空の `.lproj` は残っていない**(2026-10-26 に Release ビルドで確認)——
+      `Release-iphonesimulator/BadNote.app` を消してから建て直し、`find -name "*.lproj"` が 0 件。
+      `bad-note_BadNote.bundle` の中にも無い。**10-11 に見たものは古いビルドの残骸だった。**
+      `CFBundleDevelopmentRegion` は `ja`、`PrivacyInfo.xcprivacy` も `.app` 直下にある。
+      `knownRegions` には `es` / `zh-Hans` が残っているが、`.lproj` が生成されないので
+      ストアの対応言語には出ない。**Archive したビルドでもう一度だけ見ること**
 - [ ] Xcode の Archive → App Store Connect へアップロード(署名は自動管理のまま)
 - [ ] TestFlight の内部テストで**実機**に入れて一通り触る —— 通知の許可ダイアログ /
       新規インストールでの DB 作成 / 週次評価の初回 / 長押しドラッグ(`adb` でも
@@ -125,13 +123,13 @@ fastlane のテキストは済み。**画像が 1 枚も無い。**
 
 ### 1.6 App Store Connect の登録と提出
 
-- [ ] App Store Connect にアプリを作り、`Skip.env` の `APPLE_APP_STORE_ID` を埋める
-- [ ] リスティングは fastlane の `Darwin/fastlane/metadata/{ja,en-US}/` の内容を入れる
-      (`en-US` は UI が日本語のみである旨を冒頭に書いてある。そのまま)
+- [x] App Store Connect にアプリを作った(2026-10-26)
+- [ ] `Skip.env` 26 行目の `APPLE_APP_STORE_ID` を埋める(本人から番号をもらう)
+- [x] リスティング / プライバシー質問 / 年齢レーティング / 価格と販売地域を入れた(2026-10-26)
 - [ ] 審査メモに「アカウント不要・通信なし・すべて端末内」と、
       通知が練習予定日と大会に紐づくこと(何もしないと鳴らない)を書いておく。
       審査員が通知を試せないと「機能しない」と誤解されやすい
-- [ ] **10/24(金)までに審査に出す**
+- [ ] **審査に出す**(10/24 の目標は過ぎた。10/28 を過ぎるなら §2 の残りを切って先に出す)
 
 ### 1.7 公開後
 
