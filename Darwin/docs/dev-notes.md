@@ -200,6 +200,31 @@ return AnyView(TabView(selection: $tab) { ... })
 を入れてビルドし、`xcrun simctl io <UDID> screenshot` を撮ってから元に戻す。
 **戻したあと `git diff` が空になることを必ず確認する。**
 
+### 行全体を押させたいなら面を敷く(2026-10-18 に踏んだ)
+
+`Button` のラベルに `Spacer` を入れても、**`Spacer` の部分に当たり判定が無い。**
+文字の真上を狙ったときだけ反応するので、層の見出しは事実上押せなかった。
+**SkipUI では `contentShape` が `@available(*, unavailable)`** なので使えない。
+
+```swift
+.frame(maxWidth: .infinity)
+.background(Palette.surface)   // 面を敷いて初めて行全体が押せる
+```
+
+### タブバーの項目は `accessibilityIdentifier` を受け取らない(2026-10-18 に踏んだ)
+
+Maestro からタブを叩くときは**表示されている文字で指す**。
+
+```yaml
+- tapOn: "ホーム"     # 効く
+- tapOn: { id: "tab-home" }   # 当たらない
+```
+
+### デモデータの目標大会は 35 日後にする(2026-10-11)
+
+**2 週間以内だと調整期に入り、しばらく触れていない課題が出なくなる。**
+スクリーンショットで再浮上の 3 択を見せたいので、調整期に入らない距離に置く。
+
 ### 画面が固まったら `@Environment(\.dismiss)` を疑う(2026-10-19 に踏んだ)
 
 **症状** —— 課題詳細から編集画面へ進もうとすると、押しても遷移せず、
