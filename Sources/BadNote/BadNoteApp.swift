@@ -5,18 +5,17 @@ import SwiftUI
 /// A logger for the BadNote module.
 let logger: Logger = Logger(subsystem: "com.tange.badnote", category: "BadNote")
 
-/// The shared top-level view for the app, loaded from the platform-specific App delegates below.
+/// アプリの最上位のビュー。両プラットフォームの App デリゲートから読み込まれる。
 ///
-/// The default implementation merely loads the `ContentView` for the app and logs a message.
+/// **テンプレートのログ文言は消した**(2026-10-27)。
+/// 起動のたびにコンソールへ 1 行出るだけだが、出荷するバイナリに
+/// Skip の説明文が残っているのは筋が悪い。
 public struct BadNoteRootView : View {
     public init() {
     }
 
     public var body: some View {
         ContentView()
-            .task {
-                logger.info("Skip app logs are viewable in the Xcode console for iOS; Android logs can be viewed in Studio or using adb logcat")
-            }
     }
 }
 

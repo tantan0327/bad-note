@@ -543,3 +543,20 @@ find Darwin/build -name "PrivacyInfo.xcprivacy" -path "*.app/*"
   も、非ジェネリック型の `init<A: View>(...)` も、どちらも Android のコンパイルで落ちる
   (`This extension cannot be merged…` / `Kotlin constructors cannot introduce additional generics`)。
   ジェネリックは型宣言に置き、省略時は呼び出し側で `{ EmptyView() }` を渡す(`EmptyStateView` で採用)
+
+### アプリアイコンは `skip icon` では仕上げられない(2026-10-27 に踏んだ)
+
+`skip icon --background <色> symbol.svg` は手軽だが、出荷には使えない。
+
+- **`--shadow 0` を渡しても影が消えない。** モチーフの縁に暗い落ち影が残る
+- **1024 の書き出しにアルファが残る。** `sips -g hasAlpha` が `yes`。
+  **App Store はアルファ付きのアプリアイコンを弾く**
+
+そこで `Scripts/make-app-icon.py` で 1024 を自前で描いている(外部ライブラリ無し。
+走査線で塗って zlib で PNG にする)。そのあと
+`skip icon --no-darwin <その PNG>` で Android の各サイズだけ展開する。
+
+**Xcode でアセットカタログにドラッグすると App Icon セットが Image セットに化ける。**
+そうなると `None of the input catalogs contained a matching app icon set named "AppIcon"`
+でビルドが落ちる。`Darwin/Assets.xcassets/AppIcon.appiconset/` に
+`AppIcon.png`(1024・アルファ無し)と `Contents.json` がある形が正しい。
