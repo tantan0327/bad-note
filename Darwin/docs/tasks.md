@@ -118,7 +118,10 @@ fastlane のテキストは済み。**画像が 1 枚も無い。**
       `CFBundleDevelopmentRegion` は `ja`、`PrivacyInfo.xcprivacy` も `.app` 直下にある。
       `knownRegions` には `es` / `zh-Hans` が残っているが、`.lproj` が生成されないので
       ストアの対応言語には出ない。**Archive したビルドでもう一度だけ見ること**
-- [ ] Xcode の Archive → App Store Connect へアップロード(署名は自動管理のまま)
+- [x] Xcode の Archive → App Store Connect へアップロード済み(2026-10-26)。
+      Archive の中身を確認した —— `.lproj` 0 件 / arm64 / 1.0.0 (1) /
+      `ITSAppUsesNonExemptEncryption = false` / `PrivacyInfo.xcprivacy` 直下 / dSYM 2 つ。
+      **デモデータの文言はリリースバイナリに入っていない**(`#if DEBUG` が効いている)
 - [ ] TestFlight の内部テストで**実機**に入れて一通り触る —— 通知の許可ダイアログ /
       新規インストールでの DB 作成 / 週次評価の初回 / 長押しドラッグ(`adb` でも
       シミュレータでも再現できない。指で確かめる)
@@ -129,9 +132,8 @@ fastlane のテキストは済み。**画像が 1 枚も無い。**
 - [x] App Store Connect にアプリを作った(2026-10-26)
 - [ ] `Skip.env` 26 行目の `APPLE_APP_STORE_ID` を埋める(本人から番号をもらう)
 - [x] リスティング / プライバシー質問 / 年齢レーティング / 価格と販売地域を入れた(2026-10-26)
-- [ ] 審査メモに「アカウント不要・通信なし・すべて端末内」と、
-      通知が練習予定日と大会に紐づくこと(何もしないと鳴らない)を書いておく。
-      審査員が通知を試せないと「機能しない」と誤解されやすい
+- [x] 審査メモを入れた(2026-10-26)。アカウント不要・通信なし・すべて端末内、
+      通知は練習予定日と大会に紐づくこと、並べ替えは長押しドラッグであること
 - [ ] **審査に出す**(10/24 の目標は過ぎた。10/28 を過ぎるなら §2 の残りを切って先に出す)
 
 ### 1.7 公開後
@@ -383,7 +385,9 @@ fastlane のテキストは済み。**画像が 1 枚も無い。**
       ブランド色(インディゴ)とも、日本語だけの UI とも合っていない。60px では文字が潰れる。
       → 文字なし・単色面 + 1 モチーフに作り直し、`skip icon` で両 OS と Play 用 512px を一括生成。
       **リリースを止めるほどではない**が、ストアで最初に見られるのはこれ
-- [ ] `BadNoteApp.swift:18` のテンプレートのログ文言(「Skip app logs are viewable…」)を消す
+- [ ] `BadNoteApp.swift:18` のテンプレートのログ文言(「Skip app logs are viewable…」)を消す。
+      **1.0 のリリースバイナリに入ったまま**(2026-10-26 に `strings` で確認)。
+      画面には出ずコンソールに 1 行出るだけなので審査には影響しない。1.1 で消す
 - [ ] `Localizable.xcstrings` は 242 キーすべて翻訳なし(`sourceLanguage: en` でキーが日本語)。
       日本語専用のうちは無害。英語対応するときに `Text(verbatim:)` の日本語 + 数値
       (`HomeView` / `RemainingText` / `StatsView`)もまとめて直す
