@@ -22,7 +22,7 @@ public struct IssueDetailView: View {
                 } else if let errorText = model.errorText {
                     Text(errorText)
                         .font(.footnote)
-                        .foregroundStyle(.red)
+                        .foregroundStyle(Palette.error)
                 }
                 if let issue = model.issue {
                     doneFormSection(issue)

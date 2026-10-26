@@ -11,7 +11,7 @@ struct TrainingMenuListView: View {
             if let errorText = model.errorText {
                 Text(errorText)
                     .font(.footnote)
-                    .foregroundStyle(.red)
+                    .foregroundStyle(Palette.error)
             }
             if model.menus.isEmpty {
                 // 空の状態も 2.4 の形に。次の 1 手はその場からフォームへ(3.4)

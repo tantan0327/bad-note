@@ -24,9 +24,11 @@ struct EmptyStateView<Action: View>: View {
     var body: some View {
         VStack(spacing: 12) {
             if let iconName = iconName {
+                // **読み上げない。** 絵は下の文の飾りで、文が同じことを言っている(6.1)
                 Image(iconName, bundle: .module)
                     .font(.largeTitle)
                     .foregroundStyle(.secondary)
+                    .accessibilityHidden(true)
             }
             message
                 .font(.footnote)

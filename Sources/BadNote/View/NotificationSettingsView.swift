@@ -133,7 +133,7 @@ public struct NotificationSettingsView: View {
                 if let errorText = model.errorText {
                     Text(errorText)
                         .font(.footnote)
-                        .foregroundStyle(.red)
+                        .foregroundStyle(Palette.error)
                 }
 
                 // **許可は画面を開いた瞬間ではなく、オンにしたときに聞く。**

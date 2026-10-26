@@ -20,7 +20,7 @@ public struct IssueEditView: View {
                 if let errorText = model.errorText {
                     Text(errorText)
                         .font(.footnote)
-                        .foregroundStyle(.red)
+                        .foregroundStyle(Palette.error)
                 }
                 // **欄は 1 つだけ**(2026-10-12)。追加でも編集でも同じ姿にする ——
                 // 追加が 1 欄で編集が 2 欄だと「さっき書いたのにまだ書く欄がある」と見える

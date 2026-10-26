@@ -52,18 +52,11 @@
 「使い始めの画面」。**`List` の中では `NavigationLink` が必ず行になり
 `.buttonStyle` が効かない**ことが、押し心地が揃わなかった原因だった。
 
-### 2.2 仕上がりの精度
+### 2.2 仕上がりの精度 —— 済み(2026-10-27)
 
-- [ ] **装飾アイコンが VoiceOver に読まれる** —— `EmptyStateView.swift:26`、
-      `StatsView.swift:95`、`PracticeLogView.swift:147`。→ `.accessibilityHidden(true)`
-- [ ] **エラー文の色が直書き** —— `foregroundStyle(.red)` が 21 か所。
-      「View で色を直書きしない」の唯一の抜け。→ `Palette.error` を足して置き換え
-      (ダークでの赤も同時に決める)
-- [ ] **文字の段階表に無いサイズ** —— `StatsView.swift:103`(40pt)、`:293`(9pt。
-      Dynamic Type で拡大しない)、`PracticePlanView.swift:337` の `Color.white` 直書き。
-      → 表に足すか `.caption2` / トークンに寄せる
-- [ ] **振り返りの「保存しました」が画面最上部に出る** —— `CompetitionDetailView.swift:25`
-      に対して保存ボタンは `:341`。→ カードの中にインラインで出す
+4 項目とも実装。`Palette.error` と `Palette.onAccent` を足し、
+`foregroundStyle(.red)` の直書き 22 ファイルを置き換えた。
+文字の段階表に「積み上げの主数字」を追加し、9pt は `.caption2` に寄せた。
 
 ### 2.3 ストアの第一印象(時間が許せば)
 

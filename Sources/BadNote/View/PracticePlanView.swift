@@ -157,7 +157,7 @@ public struct PracticePlanView: View {
             if let errorText = model.errorText {
                 Text(errorText)
                     .font(.footnote)
-                    .foregroundStyle(.red)
+                    .foregroundStyle(Palette.error)
             }
 
             Section {
@@ -339,7 +339,8 @@ public struct PracticePlanView: View {
 
     private func dayColor(_ cell: MonthGridDay) -> Color {
         if model.isPlanned(cell) && cell.isInMonth {
-            return Color.white
+            // 面が `Palette.accent` で塗られた日。その上に載る文字(2026-10-27 にトークン化)
+            return Palette.onAccent
         }
         if !cell.isInMonth || !model.isSelectable(cell) {
             return Color.secondary

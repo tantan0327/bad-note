@@ -60,7 +60,7 @@ public struct ShelvedListView: View {
             if let errorText = model.errorText {
                 Text(errorText)
                     .font(.footnote)
-                    .foregroundStyle(.red)
+                    .foregroundStyle(Palette.error)
             }
             if model.issues.isEmpty {
                 Text("まだありません。棚卸しで見送った課題がここに並びます", bundle: .module)

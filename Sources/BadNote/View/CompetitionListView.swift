@@ -26,7 +26,7 @@ public struct CompetitionListView: View {
             if let errorText = model.errorText {
                 Text(errorText)
                     .font(.footnote)
-                    .foregroundStyle(.red)
+                    .foregroundStyle(Palette.error)
             }
             Card {
                 // 大会なしでもアプリは成立させる(§7.1)。次の 1 手は登録(2.4)
@@ -68,7 +68,7 @@ public struct CompetitionListView: View {
             if let errorText = model.errorText {
                 Text(errorText)
                     .font(.footnote)
-                    .foregroundStyle(.red)
+                    .foregroundStyle(Palette.error)
             }
             if model.upcoming.isEmpty {
                 // **終わった大会だけが残っている状態**(いちばん起きやすい)。
@@ -169,7 +169,7 @@ public struct CompetitionEditView: View {
                 if let errorText = model.errorText {
                     Text(errorText)
                         .font(.footnote)
-                        .foregroundStyle(.red)
+                        .foregroundStyle(Palette.error)
                 }
 
                 VStack(alignment: .leading, spacing: 8) {

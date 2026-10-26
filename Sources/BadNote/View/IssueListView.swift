@@ -29,7 +29,7 @@ public struct IssueListView: View {
             if let errorText = model.errorText {
                 Text(errorText)
                     .font(.footnote)
-                    .foregroundStyle(.red)
+                    .foregroundStyle(Palette.error)
             }
             Card {
                 EmptyStateView(icon: "checklist",
@@ -69,7 +69,7 @@ public struct IssueListView: View {
             if let errorText = model.errorText {
                 Text(errorText)
                     .font(.footnote)
-                    .foregroundStyle(.red)
+                    .foregroundStyle(Palette.error)
             }
             // 探しているときは 3 層をほどいて 1 本にする。
             // どの層にいるか思い出せないから探しているので、層に分けても助けにならない

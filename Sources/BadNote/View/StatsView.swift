@@ -67,7 +67,7 @@ public struct StatsView: View {
                 if let errorText = model.errorText {
                     Text(errorText)
                         .font(.footnote)
-                        .foregroundStyle(.red)
+                        .foregroundStyle(Palette.error)
                 }
                 lifetimeSection
                 milestoneSection
@@ -92,9 +92,11 @@ public struct StatsView: View {
     @ViewBuilder private var lifetimeSection: some View {
         Card(background: Palette.surfaceRaised) {
             VStack(spacing: 12) {
+                // **読み上げない。** 下の「ここまで積み上げた時間」が同じことを言っている(6.1)
                 Image("emoji_events", bundle: .module)
                     .font(.largeTitle)
                     .foregroundStyle(Palette.accent)
+                    .accessibilityHidden(true)
                 Text("ここまで積み上げた時間", bundle: .module)
                     .font(.caption)
                     .foregroundStyle(.secondary)
@@ -289,8 +291,10 @@ public struct StatsView: View {
                 monthLabel(entry, isCurrent: isCurrent)
                     .font(.caption)
                     .foregroundStyle(isCurrent ? Palette.accent : Color.secondary)
+                // **9pt の直書きをやめた**(2026-10-27)。Dynamic Type で拡大せず、
+                // 文字を大きくしている人にだけ読めない行になっていた
                 Text(verbatim: showYear && !isCurrent ? StatsView.yearLabel(entry.month) : " ")
-                    .font(.system(size: 9))
+                    .font(.caption2)
                     .foregroundStyle(.secondary)
             }
             .frame(height: 28)

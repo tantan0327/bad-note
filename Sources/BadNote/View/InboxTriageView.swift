@@ -18,7 +18,7 @@ public struct InboxTriageView: View {
                 if let errorText = model.errorText {
                     Text(errorText)
                         .font(.footnote)
-                        .foregroundStyle(.red)
+                        .foregroundStyle(Palette.error)
                 }
                 if let issue = model.current {
                     remainingLabel

@@ -74,7 +74,7 @@ public struct StaleSettingsView: View {
             if let errorText = model.errorText {
                 Text(errorText)
                     .font(.footnote)
-                    .foregroundStyle(.red)
+                    .foregroundStyle(Palette.error)
             }
             Section {
                 // Stepper(value:label:) は Kotlin でオーバーロード解決できない(開発メモ)。

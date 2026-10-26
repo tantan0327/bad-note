@@ -33,7 +33,7 @@ public struct TrainingView: View {
             if let errorText = model.errorText {
                 Text(errorText)
                     .font(.footnote)
-                    .foregroundStyle(.red)
+                    .foregroundStyle(Palette.error)
             }
             Card {
                 // 最初の 1 個への道は 1 タップ(3.4)。空の一覧を経由せず直接フォームへ
@@ -75,7 +75,7 @@ public struct TrainingView: View {
             if let errorText = model.errorText {
                 Text(errorText)
                     .font(.footnote)
-                    .foregroundStyle(.red)
+                    .foregroundStyle(Palette.error)
             }
             menuSection
         }

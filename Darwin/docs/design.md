@@ -83,7 +83,7 @@
 - **ブランド色はインディゴ**(light `#5C6BC0` / dark `#7986CB`)。`AccentColor` は
   `Darwin/Assets.xcassets` と `Sources/BadNote/Resources/Module.xcassets` の 2 か所にあり、
   **値は同じに保つ**(Android に効くのは Module 側だけ。開発メモ「色は asset catalog 経由…」参照)
-- **色は `View/Palette.swift` の 6 トークンから取る** —— `accent` / `surface` / `surfaceRaised` /
+- **色は `View/Palette.swift` の 8 トークンから取る** —— `accent` / `surface` / `surfaceRaised` /
   `done` / `closer` / `next`。実体は `Module.xcassets` の colorset(light / dark の 2 値)なので、
   色替えは JSON を直すだけで両プラットフォームに効く。**View で色を直書きしない**
 - **手応えは色 + 形** —— できた = 塗り丸(緑)/ 近づいた = 輪(琥珀)/ 次にやる = 四角(青)/
@@ -101,6 +101,7 @@
 | 補足・メタ情報・小さな導線 | `.footnote` | 日付、件数、「編集する」 |
 | チップ・バッジ・注釈 | `.caption` | 習熟度チップ、入力の説明文 |
 | カード内の統計数字 | 22pt semibold(単位・ラベルは `.caption`) | `View/StatItem.swift`。積み上げの 2 スタット、課題詳細の記録 |
+| 積み上げの主数字 | `.system(size: 40, weight: .bold)` | `View/StatsView.swift` の通算時間。**この画面に 1 つだけ** |
 
 詳細画面のタイトルは**その画面の固有名**(課題名・大会名)を inline で出す。
 「課題」「大会」のような中身の無い大タイトルは出さない

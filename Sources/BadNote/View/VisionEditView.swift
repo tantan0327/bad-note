@@ -16,7 +16,7 @@ public struct VisionEditView: View {
                 if let errorText = model.errorText {
                     Text(errorText)
                         .font(.footnote)
-                        .foregroundStyle(.red)
+                        .foregroundStyle(Palette.error)
                 }
 
                 // **何を書く場所かを先に決める**(1.8)。成績(「全国大会に出る」)を

@@ -124,7 +124,7 @@ public struct PracticePlanBulkAddView: View {
             if let errorText = model.errorText {
                 Text(errorText)
                     .font(.footnote)
-                    .foregroundStyle(.red)
+                    .foregroundStyle(Palette.error)
             }
 
             Section {

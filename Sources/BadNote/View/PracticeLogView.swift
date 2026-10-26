@@ -191,8 +191,10 @@ public struct PracticeLogView: View {
             // 振動は isSaved の .success がすでに鳴っているので重ねない
             ForEach(model.reachedMilestones, id: \.self) { hours in
                 HStack(spacing: 8) {
+                    // **読み上げない。** 右の文が同じことを言っている(6.1)
                     Image("emoji_events", bundle: .module)
                         .foregroundStyle(Palette.accent)
+                        .accessibilityHidden(true)
                     Text(verbatim: "\(hours) 時間にとどきました")
                         .font(.headline)
                         .foregroundStyle(Palette.accent)
@@ -261,7 +263,7 @@ public struct PracticeLogView: View {
         if let errorText = model.errorText {
             Text(errorText)
                 .font(.footnote)
-                .foregroundStyle(.red)
+                .foregroundStyle(Palette.error)
         }
     }
 

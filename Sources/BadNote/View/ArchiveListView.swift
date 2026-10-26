@@ -43,7 +43,7 @@ public struct ArchiveListView: View {
             if let errorText = model.errorText {
                 Text(errorText)
                     .font(.footnote)
-                    .foregroundStyle(.red)
+                    .foregroundStyle(Palette.error)
             }
             if model.issues.isEmpty {
                 Text("まだありません。課題を試合で出せるようになったら、ここに並びます", bundle: .module)

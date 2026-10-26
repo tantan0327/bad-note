@@ -25,6 +25,18 @@ public struct Palette {
     public static var closer: Color { Color("CloserColor", bundle: .module) }
     /// 手応え「次にやる」
     public static var next: Color { Color("NextColor", bundle: .module) }
+    /// `accent` で塗った面の上に載る文字(2026-10-27)。
+    ///
+    /// インディゴは light / dark のどちらも十分に濃いので、**両方とも白**でよい。
+    /// `Color.white` を直書きしていた練習予定日のカレンダーをここに寄せた。
+    public static var onAccent: Color { Color.white }
+    /// 保存できなかったときなどの文言(2026-10-27)。
+    ///
+    /// **`.red` を直書きしない。** ダークで既定の赤はまぶしく、面のインディゴとも喧嘩する。
+    /// light `#C63038` / dark `#FF737A`。
+    /// **「×」「失敗」の意味では使わない**(CLAUDE.md。手応えの 3 段階はこの色を持たない)。
+    /// 使うのは**操作が通らなかったことを伝える 1 行**だけ。
+    public static var error: Color { Color("ErrorColor", bundle: .module) }
 
     private init() {
     }

@@ -20,12 +20,7 @@ public struct CompetitionDetailView: View {
                 if let errorText = model.errorText {
                     Text(errorText)
                         .font(.footnote)
-                        .foregroundStyle(.red)
-                }
-                if let savedMessage = model.savedMessage {
-                    Text(savedMessage)
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Palette.error)
                 }
                 if let competition = model.competition {
                     basicSection(competition)
@@ -358,6 +353,15 @@ public struct CompetitionDetailView: View {
                     .accessibilityIdentifier("competition-review-to-issue-\(model.reviews[index].discipline.rawValue)")
                 }
                 .font(.footnote)
+                // **押した場所の隣に出す**(2026-10-27)。
+                // それまでは画面のいちばん上に出ていて、
+                // 下までスクロールして保存した人の目には入らなかった
+                if let savedMessage = model.savedMessage {
+                    Text(savedMessage)
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                        .accessibilityIdentifier("competition-review-saved")
+                }
             }
         }
     }
