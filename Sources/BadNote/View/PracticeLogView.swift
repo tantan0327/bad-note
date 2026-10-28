@@ -415,18 +415,29 @@ public struct PracticeLogView: View {
         VStack(alignment: .leading, spacing: 12) {
             sectionTitle(Text("追加する課題(任意)", bundle: .module))
 
-            ForEach(model.addedCoachWords, id: \.self) { words in
-                HStack {
-                    Text(words)
-                        .font(.footnote)
-                    Spacer()
+            // **足した行も直せる**(2026-10-28)。それまでは読むだけで、
+            // 書き間違えたら消して入れ直すしかなかった。
+            //
+            // **`id` は値ではなく位置にする。** `id: \.self` のままだと、
+            // 1 文字打つたびに値が変わって行が別物になり、焦点が外れて書き続けられない。
+            // 同じ文を 2 行書いたときにも衝突する。
+            // **範囲は `Array(...)` に包む** —— 生の `0..<count` は件数が減ると落ちる
+            ForEach(Array(0..<model.addedCoachWords.count), id: \.self) { index in
+                HStack(spacing: 8) {
+                    TextField(text: $model.addedCoachWords[index]) {
+                        Text("例: 面が寝ていると言われた", bundle: .module)
+                    }
+                    .textFieldStyle(.roundedBorder)
+                    .accessibilityIdentifier("practice-added-\(index)")
                     Button {
-                        removeCoachWords(words)
+                        model.removeCoachWords(at: index)
                     } label: {
                         Text("削除", bundle: .module)
-                            .font(.footnote)
                     }
+                    .buttonStyle(.bordered)
+                    .accessibilityIdentifier("practice-added-remove-\(index)")
                 }
+                .font(.footnote)
             }
 
             // **入力欄と「追加」は横に並べる**(2026-10-28 に実機の報告で直した)。
@@ -477,15 +488,6 @@ public struct PracticeLogView: View {
     /// **確実に空になるほうを採った**(前の文字が残るのが元の不具合)。
     private func addCoachWords() {
         model.addCoachWords()
-    }
-
-    private func removeCoachWords(_ words: String) {
-        for index in 0..<model.addedCoachWords.count {
-            if model.addedCoachWords[index] == words {
-                model.removeCoachWords(at: index)
-                return
-            }
-        }
     }
 
     @ViewBuilder private func sectionTitle(_ label: Text) -> some View {

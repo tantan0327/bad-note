@@ -174,9 +174,18 @@ import SkipSQL
     }
 
     /// 保存対象の原文。**入力中の 1 行も含める**(「＋」を押し忘れても失わない)。
+    ///
+    /// **足した行も trim して、空になったものは落とす**(2026-10-28)。
+    /// 行を編集できるようにしたので、中身を消して空にできる。
+    /// そのまま通すと無題の課題ができてしまう。
     public func pendingCoachWords() -> [String] {
         var all: [String] = []
-        all.append(contentsOf: addedCoachWords)
+        for words in addedCoachWords {
+            let trimmed = words.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines)
+            if !trimmed.isEmpty {
+                all.append(trimmed)
+            }
+        }
         let trimmed = coachWordsDraft.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines)
         if !trimmed.isEmpty {
             all.append(trimmed)

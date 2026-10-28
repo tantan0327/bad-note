@@ -590,3 +590,23 @@ TextField(text: $model.draft) { ... }
 
 `maestro` の `hideKeyboard` は iOS で失敗するので、キーボードを下げる前提の
 フローは書かない。
+
+### 編集できる行の `ForEach` は値で識別しない(2026-10-28)
+
+練習ログの「追加する課題」で、足した行を `TextField` にして直せるようにしたときの決めごと。
+
+```swift
+ForEach(model.added, id: \.self) { ... }                    // 壊れる
+ForEach(Array(0..<model.added.count), id: \.self) { index in // 位置で識別する
+    TextField(text: $model.added[index]) { ... }
+}
+```
+
+- **値で識別すると 1 文字打つたびに行が別物になり、焦点が外れて書き続けられない。**
+  同じ文を 2 行書いたときにも衝突する
+- **範囲は `Array(...)` に包む。** 生の `0..<count` は件数が減ると落ちる
+  (この節の「`ForEach(0..<count)` は件数が減ると落ちる」を参照)。
+  行を消せる画面なので必ず踏む
+- **消せる・直せるようにしたら、空になった行を落とす処理が要る。**
+  `pendingCoachWords()` で trim して空を捨てている。
+  入れなければ、中身を消した行がそのまま無題の課題になる

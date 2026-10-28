@@ -93,4 +93,40 @@ final class PracticeLogModelTests: XCTestCase {
 
         XCTAssertTrue(model.canSave)
     }
+
+    // MARK: - 足した行を編集できるようにした(2026-10-28)
+
+    /// **消された行は課題にしない。** 行が編集できるようになったので、
+    /// 中身を消して空にすることができる。そのまま保存すると無題の課題ができる。
+    func testEmptyAddedRowIsNotSaved() {
+        let model = PracticeLogModel()
+        model.addedCoachWords = ["足が止まっていた", "", "   "]
+
+        XCTAssertEqual(["足が止まっていた"], model.pendingCoachWords())
+    }
+
+    /// 全部消したら保存の材料にならない(他に何も入っていなければ保存できない)。
+    func testCannotSaveWhenEveryAddedRowIsEmptied() {
+        let model = PracticeLogModel()
+        model.addedCoachWords = ["", "   "]
+
+        XCTAssertFalse(model.canSave)
+    }
+
+    /// 前後の空白は落とす。足したときと同じ扱い(`addCoachWords` も trim している)。
+    func testAddedRowsAreTrimmed() {
+        let model = PracticeLogModel()
+        model.addedCoachWords = ["  足が止まっていた  "]
+
+        XCTAssertEqual(["足が止まっていた"], model.pendingCoachWords())
+    }
+
+    /// 編集した行と、まだ「＋」を押していない行の両方が保存の対象。
+    func testEditedRowsAndDraftAreBothKept() {
+        let model = PracticeLogModel()
+        model.addedCoachWords = ["直した 1 件目"]
+        model.coachWordsDraft = "まだ押していない行"
+
+        XCTAssertEqual(["直した 1 件目", "まだ押していない行"], model.pendingCoachWords())
+    }
 }
