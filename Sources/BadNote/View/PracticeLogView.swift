@@ -426,8 +426,11 @@ public struct PracticeLogView: View {
                 }
             }
 
+            // **ここは「言われたまま」を例にする**(2026-10-28)。
+            // 練習の直後に開く画面なので、手元にあるのは言われた言葉そのもの。
+            // 完了形への言い換えを求めると、その場で考え込ませることになる
             TextField(text: $model.coachWordsDraft) {
-                Text("課題を 1 行で", bundle: .module)
+                Text("例: 面が寝ていると言われた", bundle: .module)
             }
             .textFieldStyle(.roundedBorder)
 

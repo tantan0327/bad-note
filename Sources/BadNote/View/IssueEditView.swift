@@ -135,14 +135,56 @@ public struct IssueEditView: View {
             Text("課題", bundle: .module)
                 .font(.headline)
             TextField(text: $model.title) {
-                Text("例: レシーブでラケット面を立てて構えられている", bundle: .module)
+                Text("例: 面が寝ていると言われた", bundle: .module)
             }
             .textFieldStyle(.roundedBorder)
             .accessibilityIdentifier("issue-edit-words")
             saveHint
-            Text("「〜できている」の形で書くのがおすすめです。言われた言葉のままでも構いません", bundle: .module)
+            if model.isNew {
+                writingGuide
+            }
+        }
+    }
+
+    /// 書き方の迷いを消すための例(2026-10-28)。
+    ///
+    /// **「おすすめ」をやめた。** それまでは
+    /// 「「〜できている」の形で書くのがおすすめです。言われた言葉のままでも構いません」
+    /// の 1 文だった。**勧めたうえで許すと、勧められていないほうが間違いに見える。**
+    /// 初めて使う人が「できていないことを書くのか、できている状態を書くのか」で
+    /// 止まる、という声が実際に出た。
+    ///
+    /// どちらでも本当に動く(整理の画面で後から言い換えられる)ので、
+    /// **抽象的な助言をやめて、2 つの書き方を実物で並べる。**
+    /// 出すのは**追加のときだけ** —— 編集で開く人はもう書き方を知っている。
+    @ViewBuilder private var writingGuide: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("どちらの書き方でも大丈夫です。あとから直せます", bundle: .module)
                 .font(.caption)
                 .foregroundStyle(.secondary)
+            // **例は面に載せて、まわりの説明文と分ける。**
+            // 同じ灰色の文を 4 行並べたら、どれが例なのか読み取れなかった
+            // (2026-10-28 に実機で確認して作り直した)
+            Card {
+                VStack(alignment: .leading, spacing: 12) {
+                    guideExample(Text("言われたまま", bundle: .module),
+                                 Text("面が寝ていると言われた", bundle: .module))
+                    guideExample(Text("できている形", bundle: .module),
+                                 Text("ラケット面を立てて構えられている", bundle: .module))
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+        }
+    }
+
+    @ViewBuilder private func guideExample(_ label: Text, _ example: Text) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            label
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            example
+                .font(.footnote)
+                .foregroundStyle(.primary)
         }
     }
 
