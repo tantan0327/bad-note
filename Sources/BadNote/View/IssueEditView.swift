@@ -32,6 +32,7 @@ public struct IssueEditView: View {
                         if !model.isNew {
                             originalWordsSection
                         }
+                        coachNameSection
                         disciplineSection
                         masterySection
                         impactSection
@@ -210,6 +211,8 @@ public struct IssueEditView: View {
 
     /// **上の 1 行を直しても、ここは変わらない。**
     /// 言われたとおりの言葉を残すのがこの欄の役目(§3.1)。誤字だけは直せる。
+    /// **追加では出さない。** 新規では画面の「課題」の 1 行がそのまま
+    /// もとの言葉になるので、同じものを書く欄が 2 つ並ぶことになる(2026-10-12 の決定)。
     @ViewBuilder private var originalWordsSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("もとの言葉", bundle: .module)
@@ -222,11 +225,31 @@ public struct IssueEditView: View {
             Text("最初に書き留めた言葉です。直すのは誤字くらいに留めます", bundle: .module)
                 .font(.caption)
                 .foregroundStyle(.secondary)
+        }
+    }
+
+    /// **追加でも編集でも出す**(2026-10-29 に追加側へも出した)。
+    ///
+    /// それまで「もとの言葉」と同じ節に入っていたため、
+    /// **追加のときだけ欄ごと消えていた。** もとの言葉を出さない理由
+    /// (新規では「課題」の 1 行がそれ)は、コーチ名には当てはまらない。
+    /// モデルは新規でも保存していた(`IssueRepository.create` に渡している)ので、
+    /// 入れる場所が無かっただけ。
+    ///
+    /// 見出しを付けて、折りたたみの中の他の欄と同じ形にした ——
+    /// 以前はプレースホルダだけで、何の欄か分かりにくかった。
+    @ViewBuilder private var coachNameSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("コーチ名(任意)", bundle: .module)
+                .font(.headline)
             TextField(text: $model.coachName) {
-                Text("コーチ名(任意)", bundle: .module)
+                Text("例: 佐藤コーチ", bundle: .module)
             }
             .textFieldStyle(.roundedBorder)
             .accessibilityIdentifier("issue-edit-coach")
+            Text("誰に言われたかを残しておくと、あとで言葉から探せます", bundle: .module)
+                .font(.caption)
+                .foregroundStyle(.secondary)
         }
     }
 
