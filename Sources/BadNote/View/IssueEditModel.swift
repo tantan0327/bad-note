@@ -36,6 +36,8 @@ import SkipSQL
     public var cost: Int? = nil
     public var tags: [Tag] = []
     public var tagDraft = ""
+    /// 使ったことのあるタグ全部(`load()` で読む)。候補の母集団。
+    public private(set) var knownTags: [Tag] = []
 
     // MARK: - 表示状態
 
@@ -59,6 +61,9 @@ import SkipSQL
     // MARK: - 読み込み
 
     public func load() {
+        // **候補は新規でも読む。** ここより下は既存の課題を読む処理で、
+        // 新規では素通りする。タグの候補は新規のほうが要る(2026-10-28)
+        loadKnownTags()
         guard let issueID = issueID else {
             return
         }
@@ -118,6 +123,36 @@ import SkipSQL
         } catch {
             errorText = "タグの追加に失敗しました: \(error)"
         }
+    }
+
+    /// 使ったことのあるタグを読む。**失敗しても画面は止めない** ——
+    /// 候補が出ないだけで、手で打てば今までどおり付けられる。
+    private func loadKnownTags() {
+        do {
+            knownTags = try TagRepository(db: try context()).fetchAll()
+        } catch {
+            knownTags = []
+        }
+    }
+
+    /// いま出す候補(2026-10-28)。選び方は `TagSuggestion`(純粋関数)。
+    ///
+    /// **入力が空でも出す。** 打たずに選べることが本題で、
+    /// 同じ意味のタグが何個もできるのを防ぐのが目的。
+    public var tagCandidates: [Tag] {
+        return TagSuggestion.candidates(all: knownTags, attached: tags, query: tagDraft)
+    }
+
+    /// 候補を押して付ける。**新しくタグは作らない**(既にあるものを選ぶだけ)。
+    public func attachTag(_ tag: Tag) {
+        for existing in tags {
+            if existing.id == tag.id {
+                return
+            }
+        }
+        tags.append(tag)
+        // 打ちかけの文字は役目を終える。残すと「追加」を押して二重に作ることになる
+        tagDraft = ""
     }
 
     public func removeTag(_ tag: Tag) {

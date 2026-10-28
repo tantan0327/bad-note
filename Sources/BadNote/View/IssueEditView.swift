@@ -359,7 +359,44 @@ public struct IssueEditView: View {
                     Text("追加", bundle: .module)
                 }
                 .buttonStyle(.bordered)
+                .disabled(model.tagDraft.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines).isEmpty)
                 .accessibilityIdentifier("issue-edit-tag-add")
+            }
+            tagCandidates
+        }
+    }
+
+    /// 使ったことのあるタグを押して付けられるようにする(2026-10-28)。
+    ///
+    /// **同じ意味のタグが何個もできるのを防ぐのが目的。** それまでは毎回手で打つしかなく、
+    /// 「バックハンド」と「バックハンド 」が別のタグとして増えていった。
+    /// そうなるとタグで絞り込んでも全部は拾えない。
+    ///
+    /// **打っていなくても出す** —— 打たずに選べることが本題。
+    /// 候補が無いときは見出しごと出さない(空の行を置かない)。
+    @ViewBuilder private var tagCandidates: some View {
+        let candidates = model.tagCandidates
+        if !candidates.isEmpty {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("使ったことのあるタグ", bundle: .module)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                // **`Grid` は SkipUI 非対応**なので、折り返しは行に分けて自前で組む
+                ForEach(Array(0..<TagChipRows.rowCount(of: candidates.count)), id: \.self) { row in
+                    HStack(spacing: 8) {
+                        ForEach(TagChipRows.items(in: candidates, row: row)) { tag in
+                            Button {
+                                model.attachTag(tag)
+                            } label: {
+                                Text(tag.name)
+                                    .font(.footnote)
+                            }
+                            .buttonStyle(.bordered)
+                            .accessibilityIdentifier("issue-edit-tag-candidate-\(tag.id)")
+                        }
+                        Spacer()
+                    }
+                }
             }
         }
     }
