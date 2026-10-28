@@ -152,36 +152,56 @@ public struct IssueDetailView: View {
                     .foregroundStyle(.secondary)
                     .accessibilityIdentifier("issue-detail-standing")
             }
-            // 上げる / 下げるはバーのすぐ下に並べる(文言が現在地に依存するので離さない)。
-            // **どちらも控えめにする** —— §3.2 は「自動で上げない。done 3 回で 1 度だけ提案する」
-            // 設計なので、手動昇格を画面で最も目立つボタンにすると提案の意味が薄れる(1.5)
-            HStack(spacing: 8) {
-                if let next = model.nextLevel {
-                    Button {
-                        // バーの伸びは速く動かす(5.1)
-                        withAnimation(Motion.select) {
-                            model.raiseLevel()
-                        }
-                    } label: {
-                        Text(verbatim: "「\(next.displayName)」に上げる")
-                    }
-                    .buttonStyle(.bordered)
-                    .font(.footnote)
-                    .accessibilityIdentifier("issue-detail-raise")
-                }
-                if issue.masteryLevel != MasteryLevel.solo && !model.isArchived {
-                    Button {
-                        withAnimation(Motion.select) {
-                            model.lowerLevel()
-                        }
-                    } label: {
-                        Text("1 つ下げる", bundle: .module)
-                    }
-                    .buttonStyle(.bordered)
-                    .font(.footnote)
-                    .accessibilityIdentifier("issue-detail-lower")
-                }
+            // **4 段を並べて、どこへでも飛べるようにする**(2026-10-28)。
+            // それまでは「1 つ上げる」「1 つ下げる」だけで、
+            // 素振りから試合まで動かすのに 3 回押す必要があった。
+            //
+            // **塗りつぶしは「いまここ」の印で、上げるボタンではない**(優先度の 3 択と同じ形)。
+            // §3.2 は「自動で上げない。done 3 回で 1 度だけ提案する」設計なので、
+            // **上げる操作そのものを目立たせない**。4 つを同じ重さで並べ、
+            // 選ばれている 1 つだけ塗る。名前が長い(「パターン練習でできる」)ので 2 行に分ける
+            if !model.isArchived {
+                levelPicker(issue)
             }
+        }
+    }
+
+    @ViewBuilder private func levelPicker(_ issue: Issue) -> some View {
+        VStack(spacing: 8) {
+            HStack(spacing: 8) {
+                levelButton(MasteryLevel.solo, current: issue.masteryLevel)
+                levelButton(MasteryLevel.drill, current: issue.masteryLevel)
+            }
+            HStack(spacing: 8) {
+                levelButton(MasteryLevel.pattern, current: issue.masteryLevel)
+                levelButton(MasteryLevel.match, current: issue.masteryLevel)
+            }
+        }
+    }
+
+    @ViewBuilder private func levelButton(_ level: MasteryLevel, current: MasteryLevel) -> some View {
+        if level == current {
+            Button {
+            } label: {
+                Text(verbatim: level.displayName)
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.borderedProminent)
+            .font(.footnote)
+            .accessibilityIdentifier("issue-detail-level-\(level.rawValue)")
+        } else {
+            Button {
+                // バーの伸びは速く動かす(5.1)
+                withAnimation(Motion.select) {
+                    model.setLevel(level)
+                }
+            } label: {
+                Text(verbatim: level.displayName)
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.bordered)
+            .font(.footnote)
+            .accessibilityIdentifier("issue-detail-level-\(level.rawValue)")
         }
     }
 

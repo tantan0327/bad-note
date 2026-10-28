@@ -36,14 +36,6 @@ import SkipSQL
         self.issueID = issueID
     }
 
-    /// 1 つ上のレベル。Lv.4 なら nil(上げ先が無い)。
-    public var nextLevel: MasteryLevel? {
-        guard let issue = issue else {
-            return nil
-        }
-        return MasteryLevel(rawValue: issue.masteryLevel.rawValue + 1)
-    }
-
     public var isArchived: Bool {
         return issue?.status == IssueStatus.archived
     }
@@ -91,33 +83,28 @@ import SkipSQL
 
     // MARK: - 操作
 
-    /// 習熟度を 1 つ上げる。履歴は `IssueRepository` が自動で残す。
-    public func raiseLevel() {
-        guard let current = issue, let next = nextLevel else {
-            return
-        }
-        do {
-            var edited = current
-            edited.masteryLevel = next
-            // 断った記録の消去は `IssueRepository.update` が行う(経路が増えても漏れない)
-            _ = try IssueRepository(db: try context()).update(edited)
-            load()
-        } catch {
-            errorText = "レベルの更新に失敗しました: \(error)"
-        }
-    }
-
-    /// レベルを 1 つ下げる。日常操作ではないので「⋯」の中に置く(§3.2)。
-    public func lowerLevel() {
+    /// 習熟度を指定の段にする(2026-10-28)。履歴は `IssueRepository` が自動で残す。
+    ///
+    /// **何段でも飛べる。** それまでは 1 つ上げる / 1 つ下げるしか無く、
+    /// 素振りから試合まで動かすのに 3 回押す必要があった。
+    /// §3.2 の提案は 1 段ずつのままだが、**本人が決める場合まで 1 段に縛る理由は無い**
+    /// (判断材料を出して判断は本人に任せる。CLAUDE.md)。
+    ///
+    /// **何段飛んでも `level_change` は 1 行。**
+    /// 積み上げの「レベルアップ」は**回数**なので、1 回の操作は 1 回として数える
+    /// (`IssueRepository.countLevelUps` は行数を数える)。
+    /// 飛んだ段数ぶん水増しすると、押しただけ増える数字になる。
+    public func setLevel(_ level: MasteryLevel) {
         guard let current = issue else {
             return
         }
-        if current.masteryLevel == MasteryLevel.solo {
+        if current.masteryLevel == level {
             return
         }
         do {
             var edited = current
-            edited.masteryLevel = current.masteryLevel.oneStepDown
+            edited.masteryLevel = level
+            // 断った記録の消去は `IssueRepository.update` が行う(経路が増えても漏れない)
             _ = try IssueRepository(db: try context()).update(edited)
             load()
         } catch {
