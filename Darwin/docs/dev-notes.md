@@ -565,3 +565,28 @@ Android の各サイズは `skip icon --no-darwin <その PNG>` で展開する�
 そうなると `None of the input catalogs contained a matching app icon set named "AppIcon"`
 でビルドが落ちる。`Darwin/Assets.xcassets/AppIcon.appiconset/` に
 `AppIcon.png`(1024・アルファ無し)と `Contents.json` がある形が正しい。
+
+### 入力中の `TextField` は束縛を空にしても表示が残ることがある(2026-10-28 に踏んだ)
+
+**症状** —— 練習ログの「追加する課題」で 1 行足したあと、
+モデルは空にしているのに**前に書いた文字が欄に残る**(iPhone 17 / iOS の実機報告)。
+シミュレータでは再現しなかった。
+
+**直し方** —— 足した件数を `.id` にして、**欄ごと作り直す**。
+
+```swift
+TextField(text: $model.draft) { ... }
+    .id(model.added.count)     // 1 件増えるたびに新しい欄になる
+```
+
+**作り直すと焦点が外れてキーボードが閉じる。**
+同じ更新の中で `isFocused = true` に戻しても効かなかった。
+確実に空になるほうを採った。
+
+**ついでに踏んだもの** —— 追加ボタンを入力欄の**下**に置くと、
+キーボードが覆って押せない。押したつもりがキーボードを叩いていた
+(Maestro でも同じ症状が出て、`AAA` が `AAAんで` になった)。
+**入力欄と横に並べる**か、`.onSubmit` で改行キーからも足せるようにする。
+
+`maestro` の `hideKeyboard` は iOS で失敗するので、キーボードを下げる前提の
+フローは書かない。

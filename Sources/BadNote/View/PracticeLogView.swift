@@ -18,6 +18,9 @@ public struct PracticeLogView: View {
     #if os(iOS)
     @FocusState private var isMinutesFocused: Bool
     #endif
+    // **こちらは `#if` で囲まない。** 分数の焦点は iOS だけのキーボード用ツールバーに
+    // 紐づくが、追加する課題の焦点は**両プラットフォームで要る**(足したあと続けて書く)
+    @FocusState private var isCoachWordsFocused: Bool
 
     public init() {
     }
@@ -426,21 +429,54 @@ public struct PracticeLogView: View {
                 }
             }
 
-            // **ここは「言われたまま」を例にする**(2026-10-28)。
-            // 練習の直後に開く画面なので、手元にあるのは言われた言葉そのもの。
-            // 完了形への言い換えを求めると、その場で考え込ませることになる
-            TextField(text: $model.coachWordsDraft) {
-                Text("例: 面が寝ていると言われた", bundle: .module)
+            // **入力欄と「追加」は横に並べる**(2026-10-28 に実機の報告で直した)。
+            // 下に置いていたときは**キーボードがボタンを覆い**、
+            // 押したつもりがキーボードを叩いていた。横並びなら欄と一緒に必ず見える。
+            //
+            // **ここは「言われたまま」を例にする** —— 練習の直後に開く画面なので、
+            // 手元にあるのは言われた言葉そのもの。完了形への言い換えを求めると、
+            // その場で考え込ませることになる
+            HStack(spacing: 8) {
+                TextField(text: $model.coachWordsDraft) {
+                    Text("例: 面が寝ていると言われた", bundle: .module)
+                }
+                .textFieldStyle(.roundedBorder)
+                .focused($isCoachWordsFocused)
+                // 改行キーでも足せる。ボタンまで指を動かさずに済む
+                .submitLabel(.next)
+                .onSubmit {
+                    addCoachWords()
+                }
+                // **件数を id にして、足すたびに欄を作り直す**(2026-10-28)。
+                // モデルは `addCoachWords()` で空にしているのに、
+                // **実機では前に書いた文字が欄に残っていた**(iPhone 17 / iOS)。
+                // 入力中の欄は束縛を書き換えても表示が追いつかないことがある。
+                // 作り直せば必ず空から始まる
+                .id(model.addedCoachWords.count)
+                Button {
+                    addCoachWords()
+                } label: {
+                    Text("追加", bundle: .module)
+                }
+                .buttonStyle(.bordered)
+                .disabled(model.coachWordsDraft.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines).isEmpty)
+                .accessibilityIdentifier("practice-add-coach-words")
             }
-            .textFieldStyle(.roundedBorder)
-
-            Button {
-                model.addCoachWords()
-            } label: {
-                Text("＋ もう 1 件追加", bundle: .module)
-            }
-            .buttonStyle(.bordered)
+            .font(.footnote)
         }
+    }
+
+    /// 1 行足す。
+    ///
+    /// **足したあとキーボードは閉じる。** 欄を `.id` で作り直すので焦点が外れるため。
+    /// 焦点を戻す指定(`isCoachWordsFocused = true`)も試したが、
+    /// **作り直しと同じ更新の中では効かなかった**(2026-10-28 に実機で確認)。
+    ///
+    /// 閉じること自体は害にならない —— 上に行が増えるので「取られた」ことは見て分かるし、
+    /// 続けて書くときは欄をもう一度叩けばよい。
+    /// **確実に空になるほうを採った**(前の文字が残るのが元の不具合)。
+    private func addCoachWords() {
+        model.addCoachWords()
     }
 
     private func removeCoachWords(_ words: String) {
