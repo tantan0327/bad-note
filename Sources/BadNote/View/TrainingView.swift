@@ -37,8 +37,12 @@ public struct TrainingView: View {
             }
             Card {
                 // 最初の 1 個への道は 1 タップ(3.4)。空の一覧を経由せず直接フォームへ
+                // **「毎日やる形で」と書かない**(2026-10-28)。
+                // メニューに頻度の設定は無く、やった日にチェックするだけなので、
+                // 週 1 回でも不定期でも成立する。「毎日」と言うと、
+                // そうでないメニューを作ってはいけないように読める
                 EmptyStateView(icon: "fitness_center",
-                               message: Text("メニューはまだありません。素振り 50 回、体幹 10 分のように、毎日やる形で決めておきます", bundle: .module)) {
+                               message: Text("メニューはまだありません。素振り 50 回、体幹 10 分のように、繰り返しやることを決めておきます。毎日でも週 1 回でも、やった日にチェックします", bundle: .module)) {
                     NavigationLink {
                         TrainingMenuFormView(menuID: nil)
                     } label: {
